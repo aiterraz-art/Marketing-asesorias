@@ -4,6 +4,8 @@ import PromptBuilderModal from './PromptBuilderModal';
 import BrandVoiceManager from './BrandVoiceManager';
 import { generateContentIdeas, generateImage } from '../lib/openai';
 import { supabase, getBrandVoices } from '../lib/supabase';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 export default function ContentGeneratorPanel() {
     const [idea, setIdea] = useState('');
@@ -100,6 +102,49 @@ export default function ContentGeneratorPanel() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleCopyForInstagram = () => {
+        if (!result) return;
+
+        // Format for Instagram: Title + invisible separator + script + dots + hashtags/ads
+        const separator = "\n.\n.\n";
+        const content = `🔥 ${result.title || idea}\n\n${result.script}\n${separator}🚀 ${result.productionPlan ? "Tip de grabación: " + result.productionPlan : ""}`;
+
+        navigator.clipboard.writeText(content);
+        alert("¡Caption copiado! Listo para pegar en Instagram/TikTok.");
+    };
+
+    const handleDownloadPack = async () => {
+        if (!result) return;
+
+        const zip = new JSZip();
+
+        // Add Text Content
+        const textContent = `TÍTULO:\n${result.title || idea}\n\nGUION:\n${result.script}\n\nPLAN DE PRODUCCIÓN:\n${result.productionPlan}\n\nCOPY ADS:\n${result.adsCopy || 'N/A'}\n\nPROMPT IMAGEN:\n${generatedImagePrompt || 'N/A'}`;
+        zip.file("contenido.txt", textContent);
+
+        // Add Image if exists
+        if (generatedImage) {
+            try {
+                // Fetch image as blob because we need the data, URL might be external
+                // Note: CORS issues might happen with simple fetch if OpenAI doesn't allow it directly from browser to JSZip
+                // DALL-E urls are signed but let's try. If it fails, we might need a proxy or backend.
+                // For this demo, let's try direct fetch or fallback to url text file.
+
+                const response = await fetch(generatedImage);
+                const blob = await response.blob();
+                zip.file("imagen_ai.png", blob);
+            } catch (e) {
+                console.error("Could not download image for zip", e);
+                zip.file("imagen_url.txt", generatedImage); // Fallback
+                alert("No pudimos descargar la imagen directamente (posible bloqueo CORS), pero guardamos el link en el ZIP.");
+            }
+        }
+
+        zip.generateAsync({ type: "blob" }).then(function (content) {
+            saveAs(content, `pack_contenido_${new Date().toISOString().slice(0, 10)}.zip`);
+        });
     };
 
     // ... (return JSX)
@@ -349,20 +394,37 @@ export default function ContentGeneratorPanel() {
                             </>
                         )}
 
-                        <div className="pt-8 flex justify-end gap-3">
+                        <div className="pt-8 flex flex-wrap justify-end gap-3 border-t border-zinc-800 mt-8">
+                            <button
+                                onClick={handleCopyForInstagram}
+                                className="px-4 py-2 bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                            >
+                                <Copy size={16} /> Copiar Caption
+                            </button>
+
+                            <button
+                                onClick={handleDownloadPack}
+                                className="px-4 py-2 bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                Descargar Pack
+                            </button>
+
+                            <div className="w-px h-8 bg-zinc-700 mx-2 hidden sm:block"></div>
+
                             <button
                                 onClick={() => setResult(null)}
-                                className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+                                className="px-4 py-2 text-zinc-400 hover:text-red-400 transition-colors text-sm"
                             >
                                 Descartar
                             </button>
                             <button
                                 onClick={handleSaveToCalendar}
                                 disabled={isSaving}
-                                className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-6 py-3 rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-emerald-900/20 font-bold"
                             >
-                                {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} className="text-emerald-500" />}
-                                {isSaving ? 'Guardando...' : result.weeklyPlan ? 'Agendar Semana Completa' : 'Añadir al Calendario'}
+                                {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
+                                {isSaving ? 'Guardando...' : result.weeklyPlan ? 'Agendar Semana' : 'Guardar'}
                             </button>
                         </div>
                     </div>
