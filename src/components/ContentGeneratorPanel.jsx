@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Send, Settings, Copy, Check, ChevronRight, Loader2, Mic } from 'lucide-react';
+import { Sparkles, Send, Settings, Copy, Check, ChevronRight, Loader2, Mic, Download } from 'lucide-react';
 import PromptBuilderModal from './PromptBuilderModal';
 import BrandVoiceManager from './BrandVoiceManager';
 import { generateContentIdeas, generateImage } from '../lib/openai';
 import { supabase, getBrandVoices } from '../lib/supabase';
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import FileSaver from 'file-saver';
 
 export default function ContentGeneratorPanel() {
     const [idea, setIdea] = useState('');
