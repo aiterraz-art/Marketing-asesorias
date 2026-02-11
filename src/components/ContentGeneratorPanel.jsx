@@ -28,7 +28,21 @@ export default function ContentGeneratorPanel() {
     const [mood, setMood] = useState('profesional');
 
 
-    // ... (existing useEffects and handlers)
+    useEffect(() => {
+        const fetchVoices = async () => {
+            try {
+                const data = await getBrandVoices();
+                if (data && data.length > 0) {
+                    // Pre-select first voice if none selected
+                    setSelectedVoice(data[0]);
+                }
+            } catch (error) {
+                console.error("Error checking voices", error);
+            }
+        };
+        fetchVoices();
+    }, []);
+
 
     const handleGenerateImage = async () => {
         if (!result) return;
@@ -182,7 +196,7 @@ export default function ContentGeneratorPanel() {
         }
     };
 
-    // ... (return JSX)
+
 
 
 
@@ -306,6 +320,13 @@ export default function ContentGeneratorPanel() {
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {isGenerating && (
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center rounded-xl">
+                                <Loader2 className="animate-spin text-primary mb-4" size={48} />
+                                <p className="text-white font-bold text-lg animate-pulse">Creando tu estrategia...</p>
+                                <p className="text-zinc-500 text-sm mt-2">Nuestra IA está diseñando tus embudos de venta</p>
+                            </div>
+                        )}
 
                         {/* Weekly Plan View */}
                         {result.weeklyPlan ? (
