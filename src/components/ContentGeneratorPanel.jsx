@@ -149,80 +149,7 @@ export default function ContentGeneratorPanel() {
 
     // ... (return JSX)
 
-    {
-        result.weeklyPlan ? (
-            // ... existing weekly plan code ...
-            <div className="space-y-6">
-                {/* ... */}
-            </div>
-        ) : (
-            /* Single Content View */
-            <>
-                <Section title="Guion / Estructura" content={result.script} />
-                <Section title="Plan de Producción" content={result.productionPlan} />
-                <Section title="Copy para Meta Ads" content={result.adsCopy} />
 
-                {/* Image Generation Section */}
-                <div className="mt-8 pt-6 border-t border-zinc-800">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
-                        <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-md">
-                            <Sparkles size={20} />
-                        </div>
-                        Generar Imagen AI
-                    </h3>
-
-                    {!generatedImage ? (
-                        <button
-                            onClick={handleGenerateImage}
-                            disabled={isGeneratingImage}
-                            className="w-full bg-zinc-900 border border-zinc-700 border-dashed hover:border-purple-500 hover:bg-zinc-800 transition-all rounded-xl p-8 flex flex-col items-center justify-center gap-3 group"
-                        >
-                            {isGeneratingImage ? (
-                                <Loader2 size={32} className="text-purple-500 animate-spin" />
-                            ) : (
-                                <div className="p-3 bg-zinc-800 rounded-full text-zinc-400 group-hover:text-purple-400 group-hover:scale-110 transition-all">
-                                    <Sparkles size={24} />
-                                </div>
-                            )}
-                            <span className="text-zinc-400 font-medium group-hover:text-white">
-                                {isGeneratingImage ? 'Creando imagen única...' : 'Generar Imagen para este Contenido'}
-                            </span>
-                        </button>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="relative group rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900">
-                                <img src={generatedImage} alt="AI Generated" className="w-full h-auto max-h-[400px] object-cover" />
-                                <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-sm p-4 flex justify-between items-center translate-y-full group-hover:translate-y-0 transition-transform">
-                                    <span className="text-white text-sm font-medium">Imagen DALL-E 3</span>
-                                    <a href={generatedImage} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 underline">
-                                        Ver original
-                                    </a>
-                                </div>
-                            </div>
-
-                            {/* Prompt Display */}
-                            {generatedImagePrompt && (
-                                <div className="bg-zinc-900 border border-zinc-700/50 rounded-lg p-3 relative group">
-                                    <p className="text-xs text-zinc-500 font-bold mb-1 uppercase tracking-wider">Prompt Utilizado:</p>
-                                    <p className="text-sm text-zinc-300 pr-8">{generatedImagePrompt}</p>
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(generatedImagePrompt);
-                                            alert('Prompt copiado al portapapeles');
-                                        }}
-                                        className="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors"
-                                        title="Copiar prompt"
-                                    >
-                                        <Copy size={16} />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </>
-        )
-    }
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-100px)] p-6 lg:p-0">
@@ -386,11 +313,69 @@ export default function ContentGeneratorPanel() {
                                 ))}
                             </div>
                         ) : (
-                            /* Single Content View */
                             <>
                                 <Section title="Guion / Estructura" content={result.script} />
                                 <Section title="Plan de Producción" content={result.productionPlan} />
                                 <Section title="Copy para Meta Ads" content={result.adsCopy} />
+
+                                {/* Image Generation Section */}
+                                <div className="mt-8 pt-6 border-t border-zinc-800">
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                                        <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-md">
+                                            <Sparkles size={20} />
+                                        </div>
+                                        Generar Imagen AI
+                                    </h3>
+
+                                    {!generatedImage ? (
+                                        <button
+                                            onClick={handleGenerateImage}
+                                            disabled={isGeneratingImage}
+                                            className="w-full bg-zinc-900 border border-zinc-700 border-dashed hover:border-purple-500 hover:bg-zinc-800 transition-all rounded-xl p-8 flex flex-col items-center justify-center gap-3 group"
+                                        >
+                                            {isGeneratingImage ? (
+                                                <Loader2 size={32} className="text-purple-500 animate-spin" />
+                                            ) : (
+                                                <div className="p-3 bg-zinc-800 rounded-full text-zinc-400 group-hover:text-purple-400 group-hover:scale-110 transition-all">
+                                                    <Sparkles size={24} />
+                                                </div>
+                                            )}
+                                            <span className="text-zinc-400 font-medium group-hover:text-white">
+                                                {isGeneratingImage ? 'Creando imagen única...' : 'Generar Imagen para este Contenido'}
+                                            </span>
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="relative group rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900">
+                                                <img src={generatedImage} alt="AI Generated" className="w-full h-auto max-h-[400px] object-cover" />
+                                                <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-sm p-4 flex justify-between items-center translate-y-full group-hover:translate-y-0 transition-transform">
+                                                    <span className="text-white text-sm font-medium">Imagen DALL-E 3</span>
+                                                    <a href={generatedImage} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 underline">
+                                                        Ver original
+                                                    </a>
+                                                </div>
+                                            </div>
+
+                                            {/* Prompt Display */}
+                                            {generatedImagePrompt && (
+                                                <div className="bg-zinc-900 border border-zinc-700/50 rounded-lg p-3 relative group">
+                                                    <p className="text-xs text-zinc-500 font-bold mb-1 uppercase tracking-wider">Prompt Utilizado:</p>
+                                                    <p className="text-sm text-zinc-300 pr-8">{generatedImagePrompt}</p>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(generatedImagePrompt);
+                                                            alert('Prompt copiado al portapapeles');
+                                                        }}
+                                                        className="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors"
+                                                        title="Copiar prompt"
+                                                    >
+                                                        <Copy size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
 
@@ -406,7 +391,7 @@ export default function ContentGeneratorPanel() {
                                 onClick={handleDownloadPack}
                                 className="px-4 py-2 bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                <Download size={16} />
                                 Descargar Pack
                             </button>
 
