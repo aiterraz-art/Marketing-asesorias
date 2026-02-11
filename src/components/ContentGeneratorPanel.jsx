@@ -440,67 +440,67 @@ export default function ContentGeneratorPanel() {
                                 <Section title="Guion / Estructura" content={result.script} />
                                 <Section title="Plan de Producción" content={result.productionPlan} />
                                 <Section title="Copy para Meta Ads" content={result.adsCopy} />
+                            </>
+                        )}
 
-                                {/* Image Generation Section */}
-                                <div className="mt-8 pt-6 border-t border-zinc-800">
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
-                                        <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-md">
-                                            <Sparkles size={20} />
-                                        </div>
-                                        Generar Imagen AI
-                                    </h3>
+                        {/* Image Generation Section - Always visible if there is a result */}
+                        <div className="mt-8 pt-6 border-t border-zinc-800">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                                <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-md">
+                                    <Sparkles size={20} />
+                                </div>
+                                Generar Imagen AI
+                            </h3>
 
-                                    {!generatedImage ? (
-                                        <button
-                                            onClick={handleGenerateImage}
-                                            disabled={isGeneratingImage}
-                                            className="w-full bg-zinc-900 border border-zinc-700 border-dashed hover:border-purple-500 hover:bg-zinc-800 transition-all rounded-xl p-8 flex flex-col items-center justify-center gap-3 group"
-                                        >
-                                            {isGeneratingImage ? (
-                                                <Loader2 size={32} className="text-purple-500 animate-spin" />
-                                            ) : (
-                                                <div className="p-3 bg-zinc-800 rounded-full text-zinc-400 group-hover:text-purple-400 group-hover:scale-110 transition-all">
-                                                    <Sparkles size={24} />
-                                                </div>
-                                            )}
-                                            <span className="text-zinc-400 font-medium group-hover:text-white">
-                                                {isGeneratingImage ? 'Creando imagen única...' : 'Generar Imagen para este Contenido'}
-                                            </span>
-                                        </button>
+                            {!generatedImage ? (
+                                <button
+                                    onClick={handleGenerateImage}
+                                    disabled={isGeneratingImage}
+                                    className="w-full bg-zinc-900 border border-zinc-700 border-dashed hover:border-purple-500 hover:bg-zinc-800 transition-all rounded-xl p-8 flex flex-col items-center justify-center gap-3 group"
+                                >
+                                    {isGeneratingImage ? (
+                                        <Loader2 size={32} className="text-purple-500 animate-spin" />
                                     ) : (
-                                        <div className="space-y-4">
-                                            <div className="relative group rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900">
-                                                <img src={generatedImage} alt="AI Generated" className="w-full h-auto max-h-[400px] object-cover" />
-                                                <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-sm p-4 flex justify-between items-center translate-y-full group-hover:translate-y-0 transition-transform">
-                                                    <span className="text-white text-sm font-medium">Imagen DALL-E 3</span>
-                                                    <a href={generatedImage} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 underline">
-                                                        Ver original
-                                                    </a>
-                                                </div>
-                                            </div>
+                                        <div className="p-3 bg-zinc-800 rounded-full text-zinc-400 group-hover:text-purple-400 group-hover:scale-110 transition-all">
+                                            <Sparkles size={24} />
+                                        </div>
+                                    )}
+                                    <span className="text-zinc-400 font-medium group-hover:text-white">
+                                        {isGeneratingImage ? 'Creando imagen única...' : 'Generar Imagen para este Contenido'}
+                                    </span>
+                                </button>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="relative group rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900">
+                                        <img src={generatedImage} alt="AI Generated" className="w-full h-auto max-h-[400px] object-cover" />
+                                        <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-sm p-4 flex justify-between items-center translate-y-full group-hover:translate-y-0 transition-transform">
+                                            <span className="text-white text-sm font-medium">Imagen DALL-E 3</span>
+                                            <a href={generatedImage} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 underline">
+                                                Ver original
+                                            </a>
+                                        </div>
+                                    </div>
 
-                                            {/* Prompt Display */}
-                                            {generatedImagePrompt && (
-                                                <div className="bg-zinc-900 border border-zinc-700/50 rounded-lg p-3 relative group">
-                                                    <p className="text-xs text-zinc-500 font-bold mb-1 uppercase tracking-wider">Prompt Utilizado:</p>
-                                                    <p className="text-sm text-zinc-300 pr-8">{generatedImagePrompt}</p>
-                                                    <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(generatedImagePrompt);
-                                                            alert('Prompt copiado al portapapeles');
-                                                        }}
-                                                        className="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors"
-                                                        title="Copiar prompt"
-                                                    >
-                                                        <Copy size={16} />
-                                                    </button>
-                                                </div>
-                                            )}
+                                    {/* Prompt Display */}
+                                    {generatedImagePrompt && (
+                                        <div className="bg-zinc-900 border border-zinc-700/50 rounded-lg p-3 relative group">
+                                            <p className="text-xs text-zinc-500 font-bold mb-1 uppercase tracking-wider">Prompt Utilizado:</p>
+                                            <p className="text-sm text-zinc-300 pr-8">{generatedImagePrompt}</p>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(generatedImagePrompt);
+                                                    alert('Prompt copiado al portapapeles');
+                                                }}
+                                                className="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors"
+                                                title="Copiar prompt"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
                                         </div>
                                     )}
                                 </div>
-                            </>
-                        )}
+                            )}
+                        </div>
 
                         <div className="pt-8 flex flex-wrap justify-end gap-3 border-t border-zinc-800 mt-8">
                             <button
@@ -556,7 +556,7 @@ export default function ContentGeneratorPanel() {
                     setShowVoiceManager(false);
                 }}
             />
-        </div>
+        </div >
     );
 }
 
@@ -567,7 +567,13 @@ const Section = ({ title, content }) => (
                 <ChevronRight size={20} className="text-primary" />
                 {title}
             </h3>
-            <button className="text-zinc-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+            <button
+                onClick={() => {
+                    navigator.clipboard.writeText(content);
+                    alert(`${title} copiado al portapapeles`);
+                }}
+                className="text-zinc-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+            >
                 <Copy size={16} />
             </button>
         </div>
