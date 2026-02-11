@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
 import { TrendingUp, Users, DollarSign, MousePointerClick, Loader2, AlertTriangle, ChevronDown, ChevronRight, BrainCircuit, MessageCircle } from 'lucide-react';
 import { fetchAdInsights, fetchCampaignInsights, fetchAdsByCampaign } from '../lib/meta-ads';
-import { analyzeAdsPerformance } from '../lib/openai';
+import { analyzeAdsPerformance, continueAdsAnalysisChat } from '../lib/openai';
 
 export default function AdsAnalytics() {
     const [accountData, setAccountData] = useState([]);
@@ -16,6 +16,11 @@ export default function AdsAnalytics() {
     // AI Analysis State
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
+
+    // AI Chat State
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [isChatting, setIsChatting] = useState(false);
 
     const [kpis, setKpis] = useState({
         spend: 0,
@@ -32,8 +37,10 @@ export default function AdsAnalytics() {
     async function loadData() {
         setLoading(true);
         setError(null);
-        setAnalysisResult(null); // Reset analysis on new data
+        setAnalysisResult(null);
+        setChatMessages([]); // Reset chat on new data
         try {
+            // ... existing loadData logic ...
             // Parallel fetch for account history and breakdown
             const [history, campaignsData] = await Promise.all([
                 fetchAdInsights(period),
@@ -70,6 +77,7 @@ export default function AdsAnalytics() {
     }
 
     const toggleCampaign = async (campaignId) => {
+        // ... existing toggleCampaign logic ...
         if (expandedCampaign === campaignId) {
             setExpandedCampaign(null);
         } else {
@@ -89,13 +97,36 @@ export default function AdsAnalytics() {
     const handleRunAIAnalysis = async () => {
         if (campaigns.length === 0) return;
         setAnalyzing(true);
+        setChatMessages([]); // Reset chat
         try {
             const analysis = await analyzeAdsPerformance(campaigns);
             setAnalysisResult(analysis);
+            // Initialize chat with summary context implicitly or explicitly if needed
         } catch (e) {
             alert("Error analizando datos: " + e.message);
         } finally {
             setAnalyzing(false);
+        }
+    };
+
+    const handleSendChatMessage = async () => {
+        if (!chatInput.trim()) return;
+
+        const userMsg = { role: 'user', content: chatInput };
+        const newHistory = [...chatMessages, userMsg];
+
+        setChatMessages(newHistory);
+        setChatInput('');
+        setIsChatting(true);
+
+        try {
+            const response = await continueAdsAnalysisChat(newHistory, campaigns);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
+        } catch (error) {
+            console.error("Chat error", error);
+            alert("Error en el chat: " + error.message);
+        } finally {
+            setIsChatting(false);
         }
     };
 
@@ -176,6 +207,55 @@ export default function AdsAnalytics() {
                                     ))}
                                 </ul>
                             </div>
+
+                            {/* Conversational Chat Section */}
+                            <div className="border-t border-indigo-500/30 pt-4 mt-6">
+                                <h4 className="text-zinc-400 text-sm font-bold mb-3 flex items-center gap-2">
+                                    <MessageCircle size={16} /> Profundizar Análisis
+                                </h4>
+
+                                <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
+                                    {chatMessages.length === 0 && (
+                                        <p className="text-zinc-500 text-xs italic text-center py-2">
+                                            Pregunta a la IA sobre estos resultados para obtener recomendaciones detalladas...
+                                        </p>
+                                    )}
+                                    {chatMessages.map((msg, idx) => (
+                                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`rounded-lg px-4 py-2 text-sm max-w-[85%] ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-200'}`}>
+                                                {msg.content}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isChatting && (
+                                        <div className="flex justify-start">
+                                            <div className="bg-zinc-800 rounded-lg px-4 py-2 flex items-center gap-2">
+                                                <Loader2 size={14} className="animate-spin text-zinc-400" />
+                                                <span className="text-zinc-500 text-xs">Escribiendo...</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessage()}
+                                        placeholder="Ej: ¿Cómo mejoro la campaña perdedora?"
+                                        className="flex-1 bg-zinc-900 border border-zinc-700/50 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-zinc-600"
+                                    />
+                                    <button
+                                        onClick={handleSendChatMessage}
+                                        disabled={isChatting || !chatInput.trim()}
+                                        className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-4 py-2 disabled:opacity-50 transition-colors flex items-center justify-center"
+                                    >
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>

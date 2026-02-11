@@ -273,6 +273,41 @@ export const analyzeAdsPerformance = async (campaignsData) => {
 	}
 };
 
+export const continueAdsAnalysisChat = async (historyMessages, campaignsData) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const systemPrompt = `
+        ACTÚA COMO UN TRAFFICKER DIGITAL EXPERTO Y ANALISTA DE DATOS SENIOR.
+        Tienes acceso a los siguientes datos de rendimiento de campañas (JSON):
+        ${JSON.stringify(campaignsData)}
+
+        Tu misión es responder preguntas profundas y estratégicas del usuario sobre estos datos.
+        - Sé específico y cita números cuando sea posible.
+        - Si el usuario pregunta "por qué", busca correlaciones en el CTR, Costo, y Gasto.
+        - Mantén un tono profesional pero directo ("al grano").
+        - Si detectas una métrica preocupante, señálala aunque no te lo pregunten.
+        `;
+
+		const messages = [
+			{ role: "system", content: systemPrompt },
+			...historyMessages.map(m => ({ role: m.role, content: m.content }))
+		];
+
+		const completion = await openai.chat.completions.create({
+			messages: messages,
+			model: "gpt-5.2",
+			// No response_format here, we want free text chat
+		});
+
+		return completion.choices[0].message.content;
+
+	} catch (error) {
+		console.error("Ads Chat Error:", error);
+		throw error;
+	}
+};
+
 export const generateContentIdeas = async (params) => {
 	if (!apiKey) throw new Error("OpenAI API Key not configured");
 
