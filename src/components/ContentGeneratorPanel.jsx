@@ -5,7 +5,7 @@ import BrandVoiceManager from './BrandVoiceManager';
 import { generateContentIdeas, generateImage } from '../lib/openai';
 import { supabase, getBrandVoices } from '../lib/supabase';
 import JSZip from 'jszip';
-import FileSaver from 'file-saver';
+import { saveAs } from 'file-saver';
 
 export default function ContentGeneratorPanel() {
     const [idea, setIdea] = useState('');
@@ -143,7 +143,9 @@ export default function ContentGeneratorPanel() {
         }
 
         zip.generateAsync({ type: "blob" }).then(function (content) {
-            FileSaver.saveAs(content, `pack_contenido_${new Date().toISOString().slice(0, 10)}.zip`);
+            zip.generateAsync({ type: "blob" }).then(function (content) {
+                saveAs(content, `pack_contenido_${new Date().toISOString().slice(0, 10)}.zip`);
+            });
         });
     };
 
