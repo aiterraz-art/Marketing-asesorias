@@ -70,26 +70,32 @@ export default function ContentCalendar() {
 
             days.push(
                 <div key={day} className="h-32 bg-zinc-900 border border-zinc-800 p-2 overflow-y-auto hover:bg-zinc-800/50 transition-colors relative group">
-                    <span className={`text-sm font-bold ${dayItems.length > 0 ? 'text-white' : 'text-zinc-500'}`}>{day}</span>
+                    <span className={`text-sm font-bold block mb-2 ${dayItems.length > 0 ? 'text-white' : 'text-zinc-500'}`}>{day}</span>
 
-                    <div className="mt-2 space-y-1">
+                    <div className="space-y-1.5">
                         {dayItems.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => setSelectedItem(item)}
-                                className={`w-full text-left text-xs p-1.5 rounded truncate flex items-center gap-1 mb-1 transition-all
-                                    ${item.status === 'published' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800' : 'bg-surface border border-zinc-700 text-zinc-300 hover:text-white hover:border-primary'}
+                                className={`w-full text-left text-xs p-2 rounded-md truncate flex items-center gap-2 transition-all border
+                                    ${item.status === 'published' ? 'opacity-60 border-transparent bg-zinc-800' : ''}
+                                    ${item.type === 'reel' && item.status !== 'published' ? 'bg-pink-500/10 text-pink-300 border-pink-500/20 hover:bg-pink-500/20' : ''}
+                                    ${item.type === 'post' && item.status !== 'published' ? 'bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20' : ''}
+                                    ${item.type === 'story' && item.status !== 'published' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/20' : ''}
                                 `}
                             >
-                                {item.type === 'reel' && <span className="text-[10px] bg-pink-500/20 text-pink-400 px-1 rounded">R</span>}
-                                {item.type === 'post' && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1 rounded">P</span>}
-                                {item.type === 'story' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1 rounded">S</span>}
-                                {item.title || "Sin título"}
+                                {item.type === 'reel' && <ImageIcon size={12} className="shrink-0" />}
+                                {item.type === 'post' && <ImageIcon size={12} className="shrink-0" />}
+                                {item.type === 'story' && <CheckCircle size={12} className="shrink-0" />}
+
+                                <span className="truncate font-medium">
+                                    {item.type === 'reel' && '🎥 Reel'}
+                                    {item.type === 'post' && '🖼️ Post'}
+                                    {item.type === 'story' && '⚡️ Story'}
+                                </span>
                             </button>
                         ))}
                     </div>
-
-                    {/* Add button on hover? maybe later */}
                 </div>
             );
         }
