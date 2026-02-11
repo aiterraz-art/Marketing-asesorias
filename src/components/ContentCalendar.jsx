@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoreVertical, Copy, Download, Trash2, CheckCircle, X, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoreVertical, Copy, Download, Trash2, CheckCircle, X, Sparkles, Image as ImageIcon, Megaphone } from 'lucide-react';
 
 export default function ContentCalendar() {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -69,30 +69,38 @@ export default function ContentCalendar() {
             const dayItems = items.filter(item => item.scheduled_date && item.scheduled_date.startsWith(dateStr));
 
             days.push(
-                <div key={day} className="h-32 bg-zinc-900 border border-zinc-800 p-2 overflow-y-auto hover:bg-zinc-800/50 transition-colors relative group">
-                    <span className={`text-sm font-bold block mb-2 ${dayItems.length > 0 ? 'text-white' : 'text-zinc-500'}`}>{day}</span>
+                <div key={day} className="h-32 bg-zinc-900/50 border border-zinc-800/80 p-2 overflow-y-auto hover:bg-zinc-800/30 transition-all relative group flex flex-col">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className={`text-xs font-bold ${dayItems.length > 0 ? 'text-white' : 'text-zinc-600'}`}>
+                            {day}
+                        </span>
+                        {dayItems.some(item => item.ads_copy) && (
+                            <Megaphone size={10} className="text-emerald-400 opacity-60" title="Contiene Ads" />
+                        )}
+                    </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 flex-1">
                         {dayItems.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => setSelectedItem(item)}
-                                className={`w-full text-left text-xs p-2 rounded-md truncate flex items-center gap-2 transition-all border
-                                    ${item.status === 'published' ? 'opacity-60 border-transparent bg-zinc-800' : ''}
-                                    ${item.type === 'reel' && item.status !== 'published' ? 'bg-pink-500/10 text-pink-300 border-pink-500/20 hover:bg-pink-500/20' : ''}
-                                    ${item.type === 'post' && item.status !== 'published' ? 'bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20' : ''}
-                                    ${item.type === 'story' && item.status !== 'published' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/20' : ''}
+                                className={`w-full text-left text-[10px] p-1.5 rounded-md truncate flex items-center gap-1.5 transition-all border
+                                    ${item.status === 'published' ? 'opacity-40 border-transparent bg-zinc-800/50' : ''}
+                                    ${item.type === 'reel' && item.status !== 'published' ? 'bg-pink-500/5 text-pink-300 border-pink-500/10 hover:bg-pink-500/20 hover:border-pink-500/30' : ''}
+                                    ${item.type === 'post' && item.status !== 'published' ? 'bg-blue-500/5 text-blue-300 border-blue-500/10 hover:bg-blue-500/20 hover:border-blue-500/30' : ''}
+                                    ${item.type === 'story' && item.status !== 'published' ? 'bg-amber-500/5 text-amber-300 border-amber-500/10 hover:bg-amber-500/20 hover:border-amber-500/30' : ''}
+                                    ${item.ads_copy ? 'ring-1 ring-emerald-500/20' : ''}
                                 `}
                             >
-                                {item.type === 'reel' && <ImageIcon size={12} className="shrink-0" />}
-                                {item.type === 'post' && <ImageIcon size={12} className="shrink-0" />}
-                                {item.type === 'story' && <CheckCircle size={12} className="shrink-0" />}
+                                <div className={`w-1 h-1 rounded-full shrink-0 ${item.type === 'reel' ? 'bg-pink-500' :
+                                        item.type === 'post' ? 'bg-blue-500' : 'bg-amber-500'
+                                    }`} />
 
-                                <span className="truncate font-medium">
-                                    {item.type === 'reel' && '🎥 Reel'}
-                                    {item.type === 'post' && '🖼️ Post'}
-                                    {item.type === 'story' && '⚡️ Story'}
+                                <span className="truncate flex-1">
+                                    {item.title}
                                 </span>
+
+                                {item.ads_copy && <Megaphone size={8} className="text-emerald-400 shrink-0" />}
                             </button>
                         ))}
                     </div>

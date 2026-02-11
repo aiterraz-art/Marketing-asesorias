@@ -18,6 +18,8 @@ export default function ContentGeneratorPanel() {
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [generatedImage, setGeneratedImage] = useState(null);
     const [generatedImagePrompt, setGeneratedImagePrompt] = useState('');
+    const [expandedItems, setExpandedItems] = useState({}); // New state for collapsible items
+
 
     // ... (existing useEffects and handlers)
 
@@ -55,7 +57,7 @@ export default function ContentGeneratorPanel() {
             // Weekly Plan Saving
             result.weeklyPlan.forEach((item, index) => {
                 const date = new Date(today);
-                date.setDate(today.getDate() + index); // +0, +1, +2...
+                date.setDate(today.getDate() + index + 1); // Start from tomorrow (+1)
 
                 itemsToSave.push({
                     title: item.title,
@@ -275,42 +277,109 @@ export default function ContentGeneratorPanel() {
                         {/* Weekly Plan View */}
                         {result.weeklyPlan ? (
                             <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-white">Plan Semanal Generado 🗓️</h3>
-                                    <span className="text-sm text-zinc-400">7 Días de Contenido</span>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-xl font-bold text-white">Plan Semanal 🗓️</h3>
+                                        <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-bold">7 DÍAS</span>
+                                    </div>
                                 </div>
 
-                                {result.weeklyPlan.map((item, index) => (
-                                    <div key={index} className={`border rounded-lg p-5 transition-all ${item.isAdCandidate ? 'bg-indigo-900/20 border-indigo-500/50 hover:bg-indigo-900/30' : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-800'}`}>
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-primary font-bold text-sm uppercase tracking-wider">Día {item.day}</span>
-                                                <span className="text-xs bg-zinc-800 px-2 py-1 rounded text-zinc-400 capitalize">{item.type}</span>
-                                                {item.isAdCandidate && (
-                                                    <span className="text-xs bg-indigo-500 text-white px-2 py-1 rounded font-bold animate-pulse flex items-center gap-1">
-                                                        📢 Ad Sugerido
-                                                    </span>
+                                {/* Strategy Summary Card */}
+                                {result.strategySummary && (
+                                    <div className="bg-gradient-to-br from-zinc-900 to-indigo-950/20 border border-indigo-500/30 rounded-xl p-6 mb-8 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                            <Sparkles size={64} className="text-primary" />
+                                        </div>
+                                        <h4 className="text-indigo-400 font-bold text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                                            <Sparkles size={16} /> Estrategia General
+                                        </h4>
+                                        <p className="text-white text-lg font-medium leading-relaxed relative z-10">
+                                            "{result.strategySummary}"
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
+                                    {result.weeklyPlan.map((item, index) => {
+                                        const isExpanded = expandedItems[index];
+                                        return (
+                                            <div
+                                                key={index}
+                                                className={`border rounded-xl transition-all duration-300 overflow-hidden ${item.isAdCandidate
+                                                        ? 'bg-indigo-900/10 border-indigo-500/40 shadow-lg shadow-indigo-900/10'
+                                                        : 'bg-zinc-900/40 border-zinc-800'
+                                                    }`}
+                                            >
+                                                {/* Header / Clickable Area */}
+                                                <button
+                                                    onClick={() => setExpandedItems(prev => ({ ...prev, [index]: !prev[index] }))}
+                                                    className="w-full flex items-center justify-between p-5 text-left hover:bg-white/5 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`p-2 rounded-lg ${item.isAdCandidate ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                                                            <span className="text-xs font-bold font-mono">D{item.day}</span>
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{item.funnelLevel || 'TOFU'}</span>
+                                                                <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 capitalize">{item.type}</span>
+                                                                {item.isAdCandidate && (
+                                                                    <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded font-bold flex items-center gap-1 uppercase">
+                                                                        <Sparkles size={8} /> Ad
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <h4 className="text-white font-bold text-base">{item.title}</h4>
+                                                        </div>
+                                                    </div>
+                                                    <ChevronRight size={20} className={`text-zinc-600 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                </button>
+
+                                                {/* Content Area */}
+                                                {isExpanded && (
+                                                    <div className="px-5 pb-5 pt-1 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                                                        <div className="bg-black/40 rounded-lg p-4 border border-zinc-800/50">
+                                                            <p className="text-zinc-400 text-sm whitespace-pre-line leading-relaxed italic mb-3">
+                                                                {item.script}
+                                                            </p>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                                                <div className="space-y-1">
+                                                                    <span className="text-[10px] font-bold text-zinc-600 uppercase">Producción</span>
+                                                                    <p className="text-xs text-zinc-500">{item.productionPlan}</p>
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <span className="text-[10px] font-bold text-zinc-600 uppercase">Estrategia</span>
+                                                                    <p className="text-xs text-zinc-500">{item.reasoning}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {item.isAdCandidate && item.adsCopy && (
+                                                            <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-lg relative">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <span className="font-bold text-indigo-400 text-xs uppercase tracking-wider flex items-center gap-2">
+                                                                        <Check size={14} /> Copy Persuasivo para Ad
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            navigator.clipboard.writeText(item.adsCopy);
+                                                                            alert("Ad copy copiado");
+                                                                        }}
+                                                                        className="text-zinc-500 hover:text-white transition-colors"
+                                                                    >
+                                                                        <Copy size={14} />
+                                                                    </button>
+                                                                </div>
+                                                                <p className="text-zinc-300 text-sm">{item.adsCopy}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
-                                        </div>
-                                        <h4 className="text-white font-bold text-lg mb-2">{item.title}</h4>
-
-                                        {item.isAdCandidate && (
-                                            <p className="text-xs text-indigo-300 mb-3 italic border-l-2 border-indigo-500 pl-2">
-                                                💡 {item.reasoning}
-                                            </p>
-                                        )}
-
-                                        <p className="text-zinc-400 text-sm line-clamp-3 mb-3">{item.script}</p>
-
-                                        {item.isAdCandidate && item.adsCopy && (
-                                            <div className="bg-black/30 p-3 rounded border border-indigo-500/30 text-xs text-zinc-300 mt-2">
-                                                <span className="font-bold text-indigo-400 block mb-1">Copy para Ad:</span>
-                                                {item.adsCopy}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         ) : (
                             <>

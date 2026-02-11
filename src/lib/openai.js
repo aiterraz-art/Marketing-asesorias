@@ -328,30 +328,38 @@ export const generateContentIdeas = async (params) => {
             ACTÚA COMO UN ESTRATEGA DE CONTENIDO FITNESS DE CLASE MUNDIAL.
             Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) de contenido basada en el tema: "${idea}".
             
+            ESTRUCTURA ESTRATÉGICA (EMBUDOS):
+            Debes balancear la semana usando niveles de consciencia:
+            - TOFU (Top of Funnel): Viral/Educativo para gente que no te conoce.
+            - MOFU (Middle of Funnel): Autoridad/Pruebas para los que ya te siguen.
+            - BOFU (Bottom of Funnel): Venta directa/Resultados para cerrar clientes.
+
             Configuración:
             - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
             - Formato principal: ${type}
             
             ESTRATEGIA DE ANUNCIOS (CRÍTICO):
             - NO todo el contenido sirve para publicidad pagada.
-            - DEBES SELECCIONAR ESTRATÉGICAMENTE solo 1 o 2 piezas de la semana que tengan el mayor potencial viral o de venta para ser "Ads".
-            - El resto debe ser contenido orgánico de valor, autoridad o conexión.
+            - DEBES SELECCIONAR ESTRATÉGICAMENTE solo 1 o 2 piezas de la semana que tengan el mayor potencial de ROI (normalmente BOFU o TOFU muy potente).
+            - El resto debe ser contenido orgánico.
             
-            Genera un JSON con una propiedad "weeklyPlan" que sea un ARRAY de 7 objetos (uno por día).
+            Genera un JSON con una propiedad "strategySummary" (resumen ejecutivo de la semana en 2 frases) y una propiedad "weeklyPlan" que sea un ARRAY de 7 objetos.
             Cada objeto debe tener:
             - "day": Número del día (1-7)
             - "title": Título del contenido (gancho fuerte)
-            - "type": "${type}" (puedes variar ocasionalmente si tiene sentido estratégico)
+            - "funnelLevel": "TOFU" | "MOFU" | "BOFU"
+            - "type": "${type}"
             - "script": Guion detallado o estructura
             - "productionPlan": Instrucciones de grabación rápidas
             - "isAdCandidate": boolean (true SOLO si es una de las 1-2 piezas seleccionadas para Ads)
-            - "adsCopy": Caption persuasivo para venta (SOLO si isAdCandidate es true, sino null o string vacío)
-            - "reasoning": Breve justificación de por qué se eligió (o no) como Ad.
+            - "adsCopy": Caption persuasivo para venta (SOLO si isAdCandidate es true, sino null)
+            - "reasoning": Por qué este contenido y por qué ese nivel de embudo.
 
             Responde en formato JSON:
             {
+                "strategySummary": "...",
                 "weeklyPlan": [
-                    { "day": 1, "title": "...", "script": "...", "productionPlan": "...", "isAdCandidate": false, "adsCopy": null, "reasoning": "Contenido educativo puro..." },
+                    { "day": 1, "title": "...", "funnelLevel": "...", "script": "...", "productionPlan": "...", "isAdCandidate": false, "adsCopy": null, "reasoning": "..." },
                     ...
                 ]
             }

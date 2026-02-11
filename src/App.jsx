@@ -165,7 +165,7 @@ function App() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto pb-24 lg:pb-0 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
           {renderContent()}
         </div>
       </main>
