@@ -1,251 +1,295 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, ChevronLeft, ChevronRight, Plus, GripVertical, Trash } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoreVertical, Copy, Download, Trash2, CheckCircle, X, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 export default function ContentCalendar() {
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedEvent, setSelectedEvent] = useState(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    // ... existing code ...
-
-    const handleDeleteEvent = async () => {
-        if (!selectedEvent) return;
-        if (!confirm('¿Estás seguro de que quieres eliminar este contenido del calendario?')) return;
-
-        setIsDeleting(true);
-        try {
-            const { error } = await supabase
-                .from('content_items')
-                .delete()
-                .eq('id', selectedEvent.id);
-
-            if (error) throw error;
-
-            // Update local state
-            setEvents(events.filter(e => e.id !== selectedEvent.id));
-            setSelectedEvent(null);
-        } catch (error) {
-            console.error('Error deleting event:', error);
-            alert('Error al eliminar el evento.');
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
-    // ... existing code ...
-
-    <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-between">
-        <button
-            onClick={handleDeleteEvent}
-            disabled={isDeleting}
-            className="px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
-        >
-            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash size={16} />}
-            Eliminar
-        </button>
-        <button onClick={() => setSelectedEvent(null)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors">
-            Cerrar
-        </button>
-    </div>
-
-    // Dates logic
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedItem, setSelectedItem] = useState(null);
 
     useEffect(() => {
-        fetchEvents();
-    }, []);
+        fetchMonthItems();
+    }, [currentDate]);
 
-    async function fetchEvents() {
+    async function fetchMonthItems() {
+        setLoading(true);
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
+
         try {
-            setLoading(true);
             const { data, error } = await supabase
                 .from('content_items')
                 .select('*')
-                .order('scheduled_date', { ascending: true });
+                .gte('scheduled_date', startOfMonth)
+                .lte('scheduled_date', endOfMonth);
 
             if (error) throw error;
-            setEvents(data || []);
+            setItems(data || []);
         } catch (error) {
-            console.error('Error fetching events:', error);
+            console.error('Error fetching calendar items:', error);
         } finally {
             setLoading(false);
         }
     }
 
-    // Helper to get days of current week
-    const getWeekDays = () => {
-        const days = [];
-        const startOfWeek = new Date(currentDate);
-        const day = startOfWeek.getDay() || 7; // Get current day number, make Sunday 7
-        if (day !== 1) startOfWeek.setHours(-24 * (day - 1)); // Go back to Monday
+    const nextMonth = () => {
+        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    };
 
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(startOfWeek);
-            d.setDate(startOfWeek.getDate() + i);
-            days.push(d);
+    const prevMonth = () => {
+        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    };
+
+    const getDaysInMonth = () => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        return new Date(year, month + 1, 0).getDate();
+    };
+
+    const getFirstDayOfMonth = () => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        return new Date(year, month, 1).getDay(); // 0 = Sunday
+    };
+
+    const renderCalendarDays = () => {
+        const daysInMonth = getDaysInMonth();
+        const firstDay = getFirstDayOfMonth();
+        const days = [];
+
+        // Empty cells for days before the 1st
+        for (let i = 0; i < firstDay; i++) {
+            days.push(<div key={`empty-${i}`} className="h-32 bg-zinc-900/30 border border-zinc-800/50"></div>);
         }
+
+        // Days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0];
+            const dayItems = items.filter(item => item.scheduled_date && item.scheduled_date.startsWith(dateStr));
+
+            days.push(
+                <div key={day} className="h-32 bg-zinc-900 border border-zinc-800 p-2 overflow-y-auto hover:bg-zinc-800/50 transition-colors relative group">
+                    <span className={`text-sm font-bold ${dayItems.length > 0 ? 'text-white' : 'text-zinc-500'}`}>{day}</span>
+
+                    <div className="mt-2 space-y-1">
+                        {dayItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setSelectedItem(item)}
+                                className={`w-full text-left text-xs p-1.5 rounded truncate flex items-center gap-1 mb-1 transition-all
+                                    ${item.status === 'published' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800' : 'bg-surface border border-zinc-700 text-zinc-300 hover:text-white hover:border-primary'}
+                                `}
+                            >
+                                {item.type === 'reel' && <span className="text-[10px] bg-pink-500/20 text-pink-400 px-1 rounded">R</span>}
+                                {item.type === 'post' && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1 rounded">P</span>}
+                                {item.type === 'story' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1 rounded">S</span>}
+                                {item.title || "Sin título"}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Add button on hover? maybe later */}
+                </div>
+            );
+        }
+
         return days;
     };
 
-    const weekDays = getWeekDays();
-
-    const changeWeek = (offset) => {
-        const newDate = new Date(currentDate);
-        newDate.setDate(newDate.getDate() + (offset * 7));
-        setCurrentDate(newDate);
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <Loader2 className="animate-spin text-primary" size={40} />
-            </div>
-        );
-    }
-
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col gap-6 animate-fade-in relative">
-
+        <div className="h-full flex flex-col p-6 lg:p-0">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Calendario Editorial</h1>
-                    <p className="text-zinc-400 mt-1">Organiza tu semana y revisa guiones</p>
+            <div className="flex items-center justify-between mb-6 bg-surface p-4 rounded-xl border border-zinc-800">
+                <div className="flex items-center gap-4">
+                    <div className="p-2 bg-primary/20 text-primary rounded-lg">
+                        <CalendarIcon size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white capitalize">
+                            {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                        </h2>
+                        <p className="text-sm text-zinc-400">Planificador de Contenido</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4 bg-surface border border-zinc-800 rounded-lg p-1">
-                    <button onClick={() => changeWeek(-1)} className="p-2 hover:bg-zinc-800 rounded-md transition-colors"><ChevronLeft size={20} /></button>
-                    <span className="font-medium text-white px-2 w-32 text-center">
-                        {weekDays[0].toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}
-                    </span>
-                    <button onClick={() => changeWeek(1)} className="p-2 hover:bg-zinc-800 rounded-md transition-colors"><ChevronRight size={20} /></button>
+
+                <div className="flex items-center gap-2">
+                    <button onClick={prevMonth} className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors">
+                        <ChevronLeft size={20} />
+                    </button>
+                    <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors">
+                        Hoy
+                    </button>
+                    <button onClick={nextMonth} className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors">
+                        <ChevronRight size={20} />
+                    </button>
                 </div>
             </div>
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 flex-1 overflow-y-auto">
-                {weekDays.map((dateObj, index) => {
-                    const dateStr = dateObj.toLocaleDateString('es-ES', { weekday: 'short' });
-                    const dayNum = dateObj.getDate();
-
-                    // Filter events for this day
-                    const dayEvents = events.filter(e => {
-                        if (!e.scheduled_date) return false;
-                        const d = new Date(e.scheduled_date);
-                        return d.getDate() === dayNum && d.getMonth() === dateObj.getMonth();
-                    });
-
-                    return (
-                        <div key={index} className={`bg-surface border border-zinc-800 rounded-xl flex flex-col h-full min-h-[300px] ${dateObj.toDateString() === new Date().toDateString() ? 'ring-1 ring-primary/50' : ''}`}>
-                            <div className="p-3 border-b border-zinc-800 font-medium text-zinc-400 flex justify-between">
-                                <span className="capitalize">{dateStr}</span>
-                                <span className={`text-zinc-600 ${dateObj.toDateString() === new Date().toDateString() ? 'text-primary font-bold' : ''}`}>{dayNum}</span>
-                            </div>
-                            <div className="p-2 flex-1 space-y-2 overflow-y-auto max-h-[500px]">
-                                {dayEvents.map(event => (
-                                    <div
-                                        key={event.id}
-                                        onClick={() => setSelectedEvent(event)}
-                                        className="cursor-pointer"
-                                    >
-                                        <DraggableEvent event={event} />
-                                    </div>
-                                ))}
-                                {dayEvents.length === 0 && (
-                                    <div className="h-full flex items-center justify-center opacity-20 hover:opacity-100 transition-opacity group cursor-pointer">
-                                        <Plus size={24} className="text-zinc-600 group-hover:text-primary" />
-                                    </div>
-                                )}
-                            </div>
+            <div className="flex-1 bg-surface rounded-xl border border-zinc-800 shadow-xl overflow-hidden flex flex-col">
+                {/* Weekday Headers */}
+                <div className="grid grid-cols-7 bg-zinc-900 border-b border-zinc-800">
+                    {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                        <div key={day} className="py-3 text-center text-sm font-medium text-zinc-400 uppercase tracking-wider">
+                            {day}
                         </div>
-                    );
-                })}
+                    ))}
+                </div>
+
+                {/* Days */}
+                <div className="grid grid-cols-7 flex-1 overflow-y-auto">
+                    {loading ? (
+                        <div className="col-span-7 h-64 flex items-center justify-center text-zinc-500">
+                            Cargando calendario...
+                        </div>
+                    ) : renderCalendarDays()}
+                </div>
             </div>
 
-            {/* Event Details Modal */}
-            {selectedEvent && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-surface border border-zinc-700 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in scale-95 duration-200">
-                        <div className="p-6 border-b border-zinc-700 flex justify-between items-start bg-zinc-900">
-                            <div>
-                                <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-1 rounded uppercase tracking-wider">{selectedEvent.type}</span>
-                                <h2 className="text-2xl font-bold text-white mt-2">{selectedEvent.title}</h2>
-                            </div>
-                            <button onClick={() => setSelectedEvent(null)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
-                                <X size={24} className="text-zinc-400" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 overflow-y-auto space-y-6">
-                            {(selectedEvent.script_content) && (
-                                <div>
-                                    <h3 className="text-zinc-400 text-sm font-bold uppercase tracking-wider mb-2">Guion / Estructura</h3>
-                                    <div className="bg-zinc-900/50 p-4 rounded-lg text-zinc-300 whitespace-pre-line border border-zinc-800">
-                                        {selectedEvent.script_content}
-                                    </div>
-                                </div>
-                            )}
-
-                            {(selectedEvent.production_plan) && (
-                                <div>
-                                    <h3 className="text-zinc-400 text-sm font-bold uppercase tracking-wider mb-2">Plan de Grabación</h3>
-                                    <div className="bg-zinc-900/50 p-4 rounded-lg text-zinc-300 whitespace-pre-line border border-zinc-800">
-                                        {selectedEvent.production_plan}
-                                    </div>
-                                </div>
-                            )}
-
-                            {(selectedEvent.ads_copy) && (
-                                <div>
-                                    <h3 className="text-zinc-400 text-sm font-bold uppercase tracking-wider mb-2">Copy para Redes</h3>
-                                    <div className="bg-zinc-900/50 p-4 rounded-lg text-zinc-300 whitespace-pre-line border border-zinc-800 italic">
-                                        {selectedEvent.ads_copy}
-                                    </div>
-                                </div>
-                            )}
-
-                            {!selectedEvent.script_content && !selectedEvent.production_plan && (
-                                <div className="text-center py-10 text-zinc-500">
-                                    Este contenido no tiene detalles generados por IA.
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-between">
-                            <button
-                                onClick={handleDeleteEvent}
-                                disabled={isDeleting}
-                                className="px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash size={16} />}
-                                Eliminar
-                            </button>
-                            <button onClick={() => setSelectedEvent(null)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {/* Detail Modal */}
+            {selectedItem && (
+                <DetailModal
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    onRefresh={fetchMonthItems}
+                />
             )}
         </div>
     );
 }
 
-function DraggableEvent({ event }) {
-    const statusColors = {
-        idea: 'bg-zinc-800 border-zinc-700 text-zinc-400',
-        scripted: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-        ready: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+function DetailModal({ item, onClose, onRefresh }) {
+
+    const handleCopyCaption = () => {
+        // Format for Instagram
+        const separator = "\n.\n.\n";
+        const content = `🔥 ${item.title}\n\n${item.script_content || ''}\n${separator}🚀 ${item.production_plan ? "Tip: " + item.production_plan : ""}`;
+        navigator.clipboard.writeText(content);
+        alert("¡Caption copiado! 📋");
+    };
+
+    const handleDelete = async () => {
+        if (!confirm("¿Seguro que quieres eliminar este contenido?")) return;
+
+        try {
+            const { error } = await supabase.from('content_items').delete().eq('id', item.id);
+            if (error) throw error;
+            onRefresh();
+            onClose();
+        } catch (e) {
+            console.error(e);
+            alert("Error al eliminar");
+        }
+    };
+
+    const handleToggleStatus = async () => {
+        const newStatus = item.status === 'published' ? 'idea' : 'published';
+        try {
+            const { error } = await supabase
+                .from('content_items')
+                .update({ status: newStatus })
+                .eq('id', item.id);
+            if (error) throw error;
+            onRefresh();
+            item.status = newStatus; // Optimistic update for UI in modal
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     return (
-        <div
-            className={`p-3 rounded-lg border text-sm font-medium cursor-grab active:cursor-grabbing hover:translate-y-[-2px] transition-all shadow-sm ${statusColors[event.status] || statusColors.idea}`}
-        >
-            <div className="flex items-start justify-between gap-2">
-                <span>{event.title}</span>
-                <GripVertical size={14} className="opacity-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+
+                {/* Header */}
+                <div className="p-6 border-b border-zinc-800 flex justify-between items-start bg-zinc-900">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold tracking-wider
+                                ${item.type === 'reel' ? 'bg-pink-500/20 text-pink-400' :
+                                    item.type === 'post' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}
+                             `}>
+                                {item.type}
+                            </span>
+                            <span className="text-zinc-500 text-xs">
+                                {new Date(item.scheduled_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </span>
+                        </div>
+                        <h3 className="text-xl font-bold text-white leading-tight">{item.title}</h3>
+                    </div>
+                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors p-1">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 overflow-y-auto flex-1 space-y-6">
+
+                    {/* Image if exists */}
+                    {item.image_url && (
+                        <div className="rounded-xl overflow-hidden border border-zinc-800 bg-black relative group">
+                            <img src={item.image_url} alt="Content Asset" className="w-full h-auto max-h-[300px] object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                <a
+                                    href={item.image_url}
+                                    target="_blank"
+                                    download="imagen_post.png"
+                                    className="text-white text-xs hover:underline flex items-center gap-1"
+                                >
+                                    <Download size={14} /> Descargar Imagen Original
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
+                    <div>
+                        <h4 className="text-sm font-bold text-zinc-400 uppercase mb-2 flex items-center gap-2">
+                            <MoreVertical size={14} /> Guion / Caption
+                        </h4>
+                        <div className="bg-zinc-950/50 p-4 rounded-lg text-zinc-300 text-sm whitespace-pre-line border border-zinc-800/50 leading-relaxed font-mono">
+                            {item.script_content}
+                        </div>
+                    </div>
+
+                    {item.production_plan && (
+                        <div>
+                            <h4 className="text-sm font-bold text-zinc-400 uppercase mb-2">Plan de Producción</h4>
+                            <p className="text-zinc-400 text-sm bg-zinc-900 p-3 rounded border border-zinc-800">{item.production_plan}</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-6 border-t border-zinc-800 bg-zinc-900 flex flex-wrap justify-between items-center gap-3">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleDelete}
+                            className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors text-sm flex items-center gap-2"
+                        >
+                            <Trash2 size={16} /> <span className="hidden sm:inline">Eliminar</span>
+                        </button>
+                        <button
+                            onClick={handleToggleStatus}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2
+                                ${item.status === 'published'
+                                    ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-800 hover:bg-emerald-900/40'
+                                    : 'bg-zinc-800 text-zinc-400 hover:text-white'}
+                             `}
+                        >
+                            <CheckCircle size={16} />
+                            {item.status === 'published' ? 'Publicado' : 'Marcar Publicado'}
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={handleCopyCaption}
+                        className="flex-1 sm:flex-none px-6 py-3 bg-primary hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Copy size={18} /> Copiar Caption
+                    </button>
+                </div>
+
             </div>
         </div>
     );
