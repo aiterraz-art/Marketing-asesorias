@@ -405,7 +405,10 @@ export const generateImage = async (prompt) => {
 			size: "1024x1024",
 		});
 
-		return response.data[0].url;
+		return {
+			url: response.data[0].url,
+			prompt: response.data[0].revised_prompt || prompt // DALL-E 3 often rewrites prompts
+		};
 	} catch (error) {
 		console.error("Image Gen Error:", error);
 		throw error;
