@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
 import { TrendingUp, Users, DollarSign, MousePointerClick, Loader2, AlertTriangle, ChevronDown, ChevronRight, BrainCircuit, MessageCircle } from 'lucide-react';
 import { fetchAdInsights, fetchCampaignInsights, fetchAdsByCampaign } from '../lib/meta-ads';
@@ -226,7 +227,18 @@ export default function AdsAnalytics() {
                                     {chatMessages.map((msg, idx) => (
                                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`rounded-lg px-4 py-2 text-sm max-w-[85%] ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-200'}`}>
-                                                {msg.content}
+                                                <ReactMarkdown
+                                                    components={{
+                                                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                        ul: ({ node, ...props }) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                                                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                                        strong: ({ node, ...props }) => <strong className="font-bold text-indigo-400" {...props} />,
+                                                        a: ({ node, ...props }) => <a className="text-blue-400 hover:underline" target="_blank" {...props} />
+                                                    }}
+                                                >
+                                                    {msg.content}
+                                                </ReactMarkdown>
                                             </div>
                                         </div>
                                     ))}
