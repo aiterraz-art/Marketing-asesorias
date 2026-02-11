@@ -17,6 +17,11 @@ export default function AdsAnalytics() {
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
 
+    // Debug
+    console.log("AdsAnalytics Rendered. Chat Messages:", chatMessages);
+
+    // AI Chat State
+
     // AI Chat State
     const [chatMessages, setChatMessages] = useState([]);
     const [chatInput, setChatInput] = useState('');
