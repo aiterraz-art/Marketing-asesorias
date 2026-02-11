@@ -393,3 +393,21 @@ export const generateContentIdeas = async (params) => {
 		throw error;
 	}
 };
+
+export const generateImage = async (prompt) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const response = await openai.images.generate({
+			model: "dall-e-3",
+			prompt: "Professional fitness photography, high quality, 4k, realistic: " + prompt,
+			n: 1,
+			size: "1024x1024",
+		});
+
+		return response.data[0].url;
+	} catch (error) {
+		console.error("Image Gen Error:", error);
+		throw error;
+	}
+};

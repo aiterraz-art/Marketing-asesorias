@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, Send, Settings, Copy, Check, ChevronRight, Loader2, Mic } from 'lucide-react';
 import PromptBuilderModal from './PromptBuilderModal';
 import BrandVoiceManager from './BrandVoiceManager';
-import { generateContentIdeas } from '../lib/openai';
+import { generateContentIdeas, generateImage } from '../lib/openai';
 import { supabase, getBrandVoices } from '../lib/supabase';
 
 export default function ContentGeneratorPanel() {
@@ -13,60 +13,30 @@ export default function ContentGeneratorPanel() {
     const [result, setResult] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Prompt Settings State
-    const [showSettings, setShowSettings] = useState(false);
-    const [mood, setMood] = useState('Inspirador');
-    const [check, setCheck] = useState({ verifyHooks: true, includeCta: true });
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const [generatedImage, setGeneratedImage] = useState(null);
 
-    // Brand Voice State
-    const [showVoiceManager, setShowVoiceManager] = useState(false);
-    const [voices, setVoices] = useState([]);
-    const [selectedVoice, setSelectedVoice] = useState(null);
+    // ... (existing useEffects and handlers)
 
-    useEffect(() => {
-        loadVoices();
-    }, [showVoiceManager]); // Reload when manager closes in case of changes
-
-    async function loadVoices() {
+    const handleGenerateImage = async () => {
+        if (!result) return;
+        setIsGeneratingImage(true);
         try {
-            const data = await getBrandVoices();
-            setVoices(data);
-            if (data.length > 0 && !selectedVoice) {
-                // Auto-select default or first
-                const def = data.find(v => v.is_default) || data[0];
-                setSelectedVoice(def);
-            }
-        } catch (e) {
-            console.error("Error loading voices", e);
-        }
-    }
+            // Create a visual prompt based on the content
+            const visualPrompt = result.weeklyPlan
+                ? `Fitness content related to ${result.weeklyPlan[0].title}`
+                : `${result.title || idea}. ${result.script ? result.script.substring(0, 100) : ''}`;
 
-    const handleGenerate = async () => {
-        if (!idea.trim()) return;
+            const imageUrl = await generateImage(visualPrompt);
+            setGeneratedImage(imageUrl);
 
-        setIsGenerating(true);
-        setResult(null);
-
-        try {
-            // Construct payload 
-            const payload = {
-                idea,
-                type: contentType,
-                settings: {
-                    mood,
-                    check,
-                    brandVoice: selectedVoice // Pass selected voice
-                },
-                mode // Pass mode to API
-            };
-
-            const data = await generateContentIdeas(payload);
-            setResult(data);
+            // If saving happens later, we need to merge this into the result for saving? 
+            // Or just keep it in state and save it when "Save to Calendar" is clicked.
         } catch (error) {
-            console.error("Failed to generate content", error);
-            alert("Error al generar contenido: " + error.message);
+            console.error("Image Gen Error", error);
+            alert("Error generando imagen: " + error.message);
         } finally {
-            setIsGenerating(false);
+            setIsGeneratingImage(false);
         }
     };
 
@@ -91,7 +61,8 @@ export default function ContentGeneratorPanel() {
                     production_plan: item.productionPlan,
                     ads_copy: item.adsCopy, // Can be null if not ad
                     idea_prompt: idea,
-                    scheduled_date: date.toISOString()
+                    scheduled_date: date.toISOString(),
+                    image_url: index === 0 ? generatedImage : null // Associate image with first item for now if generated
                 });
             });
         } else {
@@ -104,7 +75,8 @@ export default function ContentGeneratorPanel() {
                 production_plan: result.productionPlan,
                 ads_copy: result.adsCopy,
                 idea_prompt: idea,
-                scheduled_date: today.toISOString()
+                scheduled_date: today.toISOString(),
+                image_url: generatedImage
             });
         }
 
@@ -117,6 +89,7 @@ export default function ContentGeneratorPanel() {
             alert(result.weeklyPlan ? '¡Plan Semanal agendado!' : '¡Contenido guardado!');
             setIdea('');
             setResult(null);
+            setGeneratedImage(null);
             setMode('single'); // Reset
         } catch (error) {
             console.error('Error saving content:', error);
@@ -125,6 +98,63 @@ export default function ContentGeneratorPanel() {
             setIsSaving(false);
         }
     };
+
+    // ... (return JSX)
+
+    {
+        result.weeklyPlan ? (
+            // ... existing weekly plan code ...
+            <div className="space-y-6">
+                {/* ... */}
+            </div>
+        ) : (
+        /* Single Content View */
+        <>
+            <Section title="Guion / Estructura" content={result.script} />
+            <Section title="Plan de Producción" content={result.productionPlan} />
+            <Section title="Copy para Meta Ads" content={result.adsCopy} />
+
+            {/* Image Generation Section */}
+            <div className="mt-8 pt-6 border-t border-zinc-800">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                    <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-md">
+                        <Sparkles size={20} />
+                    </div>
+                    Generar Imagen AI
+                </h3>
+
+                {!generatedImage ? (
+                    <button
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage}
+                        className="w-full bg-zinc-900 border border-zinc-700 border-dashed hover:border-purple-500 hover:bg-zinc-800 transition-all rounded-xl p-8 flex flex-col items-center justify-center gap-3 group"
+                    >
+                        {isGeneratingImage ? (
+                            <Loader2 size={32} className="text-purple-500 animate-spin" />
+                        ) : (
+                            <div className="p-3 bg-zinc-800 rounded-full text-zinc-400 group-hover:text-purple-400 group-hover:scale-110 transition-all">
+                                <Sparkles size={24} />
+                            </div>
+                        )}
+                        <span className="text-zinc-400 font-medium group-hover:text-white">
+                            {isGeneratingImage ? 'Creando imagen única...' : 'Generar Imagen para este Contenido'}
+                        </span>
+                    </button>
+                ) : (
+                    <div className="relative group rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900">
+                        <img src={generatedImage} alt="AI Generated" className="w-full h-auto max-h-[400px] object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-sm p-4 flex justify-between items-center translate-y-full group-hover:translate-y-0 transition-transform">
+                            <span className="text-white text-sm font-medium">Imagen DALL-E 3</span>
+                            <a href={generatedImage} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 underline">
+                                Ver original
+                            </a>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
+    )
+    }
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-100px)] p-6 lg:p-0">
