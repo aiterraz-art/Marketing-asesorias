@@ -18,7 +18,14 @@ export default function ContentGeneratorPanel() {
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [generatedImage, setGeneratedImage] = useState(null);
     const [generatedImagePrompt, setGeneratedImagePrompt] = useState('');
-    const [expandedItems, setExpandedItems] = useState({}); // New state for collapsible items
+    const [expandedItems, setExpandedItems] = useState({});
+
+    // Missing UI States
+    const [showVoiceManager, setShowVoiceManager] = useState(false);
+    const [selectedVoice, setSelectedVoice] = useState(null);
+    const [showSettings, setShowSettings] = useState(false);
+    const [check, setCheck] = useState({ verifyHooks: true, includeCta: true });
+    const [mood, setMood] = useState('profesional');
 
 
     // ... (existing useEffects and handlers)
@@ -147,6 +154,32 @@ export default function ContentGeneratorPanel() {
         zip.generateAsync({ type: "blob" }).then(function (content) {
             saveAs(content, `pack_contenido_${new Date().toISOString().slice(0, 10)}.zip`);
         });
+    };
+    const handleGenerate = async () => {
+        if (!idea.trim()) return;
+        setIsGenerating(true);
+        setResult(null);
+        setGeneratedImage(null);
+        setExpandedItems({});
+
+        try {
+            const data = await generateContentIdeas({
+                idea,
+                type: contentType,
+                mode,
+                settings: {
+                    brandVoice: selectedVoice,
+                    mood,
+                    check
+                }
+            });
+            setResult(data);
+        } catch (error) {
+            console.error("Generation Error", error);
+            alert("Error al generar contenido: " + error.message);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     // ... (return JSX)
@@ -306,8 +339,8 @@ export default function ContentGeneratorPanel() {
                                             <div
                                                 key={index}
                                                 className={`border rounded-xl transition-all duration-300 overflow-hidden ${item.isAdCandidate
-                                                        ? 'bg-indigo-900/10 border-indigo-500/40 shadow-lg shadow-indigo-900/10'
-                                                        : 'bg-zinc-900/40 border-zinc-800'
+                                                    ? 'bg-indigo-900/10 border-indigo-500/40 shadow-lg shadow-indigo-900/10'
+                                                    : 'bg-zinc-900/40 border-zinc-800'
                                                     }`}
                                             >
                                                 {/* Header / Clickable Area */}
