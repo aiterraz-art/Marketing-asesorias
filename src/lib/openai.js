@@ -314,6 +314,13 @@ export const generateContentIdeas = async (params) => {
 	const { idea, type, settings, mode = 'single' } = params;
 
 	try {
+		let systemPromptToUse = SYSTEM_PROMPT;
+
+		// Inject Brand Voice if present
+		if (settings.brandVoice) {
+			systemPromptToUse += `\n\n⚠️ INSTRUCCIÓN CRÍTICA DE TONO (BRAND VOICE):\nDebes ignorar cualquier instrucción de tono genérica anterior y ceñirte estrictamente a esta personalidad:\n\nNOMBRE DE LA VOZ: ${settings.brandVoice.name}\nINSTRUCCIONES DE TONO:\n${settings.brandVoice.tone_instructions}\n`;
+		}
+
 		let contentPrompt = '';
 
 		if (mode === 'weekly') {
@@ -322,7 +329,7 @@ export const generateContentIdeas = async (params) => {
             Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) de contenido basada en el tema: "${idea}".
             
             Configuración:
-            - Tono: ${settings.mood}
+            - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
             - Formato principal: ${type}
             
             ESTRATEGIA DE ANUNCIOS (CRÍTICO):
@@ -356,7 +363,7 @@ export const generateContentIdeas = async (params) => {
             Misión: Generar un plan de contenido para un "${type}" basado en la idea: "${idea}".
             
             Configuración:
-            - Tono: ${settings.mood}
+            - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
             - Verificar Ganchos: ${settings.check?.verifyHooks ? "SÍ" : "NO"}
             - Incluir CTA: ${settings.check?.includeCta ? "SÍ" : "NO"}
 
@@ -371,7 +378,7 @@ export const generateContentIdeas = async (params) => {
 
 		const completion = await openai.chat.completions.create({
 			messages: [
-				{ role: "system", content: SYSTEM_PROMPT },
+				{ role: "system", content: systemPromptToUse },
 				{ role: "user", content: contentPrompt }
 			],
 			model: "gpt-5.2",

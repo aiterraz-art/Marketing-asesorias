@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Sparkles, Send, Settings, Copy, Check, ChevronRight, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, Send, Settings, Copy, Check, ChevronRight, Loader2, Mic } from 'lucide-react';
 import PromptBuilderModal from './PromptBuilderModal';
+import BrandVoiceManager from './BrandVoiceManager';
 import { generateContentIdeas } from '../lib/openai';
-import { supabase } from '../lib/supabase';
+import { supabase, getBrandVoices } from '../lib/supabase';
 
 export default function ContentGeneratorPanel() {
     const [idea, setIdea] = useState('');
@@ -17,6 +18,29 @@ export default function ContentGeneratorPanel() {
     const [mood, setMood] = useState('Inspirador');
     const [check, setCheck] = useState({ verifyHooks: true, includeCta: true });
 
+    // Brand Voice State
+    const [showVoiceManager, setShowVoiceManager] = useState(false);
+    const [voices, setVoices] = useState([]);
+    const [selectedVoice, setSelectedVoice] = useState(null);
+
+    useEffect(() => {
+        loadVoices();
+    }, [showVoiceManager]); // Reload when manager closes in case of changes
+
+    async function loadVoices() {
+        try {
+            const data = await getBrandVoices();
+            setVoices(data);
+            if (data.length > 0 && !selectedVoice) {
+                // Auto-select default or first
+                const def = data.find(v => v.is_default) || data[0];
+                setSelectedVoice(def);
+            }
+        } catch (e) {
+            console.error("Error loading voices", e);
+        }
+    }
+
     const handleGenerate = async () => {
         if (!idea.trim()) return;
 
@@ -28,7 +52,11 @@ export default function ContentGeneratorPanel() {
             const payload = {
                 idea,
                 type: contentType,
-                settings: { mood, check },
+                settings: {
+                    mood,
+                    check,
+                    brandVoice: selectedVoice // Pass selected voice
+                },
                 mode // Pass mode to API
             };
 
@@ -126,6 +154,38 @@ export default function ContentGeneratorPanel() {
                             </button>
                         </div>
 
+                        {/* Brand Voice Selector */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm font-medium text-zinc-400">Voz de Marca</label>
+                                <button
+                                    onClick={() => setShowVoiceManager(true)}
+                                    className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                                >
+                                    <Settings size={12} /> Gestionar
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => setShowVoiceManager(true)}
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-zinc-700 transition-colors group text-left"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-md">
+                                        <Mic size={16} />
+                                    </div>
+                                    <div>
+                                        <span className="block text-white text-sm font-medium truncate">
+                                            {selectedVoice ? selectedVoice.name : 'Seleccionar Voz...'}
+                                        </span>
+                                        <span className="block text-zinc-500 text-xs truncate max-w-[200px]">
+                                            {selectedVoice ? selectedVoice.description : 'Define el tono de tu IA'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <ChevronRight size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                            </button>
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-zinc-400 mb-2">Tipo de Contenido</label>
                             <div className="grid grid-cols-3 gap-2">
@@ -150,7 +210,7 @@ export default function ContentGeneratorPanel() {
                                 value={idea}
                                 onChange={(e) => setIdea(e.target.value)}
                                 placeholder="Ej: 3 errores comunes al hacer sentadillas..."
-                                className="w-full h-40 bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-white placeholder-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none transition-all"
+                                className="w-full h-32 bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-white placeholder-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none transition-all"
                             />
                         </div>
 
@@ -263,6 +323,15 @@ export default function ContentGeneratorPanel() {
                 setCheck={setCheck}
                 mood={mood}
                 setMood={setMood}
+            />
+
+            <BrandVoiceManager
+                isOpen={showVoiceManager}
+                onClose={() => setShowVoiceManager(false)}
+                onSelectVoice={(voice) => {
+                    setSelectedVoice(voice);
+                    setShowVoiceManager(false);
+                }}
             />
         </div>
     );
