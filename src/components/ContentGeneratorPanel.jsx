@@ -143,9 +143,7 @@ export default function ContentGeneratorPanel() {
         }
 
         zip.generateAsync({ type: "blob" }).then(function (content) {
-            zip.generateAsync({ type: "blob" }).then(function (content) {
-                saveAs(content, `pack_contenido_${new Date().toISOString().slice(0, 10)}.zip`);
-            });
+            saveAs(content, `pack_contenido_${new Date().toISOString().slice(0, 10)}.zip`);
         });
     };
 
