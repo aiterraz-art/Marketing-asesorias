@@ -8,9 +8,11 @@ import {
     Search,
     ChevronRight,
     UserPlus,
-    Loader2
+    Loader2,
+    Sparkles
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
+import { generateFitnessPlan, analyzeStudentProgress } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
 import {
     LineChart,
@@ -36,6 +38,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         carbs: 215,
         goal: 'maintenance'
     });
+    const [latestPlan, setLatestPlan] = useState(null);
 
     const loadStudents = async () => {
         setLoading(true);
@@ -67,6 +70,32 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
             alert("Error al crear el alumno.");
         }
     };
+
+    // Cargar último plan del alumno seleccionado
+    useEffect(() => {
+        const loadPlan = async () => {
+            if (selectedStudent) {
+                try {
+                    const plan = await getStudentPlan(selectedStudent.id);
+                    setLatestPlan(plan);
+                    if (plan) {
+                        setCurrentMacros({
+                            calories: plan.calories,
+                            protein: plan.protein_g,
+                            fat: plan.fat_g,
+                            carbs: plan.carbs_g,
+                            goal: plan.goal
+                        });
+                    }
+                } catch (err) {
+                    console.error("Error loading plan:", err);
+                }
+            } else {
+                setLatestPlan(null);
+            }
+        };
+        loadPlan();
+    }, [selectedStudent]);
 
     // Mapeamos las pestañas del sidebar a los sub-componentes internos
     const activeSubTab = activeTab === 'nutricion' ? 'calculadora' :
@@ -128,10 +157,14 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 {activeSubTab === 'calculadora' && (
                     <NutritionCalculator
                         selectedStudent={selectedStudent}
+                        latestPlan={latestPlan}
                         onMacrosUpdate={setCurrentMacros}
                         onSavePlan={async (plan) => {
                             try {
                                 await saveStudentPlan(plan);
+                                // Recargar plan después de guardar
+                                const updatedPlan = await getStudentPlan(selectedStudent.id);
+                                setLatestPlan(updatedPlan);
                                 alert("¡Plan guardado con éxito!");
                             } catch (err) {
                                 console.error("Error saving plan:", err);
@@ -144,7 +177,12 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                     <PlanGenerator
                         selectedStudent={selectedStudent}
                         macros={currentMacros}
-                        onSavePlan={saveStudentPlan}
+                        latestPlan={latestPlan}
+                        onSavePlan={async (plan) => {
+                            await saveStudentPlan(plan);
+                            const updatedPlan = await getStudentPlan(selectedStudent.id);
+                            setLatestPlan(updatedPlan);
+                        }}
                     />
                 )}
                 {activeSubTab === 'progreso' && <ProgressTracker selectedStudent={selectedStudent} />}
@@ -327,7 +365,7 @@ const StudentModal = ({ isOpen, onClose, onCreate }) => {
     );
 };
 
-const NutritionCalculator = ({ selectedStudent, onSavePlan }) => {
+const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSavePlan }) => {
     const [data, setData] = useState({
         weight: selectedStudent?.weight || 80,
         height: selectedStudent?.height || 180,
@@ -341,7 +379,7 @@ const NutritionCalculator = ({ selectedStudent, onSavePlan }) => {
     const [results, setResults] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Actualizar datos si cambia el alumno seleccionado
+    // Actualizar datos si cambia el alumno seleccionado o si se carga un plan previo
     useEffect(() => {
         if (selectedStudent) {
             setData(prev => ({
@@ -350,10 +388,12 @@ const NutritionCalculator = ({ selectedStudent, onSavePlan }) => {
                 height: selectedStudent.height || prev.height,
                 age: selectedStudent.age || prev.age,
                 activity: selectedStudent.activity_level || prev.activity,
-                goal: selectedStudent.goal || prev.goal
+                goal: latestPlan?.goal || selectedStudent.goal || prev.goal,
+                protein: latestPlan?.protein_g || 160,
+                fat: latestPlan?.fat_g || 70
             }));
         }
-    }, [selectedStudent]);
+    }, [selectedStudent, latestPlan]);
 
     // Simulación de llamada a la función SQL de Supabase
     const calculate = () => {
@@ -566,6 +606,8 @@ const ProgressTracker = ({ selectedStudent }) => {
     const [loading, setLoading] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newWeight, setNewWeight] = useState('');
+    const [analyzing, setAnalyzing] = useState(false);
+    const [aiAnalysis, setAiAnalysis] = useState(null);
 
     useEffect(() => {
         if (selectedStudent) {
@@ -602,6 +644,23 @@ const ProgressTracker = ({ selectedStudent }) => {
         } catch (err) {
             console.error("Error adding measurement:", err);
             alert("Error al guardar la medida.");
+        }
+    };
+
+    const handleAnalyzeProgress = async () => {
+        if (measurements.length < 2) {
+            alert("Se necesitan al menos 2 registros para analizar el progreso.");
+            return;
+        }
+        setAnalyzing(true);
+        try {
+            const analysis = await analyzeStudentProgress(selectedStudent, measurements);
+            setAiAnalysis(analysis);
+        } catch (err) {
+            console.error("Error analyzing progress:", err);
+            alert("Error al analizar el progreso.");
+        } finally {
+            setAnalyzing(false);
         }
     };
 
@@ -688,50 +747,74 @@ const ProgressTracker = ({ selectedStudent }) => {
                     )}
                 </div>
 
-                <div className="space-y-6">
-                    <div className="bg-surface border border-zinc-900 p-6 rounded-xl">
-                        <h4 className="text-sm font-semibold text-zinc-500 uppercase mb-4">Métricas Críticas</h4>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
-                                <span className="text-zinc-400 text-sm">Peso Actual</span>
-                                <span className="text-white font-bold">{measurements[measurements.length - 1]?.weight || selectedStudent.weight} kg</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
-                                <span className="text-zinc-400 text-sm">Cambio Total</span>
-                                <span className={`font-bold ${measurements.length > 1 && measurements[measurements.length - 1].weight < measurements[0].weight ? 'text-emerald-500' : 'text-zinc-500'
-                                    }`}>
-                                    {measurements.length > 1 ? (measurements[measurements.length - 1].weight - measurements[0].weight).toFixed(1) : '0'} kg
-                                </span>
-                            </div>
+            </div>
+
+            <div className="space-y-6">
+                <div className="bg-surface border border-zinc-900 p-6 rounded-xl">
+                    <h4 className="text-sm font-semibold text-zinc-500 uppercase mb-4">Métricas Críticas</h4>
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
+                            <span className="text-zinc-400 text-sm">Peso Actual</span>
+                            <span className="text-white font-bold">{measurements[measurements.length - 1]?.weight || selectedStudent.weight} kg</span>
                         </div>
+                        <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
+                            <span className="text-zinc-400 text-sm">Cambio Total</span>
+                            <span className={`font-bold ${measurements.length > 1 && measurements[measurements.length - 1].weight < measurements[0].weight ? 'text-emerald-500' : 'text-zinc-500'
+                                }`}>
+                                {measurements.length > 1 ? (measurements[measurements.length - 1].weight - measurements[0].weight).toFixed(1) : '0'} kg
+                            </span>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleAnalyzeProgress}
+                        disabled={analyzing || measurements.length < 2}
+                        className="w-full mt-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 border border-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {analyzing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} className="text-amber-400" />}
+                        {analyzing ? "Analizando..." : "Analizar Evolución con IA"}
+                    </button>
+                </div>
+
+                {aiAnalysis && (
+                    <div className="bg-primary/10 border border-primary/20 p-6 rounded-xl animate-in slide-in-from-bottom-5 fade-in duration-500">
+                        <h4 className="text-sm font-bold text-primary uppercase mb-3 flex items-center gap-2">
+                            <Sparkles size={16} /> Reporte de Inteligencia Artificial
+                        </h4>
+                        <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+                            {aiAnalysis}
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+
+            {/* Modal Simple para añadir peso */ }
+    {
+        showAddModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                <div className="bg-surface border border-zinc-900 p-6 rounded-2xl w-full max-w-xs space-y-4">
+                    <h3 className="text-white font-bold">Nuevo Registro</h3>
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-500">Peso en kg (Ej: 82.5)</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            value={newWeight}
+                            onChange={(e) => setNewWeight(e.target.value)}
+                            autoFocus
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => setShowAddModal(false)} className="flex-1 py-2 text-zinc-500 text-sm">Cerrar</button>
+                        <button onClick={handleAddMeasurement} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold">Guardar</button>
                     </div>
                 </div>
             </div>
-
-            {/* Modal Simple para añadir peso */}
-            {showAddModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="bg-surface border border-zinc-900 p-6 rounded-2xl w-full max-w-xs space-y-4">
-                        <h3 className="text-white font-bold">Nuevo Registro</h3>
-                        <div className="space-y-1">
-                            <label className="text-xs text-zinc-500">Peso en kg (Ej: 82.5)</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={newWeight}
-                                onChange={(e) => setNewWeight(e.target.value)}
-                                autoFocus
-                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary"
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => setShowAddModal(false)} className="flex-1 py-2 text-zinc-500 text-sm">Cerrar</button>
-                            <button onClick={handleAddMeasurement} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold">Guardar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+        )
+    }
+        </div >
     );
 };
 

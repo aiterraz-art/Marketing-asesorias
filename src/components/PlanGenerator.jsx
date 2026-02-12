@@ -3,10 +3,22 @@ import { Sparkles, Download, FileText, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import html2pdf from 'html2pdf.js';
 
-const PlanGenerator = ({ selectedStudent, macros, onSavePlan }) => {
+const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState(null);
     const [isExporting, setIsExporting] = useState(false);
+
+    // Cargar plan guardado si existe al cambiar de alumno
+    useEffect(() => {
+        if (latestPlan && latestPlan.nutrition_plan_text) {
+            setGeneratedPlan({
+                nutrition_plan: latestPlan.nutrition_plan_text,
+                training_plan: latestPlan.training_plan_text
+            });
+        } else {
+            setGeneratedPlan(null);
+        }
+    }, [selectedStudent, latestPlan]);
 
     const handleGenerate = async () => {
         if (!selectedStudent) {
@@ -18,7 +30,7 @@ const PlanGenerator = ({ selectedStudent, macros, onSavePlan }) => {
         try {
             // Importar dinámicamente para evitar problemas de dependencias circulares si los hubiera
             const { generateFitnessPlan } = await import('../lib/openai');
-            const plan = await generateFitnessPlan(selectedStudent, macros);
+            const plan = await generateFitnessPlan(selectedStudent, macros, latestPlan);
             setGeneratedPlan(plan);
         } catch (error) {
             console.error("Error generating plan:", error);
