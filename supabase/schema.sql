@@ -191,7 +191,9 @@ create table if not exists public.student_plans (
   protein_g integer not null,
   fat_g integer not null,
   carbs_g integer not null,
-  goal text
+  goal text,
+  nutrition_plan_text text,
+  training_plan_text text
 );
 
 -- RLS for Student Plans

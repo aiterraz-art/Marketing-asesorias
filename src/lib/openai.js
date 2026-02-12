@@ -422,3 +422,54 @@ export const generateImage = async (prompt) => {
 		throw error;
 	}
 };
+export const generateFitnessPlan = async (studentData, macros) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const planPrompt = `
+        ACTÚA COMO UN PREPARADOR FÍSICO Y NUTRICIONISTA DE ÉLITE.
+        Tu misión es generar un PLAN INTEGRAL DE FITNESS (Nutrición + Entrenamiento) para el siguiente alumno:
+
+        DATOS DEL ALUMNO:
+        - Nombre: ${studentData.full_name}
+        - Edad: ${studentData.age}
+        - Peso: ${studentData.weight}kg
+        - Altura: ${studentData.height}cm
+        - Nivel de actividad: ${studentData.activity_level}
+        - Objetivo: ${studentData.goal}
+
+        MACRONUTRIENTES CALCULADOS:
+        - Calorías objetivo: ${macros.calories} kcal
+        - Proteína: ${macros.protein}g
+        - Grasas: ${macros.fat}g
+        - Carbohidratos: ${macros.carbs}g
+
+        TU RESPUESTA DEBE ESTAR EN FORMATO JSON ESTRUCTURADO:
+        {
+            "nutrition_plan": "Un plan alimentario detallado en formato Markdown, incluyendo ejemplos de comidas (desayuno, almuerzo, merienda, cena), consejos de hidratación y suplementación básica si aplica.",
+            "training_plan": "Una rutina de entrenamiento detallada en formato Markdown, especificando días, ejercicios, series, repeticiones y tiempos de descanso, alineada con el objetivo del alumno."
+        }
+
+        REGLAS:
+        - Tono profesional, motivador y directo.
+        - Usa Markdown para dar formato profesional (negritas, listas, tablas).
+        - El plan debe ser realista y sostenible.
+        `;
+
+		const completion = await openai.chat.completions.create({
+			messages: [
+				{ role: "system", content: "Eres un experto en transformación física." },
+				{ role: "user", content: planPrompt }
+			],
+			model: "gpt-5.2",
+			response_format: { type: "json_object" }
+		});
+
+		const content = completion.choices[0].message.content;
+		return JSON.parse(content);
+
+	} catch (error) {
+		console.error("Fitness Plan Gen Error:", error);
+		throw error;
+	}
+};

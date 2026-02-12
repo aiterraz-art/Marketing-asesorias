@@ -10,6 +10,7 @@ import {
     UserPlus
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData } from '../lib/supabase';
+import PlanGenerator from './PlanGenerator';
 
 const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelectedStudent }) => {
     const [students, setStudents] = useState([]);
@@ -94,7 +95,18 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                         }}
                     />
                 )}
-                {activeSubTab === 'rutinas' && <RoutineDesigner selectedStudent={selectedStudent} />}
+                {activeSubTab === 'rutinas' && (
+                    <PlanGenerator
+                        selectedStudent={selectedStudent}
+                        macros={{
+                            calories: selectedStudent?.weight ? Math.round((10 * selectedStudent.weight + 6.25 * 180 - 5 * 25 + 5) * 1.55) : 2500, // Fallback base
+                            protein: 160,
+                            fat: 70,
+                            carbs: 250
+                        }}
+                        onSavePlan={saveStudentPlan}
+                    />
+                )}
                 {activeSubTab === 'progreso' && <ProgressTracker selectedStudent={selectedStudent} />}
             </main>
         </div>
