@@ -639,13 +639,17 @@ Ejemplo de formato:
                             <select
                                 value={selectedStudent?.id || ""}
                                 onChange={(e) => {
-                                    const student = students.find(s => s.id === e.target.value);
-                                    onSelectStudent(student);
+                                    const val = e.target.value;
+                                    if (!val) return;
+                                    const student = students.find(s => String(s.id) === String(val));
+                                    if (student) {
+                                        onSelectStudent(student);
+                                    }
                                 }}
                                 className="appearance-none bg-black border border-zinc-800 rounded-lg px-4 py-2 pr-10 text-sm text-white focus:outline-none focus:border-primary transition-all cursor-pointer hover:border-zinc-700 w-full md:w-64"
                             >
                                 <option value="" disabled>Seleccionar Alumno...</option>
-                                {students.map(s => (
+                                {students && students.map(s => (
                                     <option key={s.id} value={s.id}>{s.full_name}</option>
                                 ))}
                             </select>
