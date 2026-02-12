@@ -787,34 +787,31 @@ const ProgressTracker = ({ selectedStudent }) => {
                     </div>
                 )}
             </div>
-        </div>
 
-            {/* Modal Simple para añadir peso */ }
-    {
-        showAddModal && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                <div className="bg-surface border border-zinc-900 p-6 rounded-2xl w-full max-w-xs space-y-4">
-                    <h3 className="text-white font-bold">Nuevo Registro</h3>
-                    <div className="space-y-1">
-                        <label className="text-xs text-zinc-500">Peso en kg (Ej: 82.5)</label>
-                        <input
-                            type="number"
-                            step="0.1"
-                            value={newWeight}
-                            onChange={(e) => setNewWeight(e.target.value)}
-                            autoFocus
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary"
-                        />
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setShowAddModal(false)} className="flex-1 py-2 text-zinc-500 text-sm">Cerrar</button>
-                        <button onClick={handleAddMeasurement} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold">Guardar</button>
+            {/* Modal Simple para añadir peso */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="bg-surface border border-zinc-900 p-6 rounded-2xl w-full max-w-xs space-y-4">
+                        <h3 className="text-white font-bold">Nuevo Registro</h3>
+                        <div className="space-y-1">
+                            <label className="text-xs text-zinc-500">Peso en kg (Ej: 82.5)</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={newWeight}
+                                onChange={(e) => setNewWeight(e.target.value)}
+                                autoFocus
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setShowAddModal(false)} className="flex-1 py-2 text-zinc-500 text-sm">Cerrar</button>
+                            <button onClick={handleAddMeasurement} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold">Guardar</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )
-    }
-        </div >
+            )}
+        </div>
     );
 };
 
