@@ -103,3 +103,36 @@ export const updateStudentData = async (id, updates) => {
     if (error) throw error;
     return data;
 }
+
+export const createStudent = async (student) => {
+    const { data, error } = await supabase
+        .from('students')
+        .insert([student])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export const getStudentMeasurements = async (studentId) => {
+    const { data, error } = await supabase
+        .from('student_measurements')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('measured_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+}
+
+export const addStudentMeasurement = async (measurement) => {
+    const { data, error } = await supabase
+        .from('student_measurements')
+        .insert([measurement])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}

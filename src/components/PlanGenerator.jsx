@@ -32,17 +32,26 @@ const PlanGenerator = ({ selectedStudent, macros, onSavePlan }) => {
         if (!generatedPlan) return;
         setIsExporting(true);
 
-        const element = document.getElementById('printable-plan');
+        const element = document.getElementById('pdf-content');
         const opt = {
-            margin: 10,
+            margin: [15, 15],
             filename: `Plan_Fitness_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#ffffff' },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            html2canvas: {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         html2pdf().set(opt).from(element).save().then(() => {
             setIsExporting(false);
+        }).catch(err => {
+            console.error("PDF Export Error:", err);
+            setIsExporting(false);
+            alert("Error al generar el PDF.");
         });
     };
 
@@ -79,8 +88,8 @@ const PlanGenerator = ({ selectedStudent, macros, onSavePlan }) => {
                     disabled={isGenerating || !selectedStudent}
                     onClick={handleGenerate}
                     className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 mx-auto ${isGenerating || !selectedStudent
-                            ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                            : 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20'
+                        ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                        : 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20'
                         }`}
                 >
                     {isGenerating ? (
@@ -149,9 +158,9 @@ const PlanGenerator = ({ selectedStudent, macros, onSavePlan }) => {
                         </div>
                     </div>
 
-                    {/* Hidden Copy for PDF (Light Theme optimized) */}
-                    <div className="hidden">
-                        <div id="pdf-content" style={{ padding: '40px', color: '#000', backgroundColor: '#fff', fontFamily: 'sans-serif' }}>
+                    {/* Hidden Copy for PDF (Light Theme optimized) - Off-screen instead of display:none */}
+                    <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                        <div id="pdf-content" style={{ width: '800px', padding: '60px', color: '#000', backgroundColor: '#fff', fontFamily: 'sans-serif', lineBreak: 'auto' }}>
                             <h1 style={{ color: '#7c3aed', marginBottom: '20px' }}>Plan Fitness Personalizado</h1>
                             <p><strong>Alumno:</strong> {selectedStudent.full_name}</p>
                             <p><strong>Objetivo:</strong> {selectedStudent.goal}</p>

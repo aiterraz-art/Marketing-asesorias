@@ -7,28 +7,66 @@ import {
     Plus,
     Search,
     ChevronRight,
-    UserPlus
+    UserPlus,
+    Loader2
 } from 'lucide-react';
-import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData } from '../lib/supabase';
+import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
 import PlanGenerator from './PlanGenerator';
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    AreaChart,
+    Area
+} from 'recharts';
 
 const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelectedStudent }) => {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+    const [currentMacros, setCurrentMacros] = useState({
+        calories: 2000,
+        protein: 150,
+        fat: 60,
+        carbs: 215,
+        goal: 'maintenance'
+    });
+
+    const loadStudents = async () => {
+        setLoading(true);
+        try {
+            const data = await getStudents();
+            setStudents(data);
+        } catch (err) {
+            console.error("Error loading students:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const loadStudents = async () => {
-            try {
-                const data = await getStudents();
-                setStudents(data);
-            } catch (err) {
-                console.error("Error loading students:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadStudents();
     }, []);
+
+    const filteredStudents = students.filter(s =>
+        s.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleCreateStudent = async (studentData) => {
+        try {
+            await createStudent(studentData);
+            await loadStudents();
+            setIsStudentModalOpen(false);
+        } catch (err) {
+            console.error("Error creating student:", err);
+            alert("Error al crear el alumno.");
+        }
+    };
 
     // Mapeamos las pestañas del sidebar a los sub-componentes internos
     const activeSubTab = activeTab === 'nutricion' ? 'calculadora' :
@@ -50,7 +88,10 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                     <p className="text-zinc-500 mt-1">Gestión integral de alumnos y protocolos de entrenamiento.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
+                    <button
+                        onClick={() => setIsStudentModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+                    >
                         <UserPlus size={18} />
                         Nuevo Alumno
                     </button>
@@ -59,9 +100,9 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
 
             {/* Mini Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatCard title="Alumnos Activos" value="12" icon={<Users className="text-primary" size={20} />} trend="+2 este mes" />
-                <StatCard title="Planes Pendientes" value="3" icon={<Calculator className="text-amber-500" size={20} />} trend="Revisión urgente" />
-                <StatCard title="Progreso Promedio" value="±4.2%" icon={<TrendingUp className="text-emerald-500" size={20} />} trend="Baja de grasa" />
+                <StatCard title="Alumnos Activos" value={students.length} icon={<Users className="text-primary" size={20} />} trend="Global" />
+                <StatCard title="Promedio Edad" value={Math.round(students.reduce((acc, s) => acc + (s.age || 0), 0) / (students.length || 1))} icon={<Calculator className="text-amber-500" size={20} />} trend="Años" />
+                <StatCard title="Último Registro" value={selectedStudent ? selectedStudent.full_name.split(' ')[0] : '---'} icon={<TrendingUp className="text-emerald-500" size={20} />} trend="Contexto" />
             </div>
 
             {/* Tabs */}
@@ -75,15 +116,19 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
             <main className="min-h-[400px]">
                 {activeSubTab === 'alumnos' && (
                     <StudentList
-                        students={students}
+                        students={filteredStudents}
                         loading={loading}
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
                         selectedId={selectedStudent?.id}
                         onSelect={setSelectedStudent}
                     />
                 )}
+                {/* ... rest of tabs ... */}
                 {activeSubTab === 'calculadora' && (
                     <NutritionCalculator
                         selectedStudent={selectedStudent}
+                        onMacrosUpdate={setCurrentMacros}
                         onSavePlan={async (plan) => {
                             try {
                                 await saveStudentPlan(plan);
@@ -98,17 +143,18 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 {activeSubTab === 'rutinas' && (
                     <PlanGenerator
                         selectedStudent={selectedStudent}
-                        macros={{
-                            calories: selectedStudent?.weight ? Math.round((10 * selectedStudent.weight + 6.25 * 180 - 5 * 25 + 5) * 1.55) : 2500, // Fallback base
-                            protein: 160,
-                            fat: 70,
-                            carbs: 250
-                        }}
+                        macros={currentMacros}
                         onSavePlan={saveStudentPlan}
                     />
                 )}
                 {activeSubTab === 'progreso' && <ProgressTracker selectedStudent={selectedStudent} />}
             </main>
+
+            <StudentModal
+                isOpen={isStudentModalOpen}
+                onClose={() => setIsStudentModalOpen(false)}
+                onCreate={handleCreateStudent}
+            />
         </div>
     );
 };
@@ -140,23 +186,30 @@ const SubTab = ({ label, isActive, onClick, icon }) => (
     </button>
 );
 
-const StudentList = ({ students, loading, onSelect, selectedId }) => (
+const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, selectedId }) => (
     <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
                 <input
                     type="text"
+                    value={searchTerm}
+                    onChange={(e) => onSearchChange(e.target.value)}
                     placeholder="Buscar alumno..."
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary transition-colors"
+                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary transition-colors text-white"
                 />
             </div>
         </div>
         <div className="divide-y divide-zinc-900">
             {loading ? (
-                <div className="p-12 text-center text-zinc-500">Cargando alumnos...</div>
+                <div className="p-12 text-center text-zinc-500 flex flex-col items-center gap-2">
+                    <Loader2 className="animate-spin text-primary" size={24} />
+                    <span>Cargando alumnos...</span>
+                </div>
             ) : students.length === 0 ? (
-                <div className="p-12 text-center text-zinc-500">No hay alumnos registrados.</div>
+                <div className="p-12 text-center text-zinc-500">
+                    {searchTerm ? "No se encontraron alumnos con ese nombre." : "No hay alumnos registrados."}
+                </div>
             ) : students.map((s) => (
                 <div
                     key={s.id}
@@ -169,7 +222,7 @@ const StudentList = ({ students, loading, onSelect, selectedId }) => (
                         </div>
                         <div>
                             <h3 className="text-white font-medium">{s.full_name}</h3>
-                            <p className="text-zinc-500 text-xs">{s.goal === 'cut' ? 'Definición' : s.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}</p>
+                            <p className="text-zinc-500 text-xs capitalize">{s.goal === 'cut' ? 'Definición' : s.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
@@ -184,6 +237,95 @@ const StudentList = ({ students, loading, onSelect, selectedId }) => (
         </div>
     </div>
 );
+
+const StudentModal = ({ isOpen, onClose, onCreate }) => {
+    const [formData, setFormData] = useState({
+        full_name: '',
+        age: 25,
+        height: 175,
+        weight: 75,
+        activity_level: 1.2,
+        goal: 'maintenance'
+    });
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-surface border border-zinc-900 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-white">Nuevo Alumno</h3>
+                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+                        <Plus size={24} className="rotate-45" />
+                    </button>
+                </div>
+                <div className="p-6 space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-500 uppercase">Nombre Completo</label>
+                        <input
+                            type="text"
+                            value={formData.full_name}
+                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary transition-colors"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase">Edad</label>
+                            <input
+                                type="number"
+                                value={formData.age}
+                                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary transition-colors"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase">Altura (cm)</label>
+                            <input
+                                type="number"
+                                value={formData.height}
+                                onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary transition-colors"
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase">Peso (kg)</label>
+                            <input
+                                type="number"
+                                value={formData.weight}
+                                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary transition-colors"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase">Meta</label>
+                            <select
+                                value={formData.goal}
+                                onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary transition-colors"
+                            >
+                                <option value="cut">Definición</option>
+                                <option value="maintenance">Mantenimiento</option>
+                                <option value="bulk">Volumen</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div className="p-6 bg-zinc-900/20 border-t border-zinc-900 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 text-zinc-400 font-medium hover:text-white transition-colors">Cancelar</button>
+                    <button
+                        onClick={() => onCreate(formData)}
+                        className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:opacity-90 transition-opacity"
+                    >
+                        Crear Alumno
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const NutritionCalculator = ({ selectedStudent, onSavePlan }) => {
     const [data, setData] = useState({
@@ -238,6 +380,17 @@ const NutritionCalculator = ({ selectedStudent, onSavePlan }) => {
     useEffect(() => {
         calculate();
     }, [data]);
+
+    useEffect(() => {
+        if (results && onMacrosUpdate) {
+            onMacrosUpdate({
+                ...results,
+                protein: data.protein,
+                fat: data.fat,
+                goal: data.goal
+            });
+        }
+    }, [results]);
 
     const handleSave = async () => {
         if (!selectedStudent) {
@@ -408,14 +561,178 @@ const RoutineDesigner = () => (
     </div>
 );
 
-const ProgressTracker = () => (
-    <div className="bg-surface border border-zinc-900 p-8 rounded-xl text-center">
-        <TrendingUp className="mx-auto text-zinc-700 mb-4" size={48} />
-        <h3 className="text-white font-medium text-lg">Seguimiento de Progreso</h3>
-        <p className="text-zinc-500 max-w-sm mx-auto mt-2">
-            Visualiza gráficamente la evolución de tus alumnos: peso, % de grasa y medidas antropométricas.
-        </p>
-    </div>
-);
+const ProgressTracker = ({ selectedStudent }) => {
+    const [measurements, setMeasurements] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newWeight, setNewWeight] = useState('');
+
+    useEffect(() => {
+        if (selectedStudent) {
+            loadMeasurements();
+        }
+    }, [selectedStudent]);
+
+    const loadMeasurements = async () => {
+        setLoading(true);
+        try {
+            const data = await getStudentMeasurements(selectedStudent.id);
+            setMeasurements(data.map(m => ({
+                date: new Date(m.measured_at).toLocaleDateString(),
+                weight: m.weight,
+                fat: m.body_fat_pct
+            })));
+        } catch (err) {
+            console.error("Error loading measurements:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddMeasurement = async () => {
+        if (!newWeight) return;
+        try {
+            await addStudentMeasurement({
+                student_id: selectedStudent.id,
+                weight: parseFloat(newWeight)
+            });
+            setNewWeight('');
+            setShowAddModal(false);
+            loadMeasurements();
+        } catch (err) {
+            console.error("Error adding measurement:", err);
+            alert("Error al guardar la medida.");
+        }
+    };
+
+    if (!selectedStudent) {
+        return (
+            <div className="bg-surface border border-zinc-900 p-12 rounded-xl text-center">
+                <Users className="mx-auto text-zinc-800 mb-4" size={48} />
+                <h3 className="text-white font-medium text-lg">Selecciona un Alumno</h3>
+                <p className="text-zinc-500 max-w-sm mx-auto mt-2">
+                    Para visualizar el progreso, primero debes seleccionar un alumno de la lista.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <TrendingUp className="text-emerald-500" />
+                    Evolución de {selectedStudent.full_name.split(' ')[0]}
+                </h2>
+                <button
+                    onClick={() => setShowAddModal(true)}
+                    className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                >
+                    <Plus size={16} />
+                    Registrar Peso
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-surface border border-zinc-900 p-6 rounded-xl aspect-[16/9]">
+                    <div className="flex items-center justify-between mb-6">
+                        <span className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Historial de Peso (kg)</span>
+                    </div>
+                    {loading ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <Loader2 className="animate-spin text-primary" />
+                        </div>
+                    ) : measurements.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="80%">
+                            <AreaChart data={measurements}>
+                                <defs>
+                                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#52525b"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    stroke="#52525b"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    domain={['dataMin - 2', 'dataMax + 2']}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#09090b', border: '1px solid #18181b', borderRadius: '8px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="weight"
+                                    stroke="#7c3aed"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#colorWeight)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600 gap-2">
+                            <TrendingUp size={32} />
+                            <p className="text-sm">Sin datos suficientes para graficar.</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-6">
+                    <div className="bg-surface border border-zinc-900 p-6 rounded-xl">
+                        <h4 className="text-sm font-semibold text-zinc-500 uppercase mb-4">Métricas Críticas</h4>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
+                                <span className="text-zinc-400 text-sm">Peso Actual</span>
+                                <span className="text-white font-bold">{measurements[measurements.length - 1]?.weight || selectedStudent.weight} kg</span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
+                                <span className="text-zinc-400 text-sm">Cambio Total</span>
+                                <span className={`font-bold ${measurements.length > 1 && measurements[measurements.length - 1].weight < measurements[0].weight ? 'text-emerald-500' : 'text-zinc-500'
+                                    }`}>
+                                    {measurements.length > 1 ? (measurements[measurements.length - 1].weight - measurements[0].weight).toFixed(1) : '0'} kg
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal Simple para añadir peso */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="bg-surface border border-zinc-900 p-6 rounded-2xl w-full max-w-xs space-y-4">
+                        <h3 className="text-white font-bold">Nuevo Registro</h3>
+                        <div className="space-y-1">
+                            <label className="text-xs text-zinc-500">Peso en kg (Ej: 82.5)</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={newWeight}
+                                onChange={(e) => setNewWeight(e.target.value)}
+                                autoFocus
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white outline-none focus:border-primary"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setShowAddModal(false)} className="flex-1 py-2 text-zinc-500 text-sm">Cerrar</button>
+                            <button onClick={handleAddMeasurement} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default AsesoriasDashboard;
