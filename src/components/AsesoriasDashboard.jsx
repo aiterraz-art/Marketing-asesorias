@@ -1359,6 +1359,74 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Vinculación de Alumno */}
+            <div className="bg-zinc-900/30 border border-zinc-900 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    {selectedStudent ? (
+                        <>
+                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                                {selectedStudent.full_name.charAt(0)}
+                            </div>
+                            <div>
+                                <p className="text-white font-medium">{selectedStudent.full_name}</p>
+                                <p className="text-zinc-500 text-[10px] uppercase tracking-wider">{selectedStudent.email}</p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+                                <Users size={20} />
+                            </div>
+                            <div>
+                                <p className="text-zinc-400 font-medium text-sm">Modo Libre</p>
+                                <p className="text-zinc-600 text-[10px] uppercase tracking-wider">Selecciona un alumno para guardar</p>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <div className="relative group">
+                        <select
+                            value={selectedStudent?.id || ""}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (!val) return;
+                                const student = students.find(s => String(s.id) === String(val));
+                                if (student) {
+                                    onSelectStudent(student);
+                                }
+                            }}
+                            className="appearance-none bg-black border border-zinc-800 rounded-lg px-4 py-2 pr-10 text-sm text-white focus:outline-none focus:border-primary transition-all cursor-pointer hover:border-zinc-700 w-full md:w-64"
+                        >
+                            <option value="" disabled>Seleccionar Alumno...</option>
+                            {students && students.map(s => (
+                                <option key={s.id} value={s.id}>{s.full_name}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                            <ChevronRight size={16} className="rotate-90" />
+                        </div>
+                    </div>
+                    {selectedStudent && (
+                        <button
+                            onClick={() => onSelectStudent(null)}
+                            className="p-2 text-zinc-500 hover:text-white transition-colors"
+                            title="Desvincular Alumno"
+                        >
+                            <X size={18} />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {!selectedStudent && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-amber-500 text-sm flex items-center gap-3">
+                    <Sparkles size={18} className="animate-pulse" />
+                    <span>Selecciona un alumno para guardar su rutina permanentemente en su ficha.</span>
+                </div>
+            )}
+
             {/* Split Selector & Config */}
             <div className="bg-surface border border-zinc-900 p-6 rounded-xl space-y-6">
                 <div className="flex items-center justify-between mb-4">
