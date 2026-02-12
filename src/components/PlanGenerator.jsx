@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, Download, FileText, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import html2pdf from 'html2pdf.js';
