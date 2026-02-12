@@ -15,7 +15,8 @@ import {
     Send,
     MessageCircle,
     Download,
-    History
+    History,
+    X
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant } from '../lib/openai';
@@ -175,6 +176,8 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 {activeSubTab === 'calculadora' && (
                     <NutritionCalculator
                         selectedStudent={selectedStudent}
+                        students={students}
+                        onSelectStudent={setSelectedStudent}
                         latestPlan={latestPlan}
                         onMacrosUpdate={setCurrentMacros}
                         onSavePlan={async (plan) => {
@@ -395,7 +398,7 @@ const StudentModal = ({ isOpen, onClose, onCreate }) => {
     );
 };
 
-const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSavePlan }) => {
+const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, latestPlan, onMacrosUpdate, onSavePlan }) => {
     const [data, setData] = useState({
         weight: selectedStudent?.weight || 80,
         height: selectedStudent?.height || 180,
@@ -605,24 +608,68 @@ Ejemplo de formato:
 
     return (
         <div className="space-y-6">
-            {!selectedStudent && (
-                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-amber-500 text-sm flex items-center gap-3">
-                    <Users size={18} />
-                    <span>Estás en modo libre. Selecciona un alumno en la lista para guardar su plan permanentemente.</span>
+            {(selectedStudent || (students && students.length > 0)) && (
+                <div className={`${selectedStudent ? 'bg-primary/10 border-primary/20' : 'bg-surface border-zinc-900'} p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all`}>
+                    <div className="flex items-center gap-3">
+                        {selectedStudent ? (
+                            <>
+                                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-primary/20">
+                                    {selectedStudent.full_name.charAt(0)}
+                                </div>
+                                <div>
+                                    <p className="text-white font-semibold text-sm">Editando plan para: {selectedStudent.full_name}</p>
+                                    <p className="text-zinc-500 text-[10px] uppercase tracking-wider">Perfil Activo • ID: #{selectedStudent.id.substring(0, 8)}</p>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-500 flex items-center justify-center">
+                                    <Users size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-zinc-400 font-medium text-sm">Modo Libre</p>
+                                    <p className="text-zinc-600 text-[10px] uppercase tracking-wider">Selecciona un alumno para guardar</p>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <div className="relative group">
+                            <select
+                                value={selectedStudent?.id || ""}
+                                onChange={(e) => {
+                                    const student = students.find(s => s.id === e.target.value);
+                                    onSelectStudent(student);
+                                }}
+                                className="appearance-none bg-black border border-zinc-800 rounded-lg px-4 py-2 pr-10 text-sm text-white focus:outline-none focus:border-primary transition-all cursor-pointer hover:border-zinc-700 w-full md:w-64"
+                            >
+                                <option value="" disabled>Seleccionar Alumno...</option>
+                                {students.map(s => (
+                                    <option key={s.id} value={s.id}>{s.full_name}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                                <ChevronRight size={16} className="rotate-90" />
+                            </div>
+                        </div>
+                        {selectedStudent && (
+                            <button
+                                onClick={() => onSelectStudent(null)}
+                                className="p-2 text-zinc-500 hover:text-white transition-colors"
+                                title="Desvincular Alumno"
+                            >
+                                <X size={18} />
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 
-            {selectedStudent && (
-                <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs">
-                            {selectedStudent.full_name.charAt(0)}
-                        </div>
-                        <div>
-                            <p className="text-white font-medium text-sm">Editando plan para: {selectedStudent.full_name}</p>
-                            <p className="text-zinc-500 text-[10px] uppercase">ID: #{selectedStudent.id}</p>
-                        </div>
-                    </div>
+            {!selectedStudent && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-amber-500 text-sm flex items-center gap-3">
+                    <Sparkles size={18} className="animate-pulse" />
+                    <span>Selecciona un alumno para guardar su plan permanentemente y sincronizar sus datos biométricos.</span>
                 </div>
             )}
 
