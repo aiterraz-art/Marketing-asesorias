@@ -1,3 +1,14 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Users,
+    Calculator,
+    Dumbbell,
+    TrendingUp,
+    Plus,
+    Search,
+    ChevronRight,
+    UserPlus
+} from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData } from '../lib/supabase';
 
 const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelectedStudent }) => {
