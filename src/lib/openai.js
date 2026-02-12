@@ -523,3 +523,48 @@ export const analyzeStudentProgress = async (studentData, history) => {
 		throw error;
 	}
 };
+
+export const chatDietAssistant = async (chatHistory, studentData, macros) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const systemPrompt = `
+        Eres un nutricionista deportivo de élite. Estás trabajando con el coach para diseñar la dieta de un alumno.
+
+        DATOS DEL ALUMNO:
+        - Nombre: ${studentData.full_name}
+        - Edad: ${studentData.age} años
+        - Peso: ${studentData.weight}kg
+        - Altura: ${studentData.height}cm
+        - Objetivo: ${studentData.goal === 'cut' ? 'Definición' : studentData.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}
+
+        MACROS CALCULADOS:
+        - Calorías: ${macros.calories} kcal
+        - Proteína: ${macros.protein}g
+        - Grasas: ${macros.fat}g
+        - Carbohidratos: ${macros.carbs}g
+
+        REGLAS:
+        - Responde en español.
+        - Cuando generes o modifiques una dieta, usa formato Markdown con tablas y listas.
+        - Sé flexible: si el coach pide cambiar un alimento, ajusta el plan manteniendo los macros.
+        - Si el coach dice "versión final", genera el plan completo y limpio sin comentarios extra.
+        - Mantén los macros lo más cerca posible del objetivo.
+        `;
+
+		const messages = [
+			{ role: "system", content: systemPrompt },
+			...chatHistory.map(m => ({ role: m.role, content: m.content }))
+		];
+
+		const completion = await openai.chat.completions.create({
+			messages: messages,
+			model: "gpt-5.2"
+		});
+
+		return completion.choices[0].message.content;
+	} catch (error) {
+		console.error("Diet Chat Error:", error);
+		throw error;
+	}
+};

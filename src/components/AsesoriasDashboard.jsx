@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
     Users,
     Calculator,
@@ -9,10 +10,13 @@ import {
     ChevronRight,
     UserPlus,
     Loader2,
-    Sparkles
+    Sparkles,
+    Send,
+    MessageCircle,
+    Download
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
-import { generateFitnessPlan, analyzeStudentProgress } from '../lib/openai';
+import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
 import {
     LineChart,
@@ -379,6 +383,14 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
     const [results, setResults] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Chat IA states
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [isChatLoading, setIsChatLoading] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const chatEndRef = useRef(null);
+    const dietContentRef = useRef(null);
+
     // Actualizar datos si cambia el alumno seleccionado o si se carga un plan previo
     useEffect(() => {
         if (selectedStudent) {
@@ -393,6 +405,9 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
                 fat: latestPlan?.fat_g || 70
             }));
         }
+        // Resetear chat al cambiar de alumno
+        setChatMessages([]);
+        setShowChat(false);
     }, [selectedStudent, latestPlan]);
 
     // Simulación de llamada a la función SQL de Supabase
@@ -432,6 +447,11 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
         }
     }, [results]);
 
+    // Auto-scroll chat
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
+
     const handleSave = async () => {
         if (!selectedStudent) {
             alert("Por favor, selecciona un alumno primero.");
@@ -451,6 +471,80 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
             setIsSaving(false);
         }
     };
+
+    // Generar dieta inicial con IA
+    const handleGenerateDiet = async () => {
+        if (!selectedStudent) {
+            alert("Selecciona un alumno primero.");
+            return;
+        }
+        setShowChat(true);
+        setIsChatLoading(true);
+
+        const initialMessage = {
+            role: 'user',
+            content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}. Usa tablas con los macros de cada comida. Incluye desayuno, media mañana, almuerzo, merienda y cena.`
+        };
+        setChatMessages([initialMessage]);
+
+        try {
+            const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs };
+            const response = await chatDietAssistant([initialMessage], selectedStudent, macros);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
+        } catch (err) {
+            console.error("Error generating diet:", err);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error al generar la dieta. Inténtalo de nuevo.' }]);
+        } finally {
+            setIsChatLoading(false);
+        }
+    };
+
+    // Enviar mensaje al chat
+    const handleSendMessage = async () => {
+        if (!chatInput.trim() || isChatLoading) return;
+
+        const userMsg = { role: 'user', content: chatInput };
+        const updatedHistory = [...chatMessages, userMsg];
+        setChatMessages(updatedHistory);
+        setChatInput('');
+        setIsChatLoading(true);
+
+        try {
+            const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs };
+            const response = await chatDietAssistant(updatedHistory, selectedStudent, macros);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
+        } catch (err) {
+            console.error("Error in diet chat:", err);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error en la respuesta. Inténtalo de nuevo.' }]);
+        } finally {
+            setIsChatLoading(false);
+        }
+    };
+
+    // Exportar última respuesta de la IA a PDF
+    const handleExportDietPDF = () => {
+        const lastAssistantMsg = [...chatMessages].reverse().find(m => m.role === 'assistant');
+        if (!lastAssistantMsg) return;
+
+        const element = dietContentRef.current;
+        if (!element) return;
+
+        const opt = {
+            margin: [15, 15],
+            filename: `Dieta_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        import('html2pdf.js').then(html2pdf => {
+            html2pdf.default().set(opt).from(element).save();
+        });
+    };
+
+    // Obtener la última respuesta de la IA para el render oculto del PDF
+    const lastAIResponse = [...chatMessages].reverse().find(m => m.role === 'assistant');
 
     return (
         <div className="space-y-6">
@@ -552,22 +646,117 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
                             </div>
                         </div>
 
-                        <button
-                            disabled={isSaving}
-                            onClick={handleSave}
-                            className={`w-full py-4 mt-8 text-white border border-zinc-800 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isSaving ? 'bg-zinc-800 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20'
-                                }`}
-                        >
-                            {isSaving ? "Guardando..." : (
-                                <>
-                                    <TrendingUp size={20} />
-                                    {selectedStudent ? `Guardar Plan para ${selectedStudent.full_name.split(' ')[0]}` : "Asignar Plan"}
-                                </>
-                            )}
-                        </button>
+                        <div className="flex gap-3 mt-8">
+                            <button
+                                disabled={isSaving}
+                                onClick={handleSave}
+                                className={`flex-1 py-4 text-white border border-zinc-800 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isSaving ? 'bg-zinc-800 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20'
+                                    }`}
+                            >
+                                {isSaving ? "Guardando..." : (
+                                    <>
+                                        <TrendingUp size={20} />
+                                        {selectedStudent ? `Guardar Plan` : "Asignar Plan"}
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={handleGenerateDiet}
+                                disabled={!selectedStudent || isChatLoading}
+                                className="flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Sparkles size={20} />
+                                Generar Dieta IA
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
+
+            {/* Chat IA de Dieta */}
+            {showChat && (
+                <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="p-4 border-b border-zinc-900 bg-zinc-900/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <MessageCircle size={18} className="text-amber-400" />
+                            <h3 className="text-white font-bold text-sm">Chat con Nutricionista IA</h3>
+                            <span className="text-zinc-600 text-xs">• Pide modificaciones hasta que quede perfecto</span>
+                        </div>
+                        {lastAIResponse && (
+                            <button
+                                onClick={handleExportDietPDF}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:opacity-90 transition-opacity"
+                            >
+                                <Download size={14} />
+                                Exportar a PDF
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Messages */}
+                    <div className="max-h-[500px] overflow-y-auto p-4 space-y-4">
+                        {chatMessages.map((msg, i) => (
+                            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
+                                    ? 'bg-primary/20 text-white rounded-br-md'
+                                    : 'bg-zinc-900 text-zinc-300 rounded-bl-md border border-zinc-800'
+                                    }`}>
+                                    {msg.role === 'assistant' ? (
+                                        <div className="prose prose-invert prose-sm max-w-none">
+                                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        <p>{msg.content}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {isChatLoading && (
+                            <div className="flex justify-start">
+                                <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl rounded-bl-md">
+                                    <Loader2 className="animate-spin text-primary" size={20} />
+                                </div>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Input */}
+                    <div className="p-4 border-t border-zinc-900 bg-black/50">
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                placeholder="Ej: Cambia el desayuno por algo sin lácteos..."
+                                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-primary placeholder:text-zinc-600"
+                                disabled={isChatLoading}
+                            />
+                            <button
+                                onClick={handleSendMessage}
+                                disabled={isChatLoading || !chatInput.trim()}
+                                className="px-4 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Send size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Hidden element for PDF export */}
+            {lastAIResponse && (
+                <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                    <div ref={dietContentRef} style={{ width: '800px', padding: '60px', color: '#000', backgroundColor: '#fff', fontFamily: 'sans-serif' }}>
+                        <h1 style={{ color: '#7c3aed', marginBottom: '10px' }}>Plan Nutricional Personalizado</h1>
+                        <p><strong>Alumno:</strong> {selectedStudent?.full_name}</p>
+                        <p><strong>Calorías:</strong> {results?.calories} kcal | <strong>P:</strong> {data.protein}g | <strong>G:</strong> {data.fat}g | <strong>C:</strong> {results?.carbs}g</p>
+                        <hr style={{ margin: '20px 0' }} />
+                        <ReactMarkdown>{lastAIResponse.content}</ReactMarkdown>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
