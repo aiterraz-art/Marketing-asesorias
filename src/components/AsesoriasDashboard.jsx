@@ -24,6 +24,7 @@ import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTra
 import PlanGenerator from './PlanGenerator';
 import StudentHistory from './StudentHistory';
 import StudentProfile from './StudentProfile';
+import { getExerciseImageUrl } from '../lib/exerciseDatabase';
 import {
     LineChart,
     Line,
@@ -1357,6 +1358,62 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
 
     const lastAIResponse = [...chatMessages].reverse().find(m => m.role === 'assistant');
 
+    const MarkdownComponents = {
+        td: ({ children }) => {
+            // Extraer texto si es posible para buscar la imagen
+            const cellText = Array.isArray(children) ? children.join('') : String(children);
+            const imageUrl = getExerciseImageUrl(cellText);
+
+            return (
+                <td className="relative group">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-1">{children}</div>
+                        {imageUrl && (
+                            <div className="w-12 h-12 flex-shrink-0 relative">
+                                <img
+                                    src={imageUrl}
+                                    alt={cellText}
+                                    className="w-full h-full object-cover rounded border border-zinc-800 bg-black/40"
+                                    loading="lazy"
+                                />
+                                {/* Tooltip zoom for web chat */}
+                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 h-32 z-50 pointer-events-none">
+                                    <img
+                                        src={imageUrl}
+                                        alt={cellText}
+                                        className="w-full h-full object-cover rounded-lg border-2 border-primary shadow-2xl bg-black"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </td>
+            );
+        }
+    };
+
+    const PDFMarkdownComponents = {
+        td: ({ children }) => {
+            const cellText = Array.isArray(children) ? children.join('') : String(children);
+            const imageUrl = getExerciseImageUrl(cellText);
+
+            return (
+                <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ flex: 1 }}>{children}</div>
+                        {imageUrl && (
+                            <img
+                                src={imageUrl}
+                                alt={cellText}
+                                style={{ width: '45px', height: '45px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
+                            />
+                        )}
+                    </div>
+                </td>
+            );
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Vinculación de Alumno */}
@@ -1570,7 +1627,12 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                                     }`}>
                                     {msg.role === 'assistant' ? (
                                         <div className="prose prose-invert prose-sm max-w-none">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={MarkdownComponents}
+                                            >
+                                                {msg.content}
+                                            </ReactMarkdown>
                                         </div>
                                     ) : (
                                         <p>{msg.content}</p>
@@ -1678,7 +1740,12 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                             .pdf-training-content hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
                         `}} />
                         <div className="pdf-training-content">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lastAIResponse.content}</ReactMarkdown>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={PDFMarkdownComponents}
+                            >
+                                {lastAIResponse.content}
+                            </ReactMarkdown>
                         </div>
                     </div>
                 </div>

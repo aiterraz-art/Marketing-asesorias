@@ -604,6 +604,8 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
         - Divide la rutina por días (ej: Día 1: Empuje, Día 2: Tracción, etc.).
         - Si el alumno hace un deporte extra (ej: Tenis), adapta la rutina para mejorar su rendimiento en ese deporte y evitar fatiga excesiva.
         - Adapta el volumen y la intensidad al nivel de experiencia del alumno (${trainingData.experience}).
+        - **NOMENCLATURA DE EJERCICIOS**: Usa preferiblemente estos nombres estándar para que el sistema asigne imágenes correctamente: 
+          Press de Banca, Press Inclinado, Aperturas, Sentadillas, Prensa, Peso Muerto, Remo con Barra, Jalón al Pecho, Dominadas, Press Militar, Elevaciones Laterales, Curl de Bíceps, Press Francés, Extensiones de Tríceps, Zancadas, Elevación de Talones, Plancha, Crunch.
         - **PROHIBIDO**: No incluyas intros, saludos, despedidas ni preguntas. SÓLO ENTREGA LA RUTINA.
         - **SÓLO LA RUTINA**: La respuesta debe empezar directamente con el título de la rutina y terminar con el resumen o consejos de ejecución.
         `;
