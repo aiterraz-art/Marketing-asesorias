@@ -9,9 +9,9 @@ const BASE_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/mai
 // El repo usa nombres en inglés con guiones, ej: "Barbell_Bench_Press/0.jpg"
 const EXERCISE_MAP = {
     // Pecho
-    "press de banca": "Barbell_Bench_Press/0.jpg",
-    "press banca": "Barbell_Bench_Press/0.jpg",
-    "press inclinado": "Barbell_Incline_Bench_Press/0.jpg",
+    "press de banca": "Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+    "press banca": "Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+    "press inclinado": "Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
     "aperturas": "Dumbbell_Flyes/0.jpg",
     "flexiones": "Push_Ups/0.jpg",
     "push ups": "Push_Ups/0.jpg",
@@ -40,9 +40,9 @@ const EXERCISE_MAP = {
     "elevación de talones": "Calf_Raises/0.jpg",
 
     // Hombros
-    "press militar": "Barbell_Military_Press/0.jpg",
+    "press militar": "Standing_Military_Press/0.jpg",
     "press de hombros": "Dumbbell_Shoulder_Press/0.jpg",
-    "elevaciones laterales": "Dumbbell_Lateral_Raise/0.jpg",
+    "elevaciones laterales": "Side_Lateral_Raise/0.jpg",
     "pajaros": "Dumbbell_Rear_Delt_Row/0.jpg",
     "pájaros": "Dumbbell_Rear_Delt_Row/0.jpg",
 
@@ -50,7 +50,7 @@ const EXERCISE_MAP = {
     "curl de biceps": "Barbell_Curl/0.jpg",
     "curl de bíceps": "Barbell_Curl/0.jpg",
     "curl con mancuernas": "Dumbbell_Bicep_Curl/0.jpg",
-    "press frances": "Barbell_Guillotine_Bench_Press/0.jpg", // Cercano a skullcrushers
+    "press frances": "Barbell_Guillotine_Bench_Press/0.jpg",
     "press francés": "Barbell_Guillotine_Bench_Press/0.jpg",
     "extension de triceps": "Triceps_Pushdown/0.jpg",
     "extensión de tríceps": "Triceps_Pushdown/0.jpg",

@@ -1360,24 +1360,24 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
 
     const MarkdownComponents = {
         td: ({ children }) => {
-            // Extraer texto si es posible para buscar la imagen
             const cellText = Array.isArray(children) ? children.join('') : String(children);
             const imageUrl = getExerciseImageUrl(cellText);
+            const [hasError, setHasError] = useState(false);
 
             return (
                 <td className="relative group">
                     <div className="flex items-center gap-3">
                         <div className="flex-1">{children}</div>
-                        {imageUrl && (
+                        {imageUrl && !hasError && (
                             <div className="w-12 h-12 flex-shrink-0 relative">
                                 <img
                                     src={imageUrl}
                                     alt={cellText}
+                                    onError={() => setHasError(true)}
                                     className="w-full h-full object-cover rounded border border-zinc-800 bg-black/40"
                                     loading="lazy"
                                 />
-                                {/* Tooltip zoom for web chat */}
-                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 h-32 z-50 pointer-events-none">
+                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 h-32 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
                                     <img
                                         src={imageUrl}
                                         alt={cellText}
