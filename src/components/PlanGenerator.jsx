@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Download, FileText, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import html2pdf from 'html2pdf.js';
 
 const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
@@ -153,7 +154,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                 </h4>
                             </div>
                             <div className="p-6 prose prose-invert prose-sm max-w-none text-zinc-400 overflow-y-auto max-h-[500px]">
-                                <ReactMarkdown>{generatedPlan.nutrition_plan}</ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.nutrition_plan}</ReactMarkdown>
                             </div>
                         </div>
 
@@ -165,7 +166,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                 </h4>
                             </div>
                             <div className="p-6 prose prose-invert prose-sm max-w-none text-zinc-400 overflow-y-auto max-h-[500px]">
-                                <ReactMarkdown>{generatedPlan.training_plan}</ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.training_plan}</ReactMarkdown>
                             </div>
                         </div>
                     </div>
@@ -180,13 +181,13 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                             <div style={{ marginBottom: '40px' }}>
                                 <h2 style={{ color: '#7c3aed' }}>Nutrición</h2>
                                 <div className="markdown-pdf">
-                                    <ReactMarkdown>{generatedPlan.nutrition_plan}</ReactMarkdown>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.nutrition_plan}</ReactMarkdown>
                                 </div>
                             </div>
                             <div>
                                 <h2 style={{ color: '#7c3aed' }}>Entrenamiento</h2>
                                 <div className="markdown-pdf">
-                                    <ReactMarkdown>{generatedPlan.training_plan}</ReactMarkdown>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.training_plan}</ReactMarkdown>
                                 </div>
                             </div>
                         </div>

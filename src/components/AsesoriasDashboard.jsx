@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
     Users,
     Calculator,
@@ -20,6 +21,7 @@ import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, create
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
 import StudentHistory from './StudentHistory';
+import StudentProfile from './StudentProfile';
 import {
     LineChart,
     Line,
@@ -151,15 +153,23 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
 
             <main className="min-h-[400px]">
                 {activeSubTab === 'alumnos' && (
-                    <StudentList
-                        students={filteredStudents}
-                        loading={loading}
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        selectedId={selectedStudent?.id}
-                        onSelect={setSelectedStudent}
-                        onHistory={setHistoryStudent}
-                    />
+                    selectedStudent ? (
+                        <StudentProfile
+                            student={selectedStudent}
+                            onBack={() => setSelectedStudent(null)}
+                            onStudentUpdated={loadStudents}
+                        />
+                    ) : (
+                        <StudentList
+                            students={filteredStudents}
+                            loading={loading}
+                            searchTerm={searchTerm}
+                            onSearchChange={setSearchTerm}
+                            selectedId={selectedStudent?.id}
+                            onSelect={setSelectedStudent}
+                            onHistory={setHistoryStudent}
+                        />
+                    )
                 )}
                 {/* ... rest of tabs ... */}
                 {activeSubTab === 'calculadora' && (
@@ -781,7 +791,7 @@ Ejemplo de formato:
                                     }`}>
                                     {msg.role === 'assistant' ? (
                                         <div className="prose prose-invert prose-sm max-w-none">
-                                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                                         </div>
                                     ) : (
                                         <p>{msg.content}</p>
@@ -916,7 +926,7 @@ Ejemplo de formato:
                             .pdf-diet-content hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
                         `}} />
                         <div className="pdf-diet-content">
-                            <ReactMarkdown>{lastAIResponse.content}</ReactMarkdown>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lastAIResponse.content}</ReactMarkdown>
                         </div>
                     </div>
                 </div>

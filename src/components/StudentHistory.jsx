@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, BarChart3, Table2, TrendingUp, TrendingDown, Minus, Calendar, Loader2, Dumbbell, Apple } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getStudentPlans, getStudentMeasurements } from '../lib/supabase';
 import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
@@ -326,7 +327,7 @@ const StudentHistory = ({ student, isOpen, onClose }) => {
                                                                                         <Apple size={14} /> Plan Nutricional
                                                                                     </h4>
                                                                                     <div className="prose prose-invert prose-sm max-w-none text-zinc-300 text-xs leading-relaxed max-h-60 overflow-y-auto pr-2">
-                                                                                        <ReactMarkdown>{p.nutrition_plan_text}</ReactMarkdown>
+                                                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{p.nutrition_plan_text}</ReactMarkdown>
                                                                                     </div>
                                                                                 </div>
                                                                             )}
@@ -336,7 +337,7 @@ const StudentHistory = ({ student, isOpen, onClose }) => {
                                                                                         <Dumbbell size={14} /> Plan de Entrenamiento
                                                                                     </h4>
                                                                                     <div className="prose prose-invert prose-sm max-w-none text-zinc-300 text-xs leading-relaxed max-h-60 overflow-y-auto pr-2">
-                                                                                        <ReactMarkdown>{p.training_plan_text}</ReactMarkdown>
+                                                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{p.training_plan_text}</ReactMarkdown>
                                                                                     </div>
                                                                                 </div>
                                                                             )}
