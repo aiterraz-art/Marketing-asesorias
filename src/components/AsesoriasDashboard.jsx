@@ -139,9 +139,9 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
 
             {/* Mini Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatCard title="Alumnos Activos" value={students.length} icon={<Users className="text-primary" size={20} />} trend="Global" />
-                <StatCard title="Promedio Edad" value={Math.round(students.reduce((acc, s) => acc + (s.age || 0), 0) / (students.length || 1))} icon={<Calculator className="text-amber-500" size={20} />} trend="Años" />
-                <StatCard title="Último Registro" value={selectedStudent ? selectedStudent.full_name.split(' ')[0] : '---'} icon={<TrendingUp className="text-emerald-500" size={20} />} trend="Contexto" />
+                <StatCard title="Alumnos Activos" value={students?.length || 0} icon={<Users className="text-primary" size={20} />} trend="Global" />
+                <StatCard title="Promedio Edad" value={Math.round((students || []).reduce((acc, s) => acc + (s.age || 0), 0) / (students?.length || 1))} icon={<Calculator className="text-amber-500" size={20} />} trend="Años" />
+                <StatCard title="Último Registro" value={selectedStudent?.full_name ? selectedStudent.full_name.split(' ')[0] : '---'} icon={<TrendingUp className="text-emerald-500" size={20} />} trend="Contexto" />
             </div>
 
             {/* Tabs */}
@@ -614,11 +614,11 @@ Ejemplo de formato:
                         {selectedStudent ? (
                             <>
                                 <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-primary/20">
-                                    {selectedStudent.full_name.charAt(0)}
+                                    {selectedStudent?.full_name?.charAt(0)}
                                 </div>
                                 <div>
-                                    <p className="text-white font-semibold text-sm">Editando plan para: {selectedStudent.full_name}</p>
-                                    <p className="text-zinc-500 text-[10px] uppercase tracking-wider">Perfil Activo • ID: #{selectedStudent.id.substring(0, 8)}</p>
+                                    <p className="text-white font-semibold text-sm">Editando plan para: {selectedStudent?.full_name}</p>
+                                    <p className="text-zinc-500 text-[10px] uppercase tracking-wider">Perfil Activo • ID: #{selectedStudent?.id?.toString().substring(0, 8)}</p>
                                 </div>
                             </>
                         ) : (
@@ -1169,7 +1169,7 @@ const ProgressTracker = ({ selectedStudent }) => {
                     <div className="space-y-4">
                         <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
                             <span className="text-zinc-400 text-sm">Peso Actual</span>
-                            <span className="text-white font-bold">{measurements[measurements.length - 1]?.weight || selectedStudent.weight} kg</span>
+                            <span className="text-white font-bold">{measurements[measurements.length - 1]?.weight || selectedStudent?.weight || '--'} kg</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-zinc-900">
                             <span className="text-zinc-400 text-sm">Cambio Total</span>
