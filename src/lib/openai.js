@@ -422,7 +422,7 @@ export const generateImage = async (prompt) => {
 		throw error;
 	}
 };
-export const generateFitnessPlan = async (studentData, macros) => {
+export const generateFitnessPlan = async (studentData, macros, previousPlan = null) => {
 	if (!apiKey) throw new Error("OpenAI API Key not configured");
 
 	try {
@@ -437,6 +437,16 @@ export const generateFitnessPlan = async (studentData, macros) => {
         - Altura: ${studentData.height}cm
         - Nivel de actividad: ${studentData.activity_level}
         - Objetivo: ${studentData.goal}
+        
+        ${previousPlan ? `
+        CONTEXTO HISTÓRICO (PLAN ANTERIOR):
+        El alumno ya ha seguido este plan previamente:
+        Nutrición Previa: ${previousPlan.nutrition_plan_text?.substring(0, 300)}...
+        Entrenamiento Previo: ${previousPlan.training_plan_text?.substring(0, 300)}...
+        
+        INSTRUCCIÓN DE EVOLUCIÓN:
+        Basándote en el plan anterior, genera una **evolución** o variación del mismo para evitar estancamientos. Aumenta la intensidad o ajusta los alimentos ligeramente para mantener la adherencia.
+        ` : 'Este es el PRIMER plan para este alumno. Diseña una base sólida.'}
 
         MACRONUTRIENTES CALCULADOS:
         - Calorías objetivo: ${macros.calories} kcal
@@ -458,7 +468,7 @@ export const generateFitnessPlan = async (studentData, macros) => {
 
 		const completion = await openai.chat.completions.create({
 			messages: [
-				{ role: "system", content: "Eres un experto en transformación física." },
+				{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento." },
 				{ role: "user", content: planPrompt }
 			],
 			model: "gpt-5.2",
@@ -470,6 +480,46 @@ export const generateFitnessPlan = async (studentData, macros) => {
 
 	} catch (error) {
 		console.error("Fitness Plan Gen Error:", error);
+		throw error;
+	}
+};
+
+export const analyzeStudentProgress = async (studentData, history) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	if (!history || history.length < 2) {
+		return "No hay suficientes datos históricos para realizar un análisis de tendencias.";
+	}
+
+	try {
+		const analysisPrompt = `
+        Analiza el progreso del siguiente alumno basándote en su historial de peso:
+        
+        ALUMNO: ${studentData.full_name} (${studentData.age} años, Meta: ${studentData.goal})
+        
+        HISTORIAL DE PESO (Del más antiguo al más reciente):
+        ${history.map(h => `- ${h.date}: ${h.weight}kg (${h.fat ? h.fat + '% grasa' : 'sin dato de grasa'})`).join('\n')}
+        
+        TUS INSTRUCCIONES:
+        1. Analiza la tendencia: ¿Está perdiendo, ganando o manteniendo peso? ¿Es coherente con su meta de '${studentData.goal}'?
+        2. Detecta estancamientos o cambios bruscos peligrosos.
+        3. Da 3 recomendaciones prácticas y breves para la siguiente etapa.
+        
+        FORMATO DE RESPUESTA:
+        Texto plano, conciso (máximo 150 palabras), tono de entrenador profesional hablando directamente al coach (tú).
+    `;
+
+		const completion = await openai.chat.completions.create({
+			messages: [
+				{ role: "system", content: "Eres un analista de datos deportivos experto." },
+				{ role: "user", content: analysisPrompt }
+			],
+			model: "gpt-5.2"
+		});
+
+		return completion.choices[0].message.content;
+	} catch (error) {
+		console.error("Progress Analysis Error:", error);
 		throw error;
 	}
 };
