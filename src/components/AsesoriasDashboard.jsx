@@ -20,6 +20,7 @@ import {
     Check
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
+import { MOCK_STUDENT } from '../lib/mockData';
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTrainingAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
 import StudentHistory from './StudentHistory';
@@ -1244,7 +1245,7 @@ const ProgressTracker = ({ selectedStudent }) => {
 
 const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestPlan, onSavePlan }) => {
     const [data, setData] = useState({
-        split: 'PPL',
+        split: 'PPL (Push/Pull/Legs)',
         daysPerWeek: 4,
         experience: 'Intermedio',
         extraSport: ''
@@ -1258,6 +1259,9 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
     const chatEndRef = useRef(null);
     const trainingContentRef = useRef(null);
 
+    const isDemoMode = !selectedStudent;
+    const activeStudent = selectedStudent || MOCK_STUDENT;
+
     useEffect(() => {
         // Reset chat when student changes
         setChatMessages([]);
@@ -1269,45 +1273,37 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
     }, [chatMessages]);
 
     const handleGenerateRoutine = async () => {
-        if (!selectedStudent) {
-            alert("Selecciona un alumno primero.");
-            return;
-        }
-        setShowChat(true);
         setIsChatLoading(true);
+        setShowChat(true);
 
-        const initialMessage = {
-            role: 'user',
-            content: `Genera una rutina de entrenamiento completa para ${selectedStudent.full_name} con los siguientes parámetros:
-            - Split: ${data.split}
-            - Días: ${data.daysPerWeek}
-            - Experiencia: ${data.experience}
-            - Deporte extra: ${data.extraSport || 'Ninguno'}`
-        };
-        setChatMessages([initialMessage]);
+        const initialUserMsg = `Genera una rutina ${data.split} de ${data.daysPerWeek} días para un nivel ${data.experience}${data.extraSport ? ` enfocado en mejorar en ${data.extraSport}` : ''}.`;
+
+        setChatMessages([{ role: 'user', content: initialUserMsg }]);
 
         try {
-            const response = await chatTrainingAssistant([initialMessage], selectedStudent, data);
+            const response = await chatTrainingAssistant([], activeStudent, data);
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
-            console.error("Error generating routine:", err);
+            console.error("Error in training chat:", err);
             setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error al generar la rutina. Inténtalo de nuevo.' }]);
         } finally {
             setIsChatLoading(false);
         }
     };
 
-    const handleSendMessage = async () => {
+    const handleSendMessage = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
         if (!chatInput.trim() || isChatLoading) return;
 
-        const userMsg = { role: 'user', content: chatInput };
-        const updatedHistory = [...chatMessages, userMsg];
-        setChatMessages(updatedHistory);
+        const userMsg = chatInput;
         setChatInput('');
+
+        const updatedHistory = [...chatMessages, { role: 'user', content: userMsg }];
+        setChatMessages(updatedHistory);
         setIsChatLoading(true);
 
         try {
-            const response = await chatTrainingAssistant(updatedHistory, selectedStudent, data);
+            const response = await chatTrainingAssistant(updatedHistory, activeStudent, data);
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
             console.error("Error in training chat:", err);
@@ -1329,7 +1325,6 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
             await onSavePlan({
                 student_id: selectedStudent.id,
                 training_plan_text: lastAIRoutined || null,
-                // Incluir macros del último plan para evitar error NOT NULL en DB
                 calories: latestPlan?.calories || 0,
                 protein_g: latestPlan?.protein_g || 0,
                 fat_g: latestPlan?.fat_g || 0,
@@ -1350,7 +1345,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
 
         const opt = {
             margin: [10, 10, 10, 10],
-            filename: `Rutina_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
+            filename: `Rutina_${activeStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -1502,12 +1497,19 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                             <p className="text-zinc-500 text-xs">Define el enfoque del entrenamiento</p>
                         </div>
                     </div>
-                    {selectedStudent && (
-                        <div className="flex items-center gap-2 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-zinc-800">
-                            <Users size={14} className="text-zinc-500" />
-                            <span className="text-xs text-white font-medium">{selectedStudent.full_name}</span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                        {isDemoMode ? (
+                            <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-1 text-blue-400 rounded-full border border-blue-500/20 text-[10px] font-bold uppercase tracking-wider">
+                                <Sparkles size={10} />
+                                Modo Prueba
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-zinc-800">
+                                <Users size={14} className="text-zinc-500" />
+                                <span className="text-xs text-white font-medium">{selectedStudent.full_name}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1585,17 +1587,18 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                 <div className="pt-4 flex gap-3">
                     <button
                         onClick={handleGenerateRoutine}
-                        disabled={!selectedStudent || isChatLoading}
+                        disabled={isChatLoading}
                         className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Sparkles size={20} />
-                        Generar Rutina con IA
+                        {isDemoMode ? "Probar Generador con IA" : "Generar Rutina con IA"}
                     </button>
                     {lastAIResponse && (
                         <button
                             onClick={handleSave}
-                            disabled={isSaving}
-                            className="px-6 py-4 bg-zinc-900 border border-zinc-800 text-zinc-400 font-bold rounded-xl hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center gap-2"
+                            disabled={isSaving || isDemoMode}
+                            className={`px-6 py-4 bg-zinc-900 border border-zinc-800 text-zinc-400 font-bold rounded-xl hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center gap-2 ${isDemoMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title={isDemoMode ? "Selecciona un alumno para guardar" : ""}
                         >
                             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                             {isSaving ? "Guardando..." : "Guardar en Ficha"}

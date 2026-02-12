@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Download, FileText, Check, Loader2 } from 'lucide-react';
+import { Sparkles, Download, FileText, Check, Loader2, Users } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import html2pdf from 'html2pdf.js';
+import { MOCK_STUDENT } from '../lib/mockData';
 
 const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState(null);
     const [isExporting, setIsExporting] = useState(false);
+
+    const isDemoMode = !selectedStudent;
+    const activeStudent = selectedStudent || MOCK_STUDENT;
+    // Si estamos en modo demo, usamos unos macros por defecto si no vienen
+    const activeMacros = macros || { calories: 2500, protein: 180, fat: 70, carbs: 280 };
 
     // Cargar plan guardado si existe al cambiar de alumno
     useEffect(() => {
@@ -22,16 +28,11 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
     }, [selectedStudent, latestPlan]);
 
     const handleGenerate = async () => {
-        if (!selectedStudent) {
-            alert("Selecciona un alumno primero.");
-            return;
-        }
-
         setIsGenerating(true);
         try {
             // Importar dinámicamente para evitar problemas de dependencias circulares si los hubiera
             const { generateFitnessPlan } = await import('../lib/openai');
-            const plan = await generateFitnessPlan(selectedStudent, macros, latestPlan);
+            const plan = await generateFitnessPlan(activeStudent, activeMacros, latestPlan);
             setGeneratedPlan(plan);
         } catch (error) {
             console.error("Error generating plan:", error);
@@ -98,9 +99,9 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                     Utiliza nuestra inteligencia artificial para redactar protocolos de entrenamiento y nutrición 100% personalizados basados en los datos de {selectedStudent?.full_name || 'tu alumno'}.
                 </p>
                 <button
-                    disabled={isGenerating || !selectedStudent}
+                    disabled={isGenerating}
                     onClick={handleGenerate}
-                    className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 mx-auto ${isGenerating || !selectedStudent
+                    className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 mx-auto ${isGenerating
                         ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                         : 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20'
                         }`}
@@ -113,7 +114,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                     ) : (
                         <>
                             <Sparkles size={20} />
-                            Generar Plan Completo
+                            {isDemoMode ? "Probar Generador con IA" : "Generar Plan Completo"}
                         </>
                     )}
                 </button>
@@ -135,13 +136,15 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                 {isExporting ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                                 Descargar PDF
                             </button>
-                            <button
-                                onClick={handleConfirm}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity"
-                            >
-                                <Check size={18} />
-                                Confirmar y Guardar
-                            </button>
+                            {!isDemoMode && (
+                                <button
+                                    onClick={handleConfirm}
+                                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity"
+                                >
+                                    <Check size={18} />
+                                    Confirmar y Guardar
+                                </button>
+                            )}
                         </div>
                     </div>
 
