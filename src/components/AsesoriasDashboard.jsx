@@ -519,18 +519,17 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
         }
     };
 
+    const isDemoMode = !selectedStudent;
+    const activeStudent = selectedStudent || MOCK_STUDENT;
+
     // Generar dieta inicial con IA
     const handleGenerateDiet = async () => {
-        if (!selectedStudent) {
-            alert("Selecciona un alumno primero.");
-            return;
-        }
         setShowChat(true);
         setIsChatLoading(true);
 
         const initialMessage = {
             role: 'user',
-            content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}.
+            content: `Genera un plan de alimentación completo y detallado para ${activeStudent.full_name}.
 
 IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
 PROHIBIDO: No incluyas saludos, ni despedidas, ni preguntas, ni comentarios introductorios. Sólo entrega el plan de alimentación y las tablas.
@@ -563,7 +562,7 @@ Ejemplo de formato:
 
         try {
             const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs, useWhey };
-            const response = await chatDietAssistant([initialMessage], selectedStudent, macros);
+            const response = await chatDietAssistant([initialMessage], activeStudent, macros);
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
             console.error("Error generating diet:", err);
@@ -799,27 +798,23 @@ Ejemplo de formato:
                             </button>
                         </div>
 
-                        <div className="flex gap-3 mt-4">
+                        <div className="flex gap-4">
                             <button
-                                disabled={isSaving}
                                 onClick={handleSave}
-                                className={`flex-1 py-4 text-white border border-zinc-800 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isSaving ? 'bg-zinc-800 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20'
-                                    }`}
+                                disabled={isSaving || isDemoMode}
+                                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-bold transition-all shadow-lg ${isDemoMode ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-primary text-white hover:opacity-90 shadow-primary/20'}`}
+                                title={isDemoMode ? "Selecciona un alumno para guardar" : ""}
                             >
-                                {isSaving ? "Guardando..." : (
-                                    <>
-                                        <TrendingUp size={20} />
-                                        {selectedStudent ? `Guardar Plan` : "Asignar Plan"}
-                                    </>
-                                )}
+                                {isSaving ? <Loader2 size={20} className="animate-spin" /> : <TrendingUp size={20} />}
+                                {isSaving ? "Guardando..." : "Asignar Plan"}
                             </button>
                             <button
                                 onClick={handleGenerateDiet}
-                                disabled={!selectedStudent || isChatLoading}
-                                className="flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isChatLoading}
+                                className="flex-1 flex items-center justify-center gap-2 py-4 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-900/20"
                             >
-                                <Sparkles size={20} />
-                                Generar Dieta IA
+                                {isChatLoading ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                                {isDemoMode ? "Probar Generar Dieta IA" : "Generar Dieta IA"}
                             </button>
                         </div>
                     </div>
