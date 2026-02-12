@@ -641,10 +641,14 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName }) => {
                             {new Date(plan.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
                         </p>
                         <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
-                            <span>{plan.calories} kcal</span>
-                            <span>P: {plan.protein_g}g</span>
-                            <span>G: {plan.fat_g}g</span>
-                            <span>C: {plan.carbs_g}g</span>
+                            {(plan.calories > 0 || plan.protein_g > 0 || plan.fat_g > 0 || plan.carbs_g > 0) && (
+                                <>
+                                    <span>{plan.calories} kcal</span>
+                                    <span>P: {plan.protein_g}g</span>
+                                    <span>G: {plan.fat_g}g</span>
+                                    <span>C: {plan.carbs_g}g</span>
+                                </>
+                            )}
                             <span className="capitalize px-1.5 py-0.5 bg-zinc-900 rounded text-[10px]">
                                 {GOAL_LABELS[plan.goal] || plan.goal}
                             </span>

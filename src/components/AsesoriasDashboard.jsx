@@ -1328,7 +1328,13 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         try {
             await onSavePlan({
                 student_id: selectedStudent.id,
-                training_plan_text: lastAIRoutined || null
+                training_plan_text: lastAIRoutined || null,
+                // Incluir macros del último plan para evitar error NOT NULL en DB
+                calories: latestPlan?.calories || 0,
+                protein_g: latestPlan?.protein_g || 0,
+                fat_g: latestPlan?.fat_g || 0,
+                carbs_g: latestPlan?.carbs_g || 0,
+                goal: latestPlan?.goal || selectedStudent.goal || 'maintenance'
             });
         } finally {
             setIsSaving(false);
