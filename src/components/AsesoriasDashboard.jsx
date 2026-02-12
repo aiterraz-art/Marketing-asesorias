@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Users,
-    Calculator,
-    Dumbbell,
-    TrendingUp,
-    Plus,
-    Search,
-    ChevronRight,
-    UserPlus
-} from 'lucide-react';
+import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData } from '../lib/supabase';
 
-const AsesoriasDashboard = ({ activeTab, setActiveTab }) => {
+const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelectedStudent }) => {
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadStudents = async () => {
+            try {
+                const data = await getStudents();
+                setStudents(data);
+            } catch (err) {
+                console.error("Error loading students:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadStudents();
+    }, []);
+
     // Mapeamos las pestañas del sidebar a los sub-componentes internos
     const activeSubTab = activeTab === 'nutricion' ? 'calculadora' :
         activeTab === 'alumnos' ? 'alumnos' :
@@ -54,10 +61,30 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab }) => {
             </div>
 
             <main className="min-h-[400px]">
-                {activeSubTab === 'alumnos' && <StudentList />}
-                {activeSubTab === 'calculadora' && <NutritionCalculator />}
-                {activeSubTab === 'rutinas' && <RoutineDesigner />}
-                {activeSubTab === 'progreso' && <ProgressTracker />}
+                {activeSubTab === 'alumnos' && (
+                    <StudentList
+                        students={students}
+                        loading={loading}
+                        selectedId={selectedStudent?.id}
+                        onSelect={setSelectedStudent}
+                    />
+                )}
+                {activeSubTab === 'calculadora' && (
+                    <NutritionCalculator
+                        selectedStudent={selectedStudent}
+                        onSavePlan={async (plan) => {
+                            try {
+                                await saveStudentPlan(plan);
+                                alert("¡Plan guardado con éxito!");
+                            } catch (err) {
+                                console.error("Error saving plan:", err);
+                                alert("Error al guardar el plan.");
+                            }
+                        }}
+                    />
+                )}
+                {activeSubTab === 'rutinas' && <RoutineDesigner selectedStudent={selectedStudent} />}
+                {activeSubTab === 'progreso' && <ProgressTracker selectedStudent={selectedStudent} />}
             </main>
         </div>
     );
@@ -90,7 +117,7 @@ const SubTab = ({ label, isActive, onClick, icon }) => (
     </button>
 );
 
-const StudentList = () => (
+const StudentList = ({ students, loading, onSelect, selectedId }) => (
     <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
@@ -103,23 +130,31 @@ const StudentList = () => (
             </div>
         </div>
         <div className="divide-y divide-zinc-900">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="p-4 flex items-center justify-between hover:bg-zinc-900/30 cursor-pointer transition-colors group">
+            {loading ? (
+                <div className="p-12 text-center text-zinc-500">Cargando alumnos...</div>
+            ) : students.length === 0 ? (
+                <div className="p-12 text-center text-zinc-500">No hay alumnos registrados.</div>
+            ) : students.map((s) => (
+                <div
+                    key={s.id}
+                    onClick={() => onSelect(s)}
+                    className={`p-4 flex items-center justify-between hover:bg-zinc-900/30 cursor-pointer transition-colors group ${selectedId === s.id ? 'bg-primary/5 border-l-2 border-primary' : ''}`}
+                >
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400 font-bold">
-                            A{i}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${selectedId === s.id ? 'bg-primary text-white border-primary' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
+                            {s.full_name.charAt(0)}
                         </div>
                         <div>
-                            <h3 className="text-white font-medium">Alumno de Prueba {i}</h3>
-                            <p className="text-zinc-500 text-xs text-zinc-600">Último contacto: hace 2 días</p>
+                            <h3 className="text-white font-medium">{s.full_name}</h3>
+                            <p className="text-zinc-500 text-xs">{s.goal === 'cut' ? 'Definición' : s.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-emerald-500 text-sm font-medium">-1.2kg</span>
-                            <span className="text-zinc-600 text-xs">Esta semana</span>
+                            <span className="text-zinc-400 text-sm font-medium">{s.weight}kg</span>
+                            <span className="text-zinc-600 text-[10px] uppercase tracking-wider">{s.age} años</span>
                         </div>
-                        <ChevronRight className="text-zinc-700 group-hover:text-primary transition-colors" size={20} />
+                        <ChevronRight className={`transition-colors ${selectedId === s.id ? 'text-primary' : 'text-zinc-700 group-hover:text-primary'}`} size={20} />
                     </div>
                 </div>
             ))}
@@ -127,18 +162,33 @@ const StudentList = () => (
     </div>
 );
 
-const NutritionCalculator = () => {
+const NutritionCalculator = ({ selectedStudent, onSavePlan }) => {
     const [data, setData] = useState({
-        weight: 80,
-        height: 180,
-        age: 25,
-        activity: 1.2,
-        goal: 'maintenance',
+        weight: selectedStudent?.weight || 80,
+        height: selectedStudent?.height || 180,
+        age: selectedStudent?.age || 25,
+        activity: selectedStudent?.activity_level || 1.2,
+        goal: selectedStudent?.goal || 'maintenance',
         protein: 160,
         fat: 70
     });
 
     const [results, setResults] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Actualizar datos si cambia el alumno seleccionado
+    useEffect(() => {
+        if (selectedStudent) {
+            setData(prev => ({
+                ...prev,
+                weight: selectedStudent.weight || prev.weight,
+                height: selectedStudent.height || prev.height,
+                age: selectedStudent.age || prev.age,
+                activity: selectedStudent.activity_level || prev.activity,
+                goal: selectedStudent.goal || prev.goal
+            }));
+        }
+    }, [selectedStudent]);
 
     // Simulación de llamada a la función SQL de Supabase
     const calculate = () => {
@@ -166,90 +216,142 @@ const NutritionCalculator = () => {
         calculate();
     }, [data]);
 
+    const handleSave = async () => {
+        if (!selectedStudent) {
+            alert("Por favor, selecciona un alumno primero.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await onSavePlan({
+                student_id: selectedStudent.id,
+                calories: results.calories,
+                protein_g: data.protein,
+                fat_g: data.fat,
+                carbs_g: results.carbs,
+                goal: data.goal
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-surface border border-zinc-900 p-6 rounded-xl space-y-6">
-                <h2 className="text-lg font-semibold text-white">Datos Biométricos</h2>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <InputGroup label="Peso (kg)" value={data.weight} onChange={(v) => setData({ ...data, weight: v })} />
-                    <InputGroup label="Altura (cm)" value={data.height} onChange={(v) => setData({ ...data, height: v })} />
-                    <InputGroup label="Edad" value={data.age} onChange={(v) => setData({ ...data, age: v })} />
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actividad</label>
-                        <select
-                            value={data.activity}
-                            onChange={(e) => setData({ ...data, activity: parseFloat(e.target.value) })}
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-primary outline-none"
-                        >
-                            <option value="1.2">Sedentario</option>
-                            <option value="1.375">Ligero</option>
-                            <option value="1.55">Moderado</option>
-                            <option value="1.725">Intenso</option>
-                            <option value="1.9">Muy Intenso</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Objetivo</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        {['cut', 'maintenance', 'bulk'].map((g) => (
-                            <button
-                                key={g}
-                                onClick={() => setData({ ...data, goal: g })}
-                                className={`py-2 px-3 rounded-lg text-xs font-medium border transition-all ${data.goal === g
-                                    ? 'bg-primary/10 border-primary text-primary'
-                                    : 'bg-black border-zinc-800 text-zinc-500'
-                                    }`}
-                            >
-                                {g === 'cut' ? 'Definición' : g === 'bulk' ? 'Volumen' : 'Mantenimiento'}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="pt-4 border-t border-zinc-900 space-y-4">
-                    <h2 className="text-lg font-semibold text-white">Configuración de Macros</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        <InputGroup label="Proteína (g)" value={data.protein} onChange={(v) => setData({ ...data, protein: v })} />
-                        <InputGroup label="Grasas (g)" value={data.fat} onChange={(v) => setData({ ...data, fat: v })} />
-                    </div>
-                </div>
-            </div>
-
-            {results && (
-                <div className="bg-surface border border-zinc-900 p-6 rounded-xl space-y-8 flex flex-col justify-center">
-                    <div className="text-center space-y-2">
-                        <p className="text-zinc-500 text-sm">Objetivo Diario</p>
-                        <h3 className="text-5xl font-black text-white italic">
-                            {results.calories} <span className="text-lg font-normal not-italic text-zinc-500">kcal</span>
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                        <MacroBox label="Proteína" value={data.protein} unit="g" color="bg-primary" pct={Math.round((data.protein * 4 / results.calories) * 100)} />
-                        <MacroBox label="Grasas" value={data.fat} unit="g" color="bg-amber-500" pct={Math.round((data.fat * 9 / results.calories) * 100)} />
-                        <MacroBox label="Carbs" value={results.carbs} unit="g" color="bg-blue-500" pct={Math.round((results.carbs * 4 / results.calories) * 100)} />
-                    </div>
-
-                    <div className="space-y-4 pt-8">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-zinc-500">Tasa Metabólica Basal (BMR)</span>
-                            <span className="text-white font-mono">{results.bmr} kcal</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                            <span className="text-zinc-500">Gasto Total Diario (TDEE)</span>
-                            <span className="text-white font-mono">{results.tdee} kcal</span>
-                        </div>
-                    </div>
-
-                    <button className="w-full py-4 mt-8 bg-zinc-900 text-white border border-zinc-800 rounded-xl font-bold hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2">
-                        <TrendingUp size={20} />
-                        Asignar Plan al Alumno
-                    </button>
+        <div className="space-y-6">
+            {!selectedStudent && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-amber-500 text-sm flex items-center gap-3">
+                    <Users size={18} />
+                    <span>Estás en modo libre. Selecciona un alumno en la lista para guardar su plan permanentemente.</span>
                 </div>
             )}
+
+            {selectedStudent && (
+                <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs">
+                            {selectedStudent.full_name.charAt(0)}
+                        </div>
+                        <div>
+                            <p className="text-white font-medium text-sm">Editando plan para: {selectedStudent.full_name}</p>
+                            <p className="text-zinc-500 text-[10px] uppercase">ID: #{selectedStudent.id}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-surface border border-zinc-900 p-6 rounded-xl space-y-6">
+                    <h2 className="text-lg font-semibold text-white">Datos Biométricos</h2>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputGroup label="Peso (kg)" value={data.weight} onChange={(v) => setData({ ...data, weight: v })} />
+                        <InputGroup label="Altura (cm)" value={data.height} onChange={(v) => setData({ ...data, height: v })} />
+                        <InputGroup label="Edad" value={data.age} onChange={(v) => setData({ ...data, age: v })} />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actividad</label>
+                            <select
+                                value={data.activity}
+                                onChange={(e) => setData({ ...data, activity: parseFloat(e.target.value) })}
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-primary outline-none"
+                            >
+                                <option value="1.2">Sedentario</option>
+                                <option value="1.375">Ligero</option>
+                                <option value="1.55">Moderado</option>
+                                <option value="1.725">Intenso</option>
+                                <option value="1.9">Muy Intenso</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Objetivo</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['cut', 'maintenance', 'bulk'].map((g) => (
+                                <button
+                                    key={g}
+                                    onClick={() => setData({ ...data, goal: g })}
+                                    className={`py-2 px-3 rounded-lg text-xs font-medium border transition-all ${data.goal === g
+                                        ? 'bg-primary/10 border-primary text-primary'
+                                        : 'bg-black border-zinc-800 text-zinc-500'
+                                        }`}
+                                >
+                                    {g === 'cut' ? 'Definición' : g === 'bulk' ? 'Volumen' : 'Mantenimiento'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-zinc-900 space-y-4">
+                        <h2 className="text-lg font-semibold text-white">Configuración de Macros</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputGroup label="Proteína (g)" value={data.protein} onChange={(v) => setData({ ...data, protein: v })} />
+                            <InputGroup label="Grasas (g)" value={data.fat} onChange={(v) => setData({ ...data, fat: v })} />
+                        </div>
+                    </div>
+                </div>
+
+                {results && (
+                    <div className="bg-surface border border-zinc-900 p-6 rounded-xl space-y-8 flex flex-col justify-center">
+                        <div className="text-center space-y-2">
+                            <p className="text-zinc-500 text-sm">Objetivo Diario</p>
+                            <h3 className="text-5xl font-black text-white italic">
+                                {results.calories} <span className="text-lg font-normal not-italic text-zinc-500">kcal</span>
+                            </h3>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                            <MacroBox label="Proteína" value={data.protein} unit="g" color="bg-primary" pct={Math.round((data.protein * 4 / results.calories) * 100)} />
+                            <MacroBox label="Grasas" value={data.fat} unit="g" color="bg-amber-500" pct={Math.round((data.fat * 9 / results.calories) * 100)} />
+                            <MacroBox label="Carbs" value={results.carbs} unit="g" color="bg-blue-500" pct={Math.round((results.carbs * 4 / results.calories) * 100)} />
+                        </div>
+
+                        <div className="space-y-4 pt-8">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-zinc-500">Tasa Metabólica Basal (BMR)</span>
+                                <span className="text-white font-mono">{results.bmr} kcal</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-zinc-500">Gasto Total Diario (TDEE)</span>
+                                <span className="text-white font-mono">{results.tdee} kcal</span>
+                            </div>
+                        </div>
+
+                        <button
+                            disabled={isSaving}
+                            onClick={handleSave}
+                            className={`w-full py-4 mt-8 text-white border border-zinc-800 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isSaving ? 'bg-zinc-800 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20'
+                                }`}
+                        >
+                            {isSaving ? "Guardando..." : (
+                                <>
+                                    <TrendingUp size={20} />
+                                    {selectedStudent ? `Guardar Plan para ${selectedStudent.full_name.split(' ')[0]}` : "Asignar Plan"}
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

@@ -34,13 +34,26 @@ function App() {
     return localStorage.getItem('appMode') || 'marketing';
   });
 
+  const [selectedStudent, setSelectedStudent] = useState(() => {
+    const saved = localStorage.getItem('selectedStudent');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [isSidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
 
-  // Update theme on body
+  // Update theme and persistence
   React.useEffect(() => {
     document.documentElement.setAttribute('data-theme', appMode);
     localStorage.setItem('appMode', appMode);
   }, [appMode]);
+
+  React.useEffect(() => {
+    if (selectedStudent) {
+      localStorage.setItem('selectedStudent', JSON.stringify(selectedStudent));
+    } else {
+      localStorage.removeItem('selectedStudent');
+    }
+  }, [selectedStudent]);
 
   // Sync state changes to URL
   const setActiveTab = (tab) => {
@@ -62,7 +75,14 @@ function App() {
 
   const renderContent = () => {
     if (appMode === 'asesorias') {
-      return <AsesoriasDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
+      return (
+        <AsesoriasDashboard
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          selectedStudent={selectedStudent}
+          setSelectedStudent={setSelectedStudent}
+        />
+      );
     }
 
     switch (activeTab) {
@@ -159,7 +179,6 @@ function App() {
               <NavItem
                 icon={<Sparkles size={20} />}
                 label="Generador"
-                isActive={activeTab === 'generator'}
                 isActive={activeTab === 'generator'}
                 onClick={() => { setActiveTab('generator'); setSidebarOpen(false); }}
               />

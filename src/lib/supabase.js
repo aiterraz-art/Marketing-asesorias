@@ -56,3 +56,50 @@ export const deleteBrandVoice = async (id) => {
     if (error) throw error;
     return true;
 }
+// Students Helpers
+
+export const getStudents = async () => {
+    const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('full_name', { ascending: true });
+
+    if (error) throw error;
+    return data;
+}
+
+export const getStudentPlan = async (studentId) => {
+    const { data, error } = await supabase
+        .from('student_plans')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data;
+}
+
+export const saveStudentPlan = async (plan) => {
+    const { data, error } = await supabase
+        .from('student_plans')
+        .insert([plan])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export const updateStudentData = async (id, updates) => {
+    const { data, error } = await supabase
+        .from('students')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
