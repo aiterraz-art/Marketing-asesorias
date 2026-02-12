@@ -492,6 +492,8 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             return;
         }
         setIsSaving(true);
+        const lastAIDiet = [...chatMessages].reverse().find(m => m.role === 'assistant')?.content;
+
         try {
             await onSavePlan({
                 student_id: selectedStudent.id,
@@ -499,7 +501,8 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                 protein_g: data.protein,
                 fat_g: data.fat,
                 carbs_g: results.carbs,
-                goal: data.goal
+                goal: data.goal,
+                nutrition_plan_text: lastAIDiet || null
             });
         } finally {
             setIsSaving(false);
@@ -520,6 +523,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}.
 
 IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
+PROHIBIDO: No incluyas saludos, ni despedidas, ni preguntas, ni comentarios introductorios. Sólo entrega el plan de alimentación y las tablas.
 
 ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
 - Proteínas: pollo, carne de vacuno, huevos enteros${useWhey ? ', proteína whey' : ''}

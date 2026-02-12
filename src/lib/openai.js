@@ -556,8 +556,8 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
           2. Medida visual (cucharadas soperas, vasos, puños, palmas, unidades)
         - Los macros totales deben cuadrar lo más exacto posible con el objetivo.
         - Al final de cada dieta, incluye un RESUMEN de macros totales vs. objetivo.
-        - Sé flexible: si piden cambiar un alimento, ajusta manteniendo los macros.
-        - Si dicen "versión final", genera el plan completo y limpio sin comentarios extra.
+        - **PROHIBIDO**: No incluyas intros ("Aquí tienes tu plan"), ni cierres ("Espero que te guste"), ni preguntas ("¿Quieres cambiar algo?"), ni comentarios técnicos.
+        - **SÓLO EL PLAN**: La respuesta debe ser el plan de alimentación y nada más. No opines, no preguntes, no sugieras.
         `;
 
 		const messages = [

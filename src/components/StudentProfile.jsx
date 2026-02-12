@@ -5,7 +5,7 @@ import {
     ArrowLeft, User, Ruler, Weight, Target, Activity, Calendar,
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
-    Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart
+    Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
@@ -397,6 +397,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                 type="nutrition"
                                 isExpanded={expandedPlan === `n-${plan.id}`}
                                 onToggle={() => setExpandedPlan(expandedPlan === `n-${plan.id}` ? null : `n-${plan.id}`)}
+                                studentName={student.full_name}
                             />
                         ))
                     )}
@@ -427,6 +428,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                 type="training"
                                 isExpanded={expandedPlan === `t-${plan.id}`}
                                 onToggle={() => setExpandedPlan(expandedPlan === `t-${plan.id}` ? null : `t-${plan.id}`)}
+                                studentName={student.full_name}
                             />
                         ))
                     )}
@@ -600,9 +602,29 @@ const EditField = ({ label, value, onChange, type = 'text' }) => (
     </div>
 );
 
-const PlanCard = ({ plan, type, isExpanded, onToggle }) => {
+const PlanCard = ({ plan, type, isExpanded, onToggle, studentName }) => {
     const content = type === 'nutrition' ? plan.nutrition_plan_text : plan.training_plan_text;
     const isNutrition = type === 'nutrition';
+    const contentRef = useRef(null);
+
+    const handleExportPDF = (e) => {
+        e.stopPropagation();
+        const element = contentRef.current;
+        if (!element) return;
+
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `Plan_${isNutrition ? 'Nutricion' : 'Entrenamiento'}_${studentName.replace(/\s+/g, '_')}_${new Date(plan.created_at).toLocaleDateString()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        import('html2pdf.js').then(html2pdf => {
+            html2pdf.default().set(opt).from(element).save();
+        });
+    };
 
     return (
         <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden transition-all">
@@ -629,11 +651,22 @@ const PlanCard = ({ plan, type, isExpanded, onToggle }) => {
                         </div>
                     </div>
                 </div>
-                {isExpanded ? <ChevronUp size={18} className="text-zinc-500" /> : <ChevronDown size={18} className="text-zinc-500" />}
+                <div className="flex items-center gap-2">
+                    {content && (
+                        <button
+                            onClick={handleExportPDF}
+                            className="p-2 text-zinc-500 hover:text-white transition-colors"
+                            title="Descargar PDF"
+                        >
+                            <Download size={18} />
+                        </button>
+                    )}
+                    {isExpanded ? <ChevronUp size={18} className="text-zinc-500" /> : <ChevronDown size={18} className="text-zinc-500" />}
+                </div>
             </button>
             {isExpanded && content && (
                 <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300">
-                    <div className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed">
+                    <div ref={contentRef} className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-black/20 p-4 rounded-lg">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
                     </div>
                 </div>
