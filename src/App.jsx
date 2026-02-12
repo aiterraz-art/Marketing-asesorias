@@ -17,6 +17,7 @@ import ContentCalendar from './components/ContentCalendar';
 import AIChatAssistant from './components/AIChatAssistant';
 import AdsAnalytics from './components/AdsAnalytics';
 import UnifiedDashboard from './components/UnifiedDashboard';
+import AsesoriasDashboard from './components/AsesoriasDashboard';
 
 function App() {
   // Initialize from URL or default to 'home'
@@ -25,7 +26,17 @@ function App() {
     return params.get('tab') || 'home';
   });
 
+  const [appMode, setAppMode] = useState(() => {
+    return localStorage.getItem('appMode') || 'marketing';
+  });
+
   const [isSidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
+
+  // Update theme on body
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', appMode);
+    localStorage.setItem('appMode', appMode);
+  }, [appMode]);
 
   // Sync state changes to URL
   const setActiveTab = (tab) => {
@@ -46,6 +57,10 @@ function App() {
   }, []);
 
   const renderContent = () => {
+    if (appMode === 'asesorias') {
+      return <AsesoriasDashboard />;
+    }
+
     switch (activeTab) {
       case 'home':
         return <UnifiedDashboard setActiveTab={setActiveTab} />;
@@ -88,11 +103,23 @@ function App() {
         className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } fixed lg:relative lg:translate-x-0 z-40 w-64 h-full bg-surface border-r border-zinc-900 flex flex-col transition-transform duration-300 shadow-2xl`}
       >
-        <div className="p-6 flex items-center gap-3 border-b border-zinc-900">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-orange-700 flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">
-            M
+        <div className="p-6 flex items-center justify-between border-b border-zinc-900">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg transition-colors ${appMode === 'marketing' ? 'bg-primary' : 'bg-primary shadow-primary/20'}`}>
+              {appMode === 'marketing' ? 'M' : 'A'}
+            </div>
+            <span className="font-bold text-lg tracking-wide text-white">
+              {appMode === 'marketing' ? 'Marketing OS' : 'Asesorías OS'}
+            </span>
           </div>
-          <span className="font-bold text-lg tracking-wide text-white">Marketing OS</span>
+
+          <button
+            onClick={() => setAppMode(appMode === 'marketing' ? 'asesorias' : 'marketing')}
+            className={`p-1.5 rounded-md border transition-all ${appMode === 'marketing' ? 'border-zinc-800 text-zinc-500' : 'border-primary/30 text-primary bg-primary/10'}`}
+            title="Cambiar Modo"
+          >
+            <Sparkles size={16} />
+          </button>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">

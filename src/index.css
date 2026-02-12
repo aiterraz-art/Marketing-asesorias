@@ -1,18 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #000000;
-  --color-surface: #121212;
-  --color-primary: #f97316;
-  /* Orange 500 */
-  --color-secondary: #3f3f46;
-  /* Zinc 700 */
-  --color-accent: #27272a;
-  /* Zinc 800 */
+  --color-marketing-background: #000000;
+  --color-marketing-surface: #121212;
+  --color-marketing-primary: #f97316;
+
+  --color-asesorias-background: #0a0a0c;
+  --color-asesorias-surface: #151518;
+  --color-asesorias-primary: #a855f7;
+  /* Purple 500 */
+  --color-asesorias-accent: #7c3aed;
+  /* Violet 600 */
 }
 
 :root {
   color-scheme: dark;
+  --app-bg: var(--color-marketing-background);
+  --app-surface: var(--color-marketing-surface);
+  --app-primary: var(--color-marketing-primary);
+  --app-accent: #27272a;
+}
+
+[data-theme='asesorias'] {
+  --app-bg: var(--color-asesorias-background);
+  --app-surface: var(--color-asesorias-surface);
+  --app-primary: var(--color-asesorias-primary);
+  --app-accent: var(--color-asesorias-accent);
 }
 
 body {
