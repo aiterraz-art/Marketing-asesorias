@@ -464,6 +464,7 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         - Tono profesional, motivador y directo.
         - Usa Markdown para dar formato profesional (negritas, listas, tablas).
         - El plan debe ser realista y sostenible.
+        - **IMPORTANTE**: No uses claras de huevo solas. Usa siempre **huevos enteros** para mayor facilidad del alumno.
         `;
 
 		const completion = await openai.chat.completions.create({
@@ -548,7 +549,7 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         REGLAS OBLIGATORIAS:
         - Habla directamente al alumno en segunda persona (tú). NUNCA mensajes al coach.
         - Responde en español CHILENO: usa "descremado" (no desnatado), "palta" (no aguacate), "porotos" (no judías), "choclo" (no elote), "zapallo italiano" (no calabacín).
-        - Usa SOLO alimentos comunes: pollo, carne de vacuno, huevos, claras, arroz, fideos, papas cocidas, avena, pan integral, palta, aceite de oliva, leche descremada, yogurt descremado, queso fresco, verduras, frutas.${macros.useWhey ? ' También proteína whey.' : ''}
+        - Usa SOLO alimentos comunes: pollo, carne de vacuno, huevos enteros (NUNCA claras solas, por facilidad), arroz, fideos, papas cocidas, avena, pan integral, palta, aceite de oliva, leche descremada, yogurt descremado, queso fresco, verduras, frutas.${macros.useWhey ? ' También proteína whey.' : ''}
         - Cuando generes o modifiques una dieta, usa formato Markdown con tablas incluyendo macros EXACTOS por alimento (P, C, G en gramos).
         - SIEMPRE muestra las cantidades en DOS formatos:
           1. Gramos exactos (para alumnos con pesa)

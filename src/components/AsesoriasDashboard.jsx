@@ -522,7 +522,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
 IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
 
 ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
-- Proteínas: pollo, carne de vacuno, huevos enteros, claras de huevo${useWhey ? ', proteína whey' : ''}
+- Proteínas: pollo, carne de vacuno, huevos enteros${useWhey ? ', proteína whey' : ''}
 - Carbohidratos: arroz, fideos, papas cocidas, avena, pan integral
 - Grasas: palta, aceite de oliva
 - Lácteos: leche descremada, yogurt descremado, queso fresco
