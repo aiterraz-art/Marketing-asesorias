@@ -576,3 +576,51 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 		throw error;
 	}
 };
+
+export const chatTrainingAssistant = async (chatHistory, studentData, trainingData) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const systemPrompt = `
+        Eres un entrenador personal de élite calificado en periodización y nutrición deportiva. Estás creando una rutina de entrenamiento que va DIRECTAMENTE al alumno.
+
+        DATOS DEL ALUMNO:
+        - Nombre: ${studentData.full_name}
+        - Edad: ${studentData.age} años
+        - Peso: ${studentData.weight}kg
+        - Altura: ${studentData.height}cm
+        - Objetivo: ${studentData.goal === 'cut' ? 'Definición' : studentData.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}
+        - Nivel de Experiencia: ${trainingData.experience}
+        - Deporte Adicional: ${trainingData.extraSport || 'Ninguno'}
+
+        CONFIGURACIÓN DE ENTRENAMIENTO:
+        - Tipo de Split: ${trainingData.split}
+        - Días a la semana: ${trainingData.daysPerWeek}
+
+        REGLAS OBLIGATORIAS:
+        - Habla directamente al alumno en segunda persona (tú). NUNCA mensajes al coach.
+        - Usa un lenguaje motivador pero técnico y preciso.
+        - Estructura la rutina con tablas Markdown claras que incluyan: Ejercicio, Series, Repeticiones, RIR/RPE y Descanso.
+        - Divide la rutina por días (ej: Día 1: Empuje, Día 2: Tracción, etc.).
+        - Si el alumno hace un deporte extra (ej: Tenis), adapta la rutina para mejorar su rendimiento en ese deporte y evitar fatiga excesiva.
+        - Adapta el volumen y la intensidad al nivel de experiencia del alumno (${trainingData.experience}).
+        - **PROHIBIDO**: No incluyas intros, saludos, despedidas ni preguntas. SÓLO ENTREGA LA RUTINA.
+        - **SÓLO LA RUTINA**: La respuesta debe empezar directamente con el título de la rutina y terminar con el resumen o consejos de ejecución.
+        `;
+
+		const messages = [
+			{ role: "system", content: systemPrompt },
+			...chatHistory.map(m => ({ role: m.role, content: m.content }))
+		];
+
+		const completion = await openai.chat.completions.create({
+			messages: messages,
+			model: "gpt-5.2"
+		});
+
+		return completion.choices[0].message.content;
+	} catch (error) {
+		console.error("Training Chat Error:", error);
+		throw error;
+	}
+};

@@ -16,10 +16,11 @@ import {
     MessageCircle,
     Download,
     History,
-    X
+    X,
+    Check
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
-import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant } from '../lib/openai';
+import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTrainingAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
 import StudentHistory from './StudentHistory';
 import StudentProfile from './StudentProfile';
@@ -195,14 +196,21 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                     />
                 )}
                 {activeSubTab === 'rutinas' && (
-                    <PlanGenerator
+                    <TrainingGenerator
                         selectedStudent={selectedStudent}
-                        macros={currentMacros}
+                        students={students}
+                        onSelectStudent={setSelectedStudent}
                         latestPlan={latestPlan}
                         onSavePlan={async (plan) => {
-                            await saveStudentPlan(plan);
-                            const updatedPlan = await getStudentPlan(selectedStudent.id);
-                            setLatestPlan(updatedPlan);
+                            try {
+                                await saveStudentPlan(plan);
+                                const updatedPlan = await getStudentPlan(selectedStudent.id);
+                                setLatestPlan(updatedPlan);
+                                alert("¡Rutina guardada con éxito!");
+                            } catch (err) {
+                                console.error("Error saving routine:", err);
+                                alert("Error al guardar la rutina.");
+                            }
                         }}
                     />
                 )}
@@ -1225,6 +1233,384 @@ const ProgressTracker = ({ selectedStudent }) => {
                         <div className="flex gap-2">
                             <button onClick={() => setShowAddModal(false)} className="flex-1 py-2 text-zinc-500 text-sm">Cerrar</button>
                             <button onClick={handleAddMeasurement} className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestPlan, onSavePlan }) => {
+    const [data, setData] = useState({
+        split: 'PPL',
+        daysPerWeek: 4,
+        experience: 'Intermedio',
+        extraSport: ''
+    });
+
+    const [isSaving, setIsSaving] = useState(false);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [isChatLoading, setIsChatLoading] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const chatEndRef = useRef(null);
+    const trainingContentRef = useRef(null);
+
+    useEffect(() => {
+        // Reset chat when student changes
+        setChatMessages([]);
+        setShowChat(false);
+    }, [selectedStudent]);
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
+
+    const handleGenerateRoutine = async () => {
+        if (!selectedStudent) {
+            alert("Selecciona un alumno primero.");
+            return;
+        }
+        setShowChat(true);
+        setIsChatLoading(true);
+
+        const initialMessage = {
+            role: 'user',
+            content: `Genera una rutina de entrenamiento completa para ${selectedStudent.full_name} con los siguientes parámetros:
+            - Split: ${data.split}
+            - Días: ${data.daysPerWeek}
+            - Experiencia: ${data.experience}
+            - Deporte extra: ${data.extraSport || 'Ninguno'}`
+        };
+        setChatMessages([initialMessage]);
+
+        try {
+            const response = await chatTrainingAssistant([initialMessage], selectedStudent, data);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
+        } catch (err) {
+            console.error("Error generating routine:", err);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error al generar la rutina. Inténtalo de nuevo.' }]);
+        } finally {
+            setIsChatLoading(false);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!chatInput.trim() || isChatLoading) return;
+
+        const userMsg = { role: 'user', content: chatInput };
+        const updatedHistory = [...chatMessages, userMsg];
+        setChatMessages(updatedHistory);
+        setChatInput('');
+        setIsChatLoading(true);
+
+        try {
+            const response = await chatTrainingAssistant(updatedHistory, selectedStudent, data);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
+        } catch (err) {
+            console.error("Error in training chat:", err);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error en la respuesta. Inténtalo de nuevo.' }]);
+        } finally {
+            setIsChatLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!selectedStudent) {
+            alert("Selecciona un alumno primero.");
+            return;
+        }
+        setIsSaving(true);
+        const lastAIRoutined = [...chatMessages].reverse().find(m => m.role === 'assistant')?.content;
+
+        try {
+            await onSavePlan({
+                student_id: selectedStudent.id,
+                training_plan_text: lastAIRoutined || null
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleExportPDF = () => {
+        const lastAssistantMsg = [...chatMessages].reverse().find(m => m.role === 'assistant');
+        if (!lastAssistantMsg) return;
+
+        const element = trainingContentRef.current;
+        if (!element) return;
+
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `Rutina_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        import('html2pdf.js').then(html2pdf => {
+            html2pdf.default().set(opt).from(element).save();
+        });
+    };
+
+    const lastAIResponse = [...chatMessages].reverse().find(m => m.role === 'assistant');
+
+    return (
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Split Selector & Config */}
+            <div className="bg-surface border border-zinc-900 p-6 rounded-xl space-y-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                            <Dumbbell size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold">Configuración de Rutina</h3>
+                            <p className="text-zinc-500 text-xs">Define el enfoque del entrenamiento</p>
+                        </div>
+                    </div>
+                    {selectedStudent && (
+                        <div className="flex items-center gap-2 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-zinc-800">
+                            <Users size={14} className="text-zinc-500" />
+                            <span className="text-xs text-white font-medium">{selectedStudent.full_name}</span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Tipo de Split</label>
+                            <select
+                                value={data.split}
+                                onChange={(e) => setData({ ...data, split: e.target.value })}
+                                className="w-full bg-black border border-zinc-800 rounded-lg p-2.5 text-sm text-white focus:border-primary outline-none"
+                            >
+                                <option value="PPL (Push/Pull/Legs)">PPL (Push/Pull/Legs)</option>
+                                <option value="Arnold Split">Arnold Split</option>
+                                <option value="Upper/Lower">Upper / Lower</option>
+                                <option value="Full Body">Full Body</option>
+                                <option value="Bro Split (Músculo por día)">Bro Split</option>
+                                <option value="Personalizado / Mixto">Personalizado</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Días por Semana</label>
+                            <div className="flex gap-2">
+                                {[2, 3, 4, 5, 6].map(d => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setData({ ...data, daysPerWeek: d })}
+                                        className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${data.daysPerWeek === d
+                                            ? 'bg-blue-500/10 border-blue-500 text-blue-400'
+                                            : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                            }`}
+                                    >
+                                        {d}d
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Nivel de Experiencia</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['Principiante', 'Intermedio', 'Avanzado'].map(exp => (
+                                    <button
+                                        key={exp}
+                                        onClick={() => setData({ ...data, experience: exp })}
+                                        className={`py-2 rounded-lg text-[10px] font-bold border transition-all ${data.experience === exp
+                                            ? 'bg-primary/10 border-primary text-primary'
+                                            : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                            }`}
+                                    >
+                                        {exp}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Enfoque Deporte Extra (Opcional)</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={data.extraSport}
+                                    onChange={(e) => setData({ ...data, extraSport: e.target.value })}
+                                    placeholder="Ej: Tenis, Boxeo, Fútbol..."
+                                    className="w-full bg-black border border-zinc-800 rounded-lg p-2.5 pl-9 text-sm text-white focus:border-primary outline-none placeholder:text-zinc-700"
+                                />
+                                <TrendingUp size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                    <button
+                        onClick={handleGenerateRoutine}
+                        disabled={!selectedStudent || isChatLoading}
+                        className="flex-1 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Sparkles size={20} />
+                        Generar Rutina con IA
+                    </button>
+                    {lastAIResponse && (
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="px-6 py-4 bg-zinc-900 border border-zinc-800 text-zinc-400 font-bold rounded-xl hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center gap-2"
+                        >
+                            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                            {isSaving ? "Guardando..." : "Guardar en Ficha"}
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Chat Assistant */}
+            {showChat && (
+                <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="p-4 border-b border-zinc-900 bg-zinc-900/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <MessageCircle size={18} className="text-blue-400" />
+                            <h3 className="text-white font-bold text-sm">Entrenador Personal IA</h3>
+                            <span className="text-zinc-600 text-xs">• Ajusta ejercicios o volumen por chat</span>
+                        </div>
+                        {lastAIResponse && (
+                            <button
+                                onClick={handleExportPDF}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all"
+                            >
+                                <Download size={14} />
+                                Exportar Rutina a PDF
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="max-h-[600px] overflow-y-auto p-4 space-y-4">
+                        {chatMessages.map((msg, i) => (
+                            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
+                                    ? 'bg-blue-500/10 text-white border border-blue-500/20 rounded-br-md'
+                                    : 'bg-zinc-900 text-zinc-300 rounded-bl-md border border-zinc-800'
+                                    }`}>
+                                    {msg.role === 'assistant' ? (
+                                        <div className="prose prose-invert prose-sm max-w-none">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        <p>{msg.content}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {isChatLoading && (
+                            <div className="flex justify-start">
+                                <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl rounded-bl-md">
+                                    <Loader2 className="animate-spin text-blue-400" size={20} />
+                                </div>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    <div className="p-4 border-t border-zinc-900 bg-black/50">
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                placeholder="Ej: Cambia las sentadillas por prensa, me duele la espalda..."
+                                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-blue-500 placeholder:text-zinc-600"
+                                disabled={isChatLoading}
+                            />
+                            <button
+                                onClick={handleSendMessage}
+                                disabled={isChatLoading || !chatInput.trim()}
+                                className="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                            >
+                                <Send size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Hidden PDF element */}
+            {lastAIResponse && (
+                <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                    <div ref={trainingContentRef} style={{
+                        width: '680px',
+                        padding: '40px 35px',
+                        color: '#1a1a1a',
+                        backgroundColor: '#ffffff',
+                        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                        fontSize: '12px',
+                        lineHeight: '1.6',
+                        boxSizing: 'border-box'
+                    }}>
+                        {/* Header */}
+                        <div style={{ textAlign: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #3b82f6' }}>
+                            <h1 style={{ color: '#3b82f6', fontSize: '20px', margin: '0 0 8px 0', fontWeight: '700' }}>Plan de Entrenamiento Personalizado</h1>
+                            <p style={{ color: '#666', fontSize: '12px', margin: '0' }}>
+                                {selectedStudent?.full_name} • {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </p>
+                            <p style={{ color: '#888', fontSize: '10px', marginTop: '4px' }}>
+                                Split: {data.split} • {data.daysPerWeek} días • Nivel: {data.experience}
+                            </p>
+                        </div>
+
+                        {/* Content */}
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                            .pdf-training-content h1, .pdf-training-content h2, .pdf-training-content h3 {
+                                color: #1a1a1a;
+                                margin-top: 18px;
+                                margin-bottom: 8px;
+                                font-weight: 700;
+                            }
+                            .pdf-training-content h2 { font-size: 15px; color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+                            .pdf-training-content h3 { font-size: 13px; }
+                            .pdf-training-content p { margin: 6px 0; font-size: 11px; }
+                            .pdf-training-content ul, .pdf-training-content ol { padding-left: 18px; margin: 6px 0; }
+                            .pdf-training-content li { margin: 3px 0; font-size: 11px; }
+                            .pdf-training-content table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin: 10px 0;
+                                font-size: 10px;
+                                table-layout: fixed;
+                                word-wrap: break-word;
+                            }
+                            .pdf-training-content th {
+                                background-color: #3b82f6;
+                                color: white;
+                                padding: 6px 8px;
+                                text-align: left;
+                                font-weight: 600;
+                                font-size: 9px;
+                                text-transform: uppercase;
+                            }
+                            .pdf-training-content td {
+                                padding: 5px 8px;
+                                border-bottom: 1px solid #eee;
+                                font-size: 10px;
+                                vertical-align: top;
+                            }
+                            .pdf-training-content tr:nth-child(even) { background-color: #f8fafc; }
+                            .pdf-training-content tr:hover { background-color: #f1f5f9; }
+                            .pdf-training-content strong { font-weight: 700; }
+                            .pdf-training-content hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
+                        `}} />
+                        <div className="pdf-training-content">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lastAIResponse.content}</ReactMarkdown>
                         </div>
                     </div>
                 </div>
