@@ -374,6 +374,7 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
         weight: selectedStudent?.weight || 80,
         height: selectedStudent?.height || 180,
         age: selectedStudent?.age || 25,
+        sex: selectedStudent?.sex || 'male',
         activity: selectedStudent?.activity_level || 1.2,
         goal: selectedStudent?.goal || 'maintenance',
         protein: 160,
@@ -399,6 +400,7 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
                 weight: selectedStudent.weight || prev.weight,
                 height: selectedStudent.height || prev.height,
                 age: selectedStudent.age || prev.age,
+                sex: selectedStudent.sex || prev.sex,
                 activity: selectedStudent.activity_level || prev.activity,
                 goal: latestPlan?.goal || selectedStudent.goal || prev.goal,
                 protein: latestPlan?.protein_g || 160,
@@ -410,9 +412,11 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
         setShowChat(false);
     }, [selectedStudent, latestPlan]);
 
-    // Simulación de llamada a la función SQL de Supabase
+    // Cálculo con Harris-Benedict Revisada
     const calculate = () => {
-        const tmb = (10 * data.weight) + (6.25 * data.height) - (5 * data.age) + 5;
+        const tmb = data.sex === 'male'
+            ? 88.362 + (13.397 * data.weight) + (4.799 * data.height) - (5.677 * data.age)
+            : 447.593 + (9.247 * data.weight) + (3.098 * data.height) - (4.330 * data.age);
         const tdee = tmb * data.activity;
         let targetCals = tdee;
 
@@ -483,7 +487,20 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
 
         const initialMessage = {
             role: 'user',
-            content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}. Usa tablas con los macros de cada comida. Incluye desayuno, media mañana, almuerzo, merienda y cena.`
+            content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}. 
+
+REGLAS DE FORMATO OBLIGATORIAS:
+- Usa tablas con los macros de cada comida.
+- Incluye desayuno, media mañana, almuerzo, merienda y cena.
+- Para CADA alimento, muestra DOS columnas de cantidad:
+  1. **Gramos exactos** (para alumnos con pesa de cocina)
+  2. **Medida visual** (cucharadas, vasos, puños, palmas, unidades) para alumnos SIN pesa
+
+Ejemplo de formato por alimento:
+| Alimento | Gramos | Medida Visual |
+|----------|--------|---------------|
+| Avena    | 60g    | 6 cdas soperas |
+| Leche    | 250ml  | 1 vaso        |`
         };
         setChatMessages([initialMessage]);
 
@@ -577,6 +594,23 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
                         <InputGroup label="Peso (kg)" value={data.weight} onChange={(v) => setData({ ...data, weight: v })} />
                         <InputGroup label="Altura (cm)" value={data.height} onChange={(v) => setData({ ...data, height: v })} />
                         <InputGroup label="Edad" value={data.age} onChange={(v) => setData({ ...data, age: v })} />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Sexo</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {['male', 'female'].map((s) => (
+                                    <button
+                                        key={s}
+                                        onClick={() => setData({ ...data, sex: s })}
+                                        className={`py-2 px-3 rounded-lg text-xs font-medium border transition-all ${data.sex === s
+                                            ? 'bg-primary/10 border-primary text-primary'
+                                            : 'bg-black border-zinc-800 text-zinc-500'
+                                            }`}
+                                    >
+                                        {s === 'male' ? '♂ Hombre' : '♀ Mujer'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actividad</label>
                             <select

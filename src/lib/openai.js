@@ -544,9 +544,13 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Grasas: ${macros.fat}g
         - Carbohidratos: ${macros.carbs}g
 
-        REGLAS:
+        REGLAS OBLIGATORIAS:
         - Responde en español.
         - Cuando generes o modifiques una dieta, usa formato Markdown con tablas y listas.
+        - SIEMPRE muestra las cantidades en DOS formatos:
+          1. Gramos exactos (para alumnos con pesa de cocina)
+          2. Medida visual equivalente (cucharadas soperas, vasos, puños, palmas, unidades, tazas)
+        - Ejemplo: "Avena: 60g (6 cdas soperas)" o en tabla con columnas separadas.
         - Sé flexible: si el coach pide cambiar un alimento, ajusta el plan manteniendo los macros.
         - Si el coach dice "versión final", genera el plan completo y limpio sin comentarios extra.
         - Mantén los macros lo más cerca posible del objetivo.
