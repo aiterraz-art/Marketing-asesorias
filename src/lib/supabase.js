@@ -81,6 +81,17 @@ export const getStudentPlan = async (studentId) => {
     return data;
 }
 
+export const getStudentPlans = async (studentId) => {
+    const { data, error } = await supabase
+        .from('student_plans')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
 export const saveStudentPlan = async (plan) => {
     const { data, error } = await supabase
         .from('student_plans')

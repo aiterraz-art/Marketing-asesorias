@@ -13,11 +13,13 @@ import {
     Sparkles,
     Send,
     MessageCircle,
-    Download
+    Download,
+    History
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
+import StudentHistory from './StudentHistory';
 import {
     LineChart,
     Line,
@@ -43,6 +45,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         goal: 'maintenance'
     });
     const [latestPlan, setLatestPlan] = useState(null);
+    const [historyStudent, setHistoryStudent] = useState(null);
 
     const loadStudents = async () => {
         setLoading(true);
@@ -155,6 +158,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                         onSearchChange={setSearchTerm}
                         selectedId={selectedStudent?.id}
                         onSelect={setSelectedStudent}
+                        onHistory={setHistoryStudent}
                     />
                 )}
                 {/* ... rest of tabs ... */}
@@ -197,6 +201,11 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 onClose={() => setIsStudentModalOpen(false)}
                 onCreate={handleCreateStudent}
             />
+            <StudentHistory
+                student={historyStudent}
+                isOpen={!!historyStudent}
+                onClose={() => setHistoryStudent(null)}
+            />
         </div>
     );
 };
@@ -228,7 +237,7 @@ const SubTab = ({ label, isActive, onClick, icon }) => (
     </button>
 );
 
-const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, selectedId }) => (
+const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, selectedId, onHistory }) => (
     <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
@@ -272,6 +281,13 @@ const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, 
                             <span className="text-zinc-400 text-sm font-medium">{s.weight}kg</span>
                             <span className="text-zinc-600 text-[10px] uppercase tracking-wider">{s.age} años</span>
                         </div>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onHistory(s); }}
+                            className="p-2 rounded-lg text-zinc-600 hover:text-amber-400 hover:bg-amber-400/10 transition-all"
+                            title="Ver historial"
+                        >
+                            <History size={18} />
+                        </button>
                         <ChevronRight className={`transition-colors ${selectedId === s.id ? 'text-primary' : 'text-zinc-700 group-hover:text-primary'}`} size={20} />
                     </div>
                 </div>
