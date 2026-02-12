@@ -1,41 +1,36 @@
 @import "tailwindcss";
 
-@theme {
-  --color-marketing-background: #000000;
-  --color-marketing-surface: #121212;
-  --color-marketing-primary: #f97316;
-
-  --color-asesorias-background: #0a0a0c;
-  --color-asesorias-surface: #151518;
-  --color-asesorias-primary: #a855f7;
-  /* Purple 500 */
-  --color-asesorias-accent: #7c3aed;
-  /* Violet 600 */
-}
-
 :root {
   color-scheme: dark;
-  --app-bg: var(--color-marketing-background);
-  --app-surface: var(--color-marketing-surface);
-  --app-primary: var(--color-marketing-primary);
+  --app-bg: #000000;
+  --app-surface: #121212;
+  --app-primary: #f97316;
   --app-accent: #27272a;
 }
 
 [data-theme='asesorias'] {
-  --app-bg: var(--color-asesorias-background);
-  --app-surface: var(--color-asesorias-surface);
-  --app-primary: var(--color-asesorias-primary);
-  --app-accent: var(--color-asesorias-accent);
+  --app-bg: #0a0a0c;
+  --app-surface: #151518;
+  --app-primary: #a855f7;
+  --app-accent: #7c3aed;
+}
+
+@theme {
+  --color-primary: var(--app-primary);
+  --color-surface: var(--app-surface);
+  --color-background: var(--app-bg);
+  --color-accent: var(--app-accent);
 }
 
 body {
   background-color: var(--app-bg);
   color: #d1d5db;
-  /* text-zinc-300 */
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
 }
+
 .bg-surface {
   background-color: var(--app-surface);
 }
