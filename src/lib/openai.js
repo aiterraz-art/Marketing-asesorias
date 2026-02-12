@@ -529,7 +529,7 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 
 	try {
 		const systemPrompt = `
-        Eres un nutricionista deportivo de élite. Estás trabajando con el coach para diseñar la dieta de un alumno.
+        Eres un nutricionista deportivo de élite. Estás creando una dieta que va DIRECTAMENTE al alumno, NO al coach.
 
         DATOS DEL ALUMNO:
         - Nombre: ${studentData.full_name}
@@ -543,17 +543,20 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Proteína: ${macros.protein}g
         - Grasas: ${macros.fat}g
         - Carbohidratos: ${macros.carbs}g
+        - Proteína Whey: ${macros.useWhey ? 'SÍ, incluir en la dieta' : 'NO, no usar suplementos'}
 
         REGLAS OBLIGATORIAS:
-        - Responde en español.
-        - Cuando generes o modifiques una dieta, usa formato Markdown con tablas y listas.
+        - Habla directamente al alumno en segunda persona (tú). NUNCA mensajes al coach.
+        - Responde en español CHILENO: usa "descremado" (no desnatado), "palta" (no aguacate), "porotos" (no judías), "choclo" (no elote), "zapallo italiano" (no calabacín).
+        - Usa SOLO alimentos comunes: pollo, carne de vacuno, huevos, claras, arroz, fideos, papas cocidas, avena, pan integral, palta, aceite de oliva, leche descremada, yogurt descremado, queso fresco, verduras, frutas.${macros.useWhey ? ' También proteína whey.' : ''}
+        - Cuando generes o modifiques una dieta, usa formato Markdown con tablas incluyendo macros EXACTOS por alimento (P, C, G en gramos).
         - SIEMPRE muestra las cantidades en DOS formatos:
-          1. Gramos exactos (para alumnos con pesa de cocina)
-          2. Medida visual equivalente (cucharadas soperas, vasos, puños, palmas, unidades, tazas)
-        - Ejemplo: "Avena: 60g (6 cdas soperas)" o en tabla con columnas separadas.
-        - Sé flexible: si el coach pide cambiar un alimento, ajusta el plan manteniendo los macros.
-        - Si el coach dice "versión final", genera el plan completo y limpio sin comentarios extra.
-        - Mantén los macros lo más cerca posible del objetivo.
+          1. Gramos exactos (para alumnos con pesa)
+          2. Medida visual (cucharadas soperas, vasos, puños, palmas, unidades)
+        - Los macros totales deben cuadrar lo más exacto posible con el objetivo.
+        - Al final de cada dieta, incluye un RESUMEN de macros totales vs. objetivo.
+        - Sé flexible: si piden cambiar un alimento, ajusta manteniendo los macros.
+        - Si dicen "versión final", genera el plan completo y limpio sin comentarios extra.
         `;
 
 		const messages = [

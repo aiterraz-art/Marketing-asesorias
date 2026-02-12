@@ -405,6 +405,7 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
     const [showChat, setShowChat] = useState(false);
+    const [useWhey, setUseWhey] = useState(false);
     const chatEndRef = useRef(null);
     const dietContentRef = useRef(null);
 
@@ -503,25 +504,38 @@ const NutritionCalculator = ({ selectedStudent, latestPlan, onMacrosUpdate, onSa
 
         const initialMessage = {
             role: 'user',
-            content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}. 
+            content: `Genera un plan de alimentación completo y detallado para ${selectedStudent.full_name}.
+
+IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
+
+ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
+- Proteínas: pollo, carne de vacuno, huevos enteros, claras de huevo${useWhey ? ', proteína whey' : ''}
+- Carbohidratos: arroz, fideos, papas cocidas, avena, pan integral
+- Grasas: palta, aceite de oliva
+- Lácteos: leche descremada, yogurt descremado, queso fresco
+- Verduras: lechuga, tomate, pepino, brócoli, zapallo italiano (libres)
+- Frutas: plátano, manzana, naranja (con moderación)
 
 REGLAS DE FORMATO OBLIGATORIAS:
-- Usa tablas con los macros de cada comida.
-- Incluye desayuno, media mañana, almuerzo, merienda y cena.
+- Usa tablas con los macros EXACTOS de cada alimento (proteína, carbs, grasa en gramos).
+- Incluye: Desayuno, Media Mañana, Almuerzo, Merienda y Cena.
+- Los macros totales del día deben cuadrar lo más exacto posible con el objetivo.
 - Para CADA alimento, muestra DOS columnas de cantidad:
   1. **Gramos exactos** (para alumnos con pesa de cocina)
-  2. **Medida visual** (cucharadas, vasos, puños, palmas, unidades) para alumnos SIN pesa
+  2. **Medida visual** (cucharadas soperas, vasos, puños, unidades) para alumnos SIN pesa
+- Al final muestra un RESUMEN con el total de macros del día vs. el objetivo.
+- Usa vocabulario CHILENO: descremado (no desnatado), palta (no aguacate), porotos (no judías), choclo (no elote).
 
-Ejemplo de formato por alimento:
-| Alimento | Gramos | Medida Visual |
-|----------|--------|---------------|
-| Avena    | 60g    | 6 cdas soperas |
-| Leche    | 250ml  | 1 vaso        |`
+Ejemplo de formato:
+| Alimento | Gramos | Medida Visual | P | C | G |
+|----------|--------|---------------|---|---|---|
+| Pechuga de pollo | 150g | 1 palma | 46 | 0 | 3 |
+| Arroz cocido | 200g | 1 taza | 4 | 44 | 0 |`
         };
         setChatMessages([initialMessage]);
 
         try {
-            const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs };
+            const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs, useWhey };
             const response = await chatDietAssistant([initialMessage], selectedStudent, macros);
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
@@ -543,7 +557,7 @@ Ejemplo de formato por alimento:
         setIsChatLoading(true);
 
         try {
-            const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs };
+            const macros = { calories: results.calories, protein: data.protein, fat: data.fat, carbs: results.carbs, useWhey };
             const response = await chatDietAssistant(updatedHistory, selectedStudent, macros);
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
@@ -696,7 +710,21 @@ Ejemplo de formato por alimento:
                             </div>
                         </div>
 
-                        <div className="flex gap-3 mt-8">
+                        {/* Toggle Whey */}
+                        <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl mt-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-white font-medium">Incluir Proteína Whey</span>
+                                <span className="text-[10px] text-zinc-600 uppercase">en la dieta</span>
+                            </div>
+                            <button
+                                onClick={() => setUseWhey(!useWhey)}
+                                className={`relative w-11 h-6 rounded-full transition-all duration-300 ${useWhey ? 'bg-primary' : 'bg-zinc-700'}`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-300 ${useWhey ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+
+                        <div className="flex gap-3 mt-4">
                             <button
                                 disabled={isSaving}
                                 onClick={handleSave}
