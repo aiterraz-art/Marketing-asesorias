@@ -10,8 +10,18 @@ import {
     UserPlus
 } from 'lucide-react';
 
-const AsesoriasDashboard = () => {
-    const [activeSubTab, setActiveSubTab] = useState('alumnos');
+const AsesoriasDashboard = ({ activeTab, setActiveTab }) => {
+    // Mapeamos las pestañas del sidebar a los sub-componentes internos
+    const activeSubTab = activeTab === 'nutricion' ? 'calculadora' :
+        activeTab === 'alumnos' ? 'alumnos' :
+            activeTab === 'rutinas' ? 'rutinas' :
+                activeTab === 'progreso' ? 'progreso' : 'alumnos';
+
+    const setSubTab = (tab) => {
+        // Al hacer clic internamente, también actualizamos el estado global (sidebar)
+        const tabMap = { 'alumnos': 'alumnos', 'calculadora': 'nutricion', 'rutinas': 'rutinas', 'progreso': 'progreso' };
+        setActiveTab(tabMap[tab] || 'alumnos');
+    };
 
     return (
         <div className="p-6 lg:p-8 space-y-8 animate-in fade-in duration-500">
@@ -37,15 +47,17 @@ const AsesoriasDashboard = () => {
 
             {/* Tabs */}
             <div className="flex border-b border-zinc-900">
-                <SubTab label="Alumnos" isActive={activeSubTab === 'alumnos'} onClick={() => setActiveSubTab('alumnos')} icon={<Users size={18} />} />
-                <SubTab label="Calculadora" isActive={activeSubTab === 'calculadora'} onClick={() => setActiveSubTab('calculadora')} icon={<Calculator size={18} />} />
-                <SubTab label="Rutinas" isActive={activeSubTab === 'rutinas'} onClick={() => setActiveSubTab('rutinas')} icon={<Dumbbell size={18} />} />
+                <SubTab label="Alumnos" isActive={activeSubTab === 'alumnos'} onClick={() => setSubTab('alumnos')} icon={<Users size={18} />} />
+                <SubTab label="Calculadora" isActive={activeSubTab === 'calculadora'} onClick={() => setSubTab('calculadora')} icon={<Calculator size={18} />} />
+                <SubTab label="Rutinas" isActive={activeSubTab === 'rutinas'} onClick={() => setSubTab('rutinas')} icon={<Dumbbell size={18} />} />
+                <SubTab label="Progreso" isActive={activeSubTab === 'progreso'} onClick={() => setSubTab('progreso')} icon={<TrendingUp size={18} />} />
             </div>
 
             <main className="min-h-[400px]">
                 {activeSubTab === 'alumnos' && <StudentList />}
                 {activeSubTab === 'calculadora' && <NutritionCalculator />}
                 {activeSubTab === 'rutinas' && <RoutineDesigner />}
+                {activeSubTab === 'progreso' && <ProgressTracker />}
             </main>
         </div>
     );
@@ -187,8 +199,8 @@ const NutritionCalculator = () => {
                                 key={g}
                                 onClick={() => setData({ ...data, goal: g })}
                                 className={`py-2 px-3 rounded-lg text-xs font-medium border transition-all ${data.goal === g
-                                        ? 'bg-primary/10 border-primary text-primary'
-                                        : 'bg-black border-zinc-800 text-zinc-500'
+                                    ? 'bg-primary/10 border-primary text-primary'
+                                    : 'bg-black border-zinc-800 text-zinc-500'
                                     }`}
                             >
                                 {g === 'cut' ? 'Definición' : g === 'bulk' ? 'Volumen' : 'Mantenimiento'}
@@ -268,6 +280,16 @@ const RoutineDesigner = () => (
         <Dumbbell className="text-zinc-700 mb-4" size={48} />
         <h3 className="text-white font-medium">Planificador de Rutinas</h3>
         <p className="text-zinc-500 text-sm mt-1">Próximamente: Generador de rutinas con IA.</p>
+    </div>
+);
+
+const ProgressTracker = () => (
+    <div className="bg-surface border border-zinc-900 p-8 rounded-xl text-center">
+        <TrendingUp className="mx-auto text-zinc-700 mb-4" size={48} />
+        <h3 className="text-white font-medium text-lg">Seguimiento de Progreso</h3>
+        <p className="text-zinc-500 max-w-sm mx-auto mt-2">
+            Visualiza gráficamente la evolución de tus alumnos: peso, % de grasa y medidas antropométricas.
+        </p>
     </div>
 );
 

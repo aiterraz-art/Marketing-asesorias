@@ -9,7 +9,11 @@ import {
   Menu,
   X,
   MessageSquare,
-  Home
+  Home,
+  Users,
+  Calculator,
+  Dumbbell,
+  TrendingUp
 } from 'lucide-react';
 import ProjectOverview from './components/ProjectOverview';
 import ContentGeneratorPanel from './components/ContentGeneratorPanel';
@@ -58,7 +62,7 @@ function App() {
 
   const renderContent = () => {
     if (appMode === 'asesorias') {
-      return <AsesoriasDashboard />;
+      return <AsesoriasDashboard activeTab={activeTab} setActiveTab={setActiveTab} />;
     }
 
     switch (activeTab) {
@@ -123,47 +127,87 @@ function App() {
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <NavItem
-            icon={<Home size={20} />}
-            label="Inicio"
-            isActive={activeTab === 'home'}
-            onClick={() => { setActiveTab('home'); setSidebarOpen(false); }}
-          />
-          <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Gestión</div>
-          <NavItem
-            icon={<Layers size={20} />}
-            label="Campañas"
-            isActive={activeTab === 'dashboard'}
-            onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }}
-          />
-          <NavItem
-            icon={<CalIcon size={20} />}
-            label="Calendario"
-            isActive={activeTab === 'calendar'}
-            onClick={() => { setActiveTab('calendar'); setSidebarOpen(false); }}
-          />
+          {appMode === 'marketing' ? (
+            <>
+              <NavItem
+                icon={<Home size={20} />}
+                label="Inicio"
+                isActive={activeTab === 'home'}
+                onClick={() => { setActiveTab('home'); setSidebarOpen(false); }}
+              />
+              <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Gestión</div>
+              <NavItem
+                icon={<Layers size={20} />}
+                label="Campañas"
+                isActive={activeTab === 'dashboard'}
+                onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }}
+              />
+              <NavItem
+                icon={<CalIcon size={20} />}
+                label="Calendario"
+                isActive={activeTab === 'calendar'}
+                onClick={() => { setActiveTab('calendar'); setSidebarOpen(false); }}
+              />
 
-          <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Inteligencia</div>
-          <NavItem
-            icon={<MessageSquare size={20} />}
-            label="Chat IA"
-            isActive={activeTab === 'chat'}
-            onClick={() => { setActiveTab('chat'); setSidebarOpen(false); }}
-          />
-          <NavItem
-            icon={<Sparkles size={20} />}
-            label="Generador"
-            isActive={activeTab === 'generator'}
-            onClick={() => { setActiveTab('generator'); setSidebarOpen(false); }}
-          />
+              <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Inteligencia</div>
+              <NavItem
+                icon={<MessageSquare size={20} />}
+                label="Chat IA"
+                isActive={activeTab === 'chat'}
+                onClick={() => { setActiveTab('chat'); setSidebarOpen(false); }}
+              />
+              <NavItem
+                icon={<Sparkles size={20} />}
+                label="Generador"
+                isActive={activeTab === 'generator'}
+                isActive={activeTab === 'generator'}
+                onClick={() => { setActiveTab('generator'); setSidebarOpen(false); }}
+              />
 
-          <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Métricas</div>
-          <NavItem
-            icon={<BarChart3 size={20} />}
-            label="Analíticas Ads"
-            isActive={activeTab === 'analytics'}
-            onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
-          />
+              <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Métricas</div>
+              <NavItem
+                icon={<BarChart3 size={20} />}
+                label="Analíticas Ads"
+                isActive={activeTab === 'analytics'}
+                onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
+              />
+            </>
+          ) : (
+            <>
+              <NavItem
+                icon={<Home size={20} />}
+                label="Inicio"
+                isActive={activeTab === 'home'}
+                onClick={() => { setActiveTab('home'); setSidebarOpen(false); }}
+              />
+              <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Control Alumnos</div>
+              <NavItem
+                icon={<Users size={20} />}
+                label="Lista Alumnos"
+                isActive={activeTab === 'alumnos'}
+                onClick={() => { setActiveTab('alumnos'); setSidebarOpen(false); }}
+              />
+              <NavItem
+                icon={<Calculator size={20} />}
+                label="Nutrición"
+                isActive={activeTab === 'nutricion'}
+                onClick={() => { setActiveTab('nutricion'); setSidebarOpen(false); }}
+              />
+              <NavItem
+                icon={<Dumbbell size={20} />}
+                label="Rutinas"
+                isActive={activeTab === 'rutinas'}
+                onClick={() => { setActiveTab('rutinas'); setSidebarOpen(false); }}
+              />
+              <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Seguimiento</div>
+              <NavItem
+                icon={<TrendingUp size={20} />}
+                label="Progreso"
+                isActive={activeTab === 'progreso'}
+                onClick={() => { setActiveTab('progreso'); setSidebarOpen(false); }}
+              />
+            </>
+          )}
 
           <div className="my-4 border-t border-zinc-900" />
           <NavItem icon={<Settings size={20} />} label="Configuración" />
@@ -182,7 +226,7 @@ function App() {
         {/* Header */}
         <header className="h-16 border-b border-zinc-900 bg-black/50 backdrop-blur-sm flex items-center justify-between px-6 lg:px-8 shrink-0 z-30">
           <div className="flex items-center gap-2 text-zinc-600 text-sm ml-8 lg:ml-0">
-            <span className="hover:text-zinc-400 cursor-pointer">Marketing OS</span>
+            <span className="hover:text-zinc-400 cursor-pointer">{appMode === 'marketing' ? 'Marketing OS' : 'Asesorías OS'}</span>
             <span>/</span>
             <span className="text-white capitalize font-medium">{activeTab === 'home' ? 'Inicio' : activeTab}</span>
           </div>
