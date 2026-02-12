@@ -577,10 +577,10 @@ Ejemplo de formato:
         if (!element) return;
 
         const opt = {
-            margin: [15, 15],
+            margin: [10, 10, 10, 10],
             filename: `Dieta_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
@@ -826,12 +826,98 @@ Ejemplo de formato:
             {/* Hidden element for PDF export */}
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                    <div ref={dietContentRef} style={{ width: '800px', padding: '60px', color: '#000', backgroundColor: '#fff', fontFamily: 'sans-serif' }}>
-                        <h1 style={{ color: '#7c3aed', marginBottom: '10px' }}>Plan Nutricional Personalizado</h1>
-                        <p><strong>Alumno:</strong> {selectedStudent?.full_name}</p>
-                        <p><strong>Calorías:</strong> {results?.calories} kcal | <strong>P:</strong> {data.protein}g | <strong>G:</strong> {data.fat}g | <strong>C:</strong> {results?.carbs}g</p>
-                        <hr style={{ margin: '20px 0' }} />
-                        <ReactMarkdown>{lastAIResponse.content}</ReactMarkdown>
+                    <div ref={dietContentRef} style={{
+                        width: '680px',
+                        padding: '40px 35px',
+                        color: '#1a1a1a',
+                        backgroundColor: '#ffffff',
+                        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                        fontSize: '12px',
+                        lineHeight: '1.6',
+                        boxSizing: 'border-box'
+                    }}>
+                        {/* Header */}
+                        <div style={{ textAlign: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #7c3aed' }}>
+                            <h1 style={{ color: '#7c3aed', fontSize: '20px', margin: '0 0 8px 0', fontWeight: '700' }}>Plan Nutricional Personalizado</h1>
+                            <p style={{ color: '#666', fontSize: '12px', margin: '0' }}>
+                                {selectedStudent?.full_name} • {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
+
+                        {/* Macros Summary */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-around',
+                            backgroundColor: '#f8f7ff',
+                            border: '1px solid #e8e5f0',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            marginBottom: '20px',
+                            fontSize: '11px'
+                        }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#7c3aed' }}>{results?.calories}</div>
+                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Calorías</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#7c3aed' }}>{data.protein}g</div>
+                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Proteína</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#f59e0b' }}>{data.fat}g</div>
+                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Grasas</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#3b82f6' }}>{results?.carbs}g</div>
+                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Carbohidratos</div>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                            .pdf-diet-content h1, .pdf-diet-content h2, .pdf-diet-content h3 {
+                                color: #1a1a1a;
+                                margin-top: 18px;
+                                margin-bottom: 8px;
+                                font-weight: 700;
+                            }
+                            .pdf-diet-content h2 { font-size: 15px; color: #7c3aed; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+                            .pdf-diet-content h3 { font-size: 13px; }
+                            .pdf-diet-content p { margin: 6px 0; font-size: 11px; }
+                            .pdf-diet-content ul, .pdf-diet-content ol { padding-left: 18px; margin: 6px 0; }
+                            .pdf-diet-content li { margin: 3px 0; font-size: 11px; }
+                            .pdf-diet-content table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin: 10px 0;
+                                font-size: 10px;
+                                table-layout: fixed;
+                                word-wrap: break-word;
+                            }
+                            .pdf-diet-content th {
+                                background-color: #7c3aed;
+                                color: white;
+                                padding: 6px 8px;
+                                text-align: left;
+                                font-weight: 600;
+                                font-size: 9px;
+                                text-transform: uppercase;
+                            }
+                            .pdf-diet-content td {
+                                padding: 5px 8px;
+                                border-bottom: 1px solid #eee;
+                                font-size: 10px;
+                                vertical-align: top;
+                            }
+                            .pdf-diet-content tr:nth-child(even) { background-color: #faf9fd; }
+                            .pdf-diet-content tr:hover { background-color: #f3f0ff; }
+                            .pdf-diet-content strong { font-weight: 700; }
+                            .pdf-diet-content hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
+                        `}} />
+                        <div className="pdf-diet-content">
+                            <ReactMarkdown>{lastAIResponse.content}</ReactMarkdown>
+                        </div>
                     </div>
                 </div>
             )}
