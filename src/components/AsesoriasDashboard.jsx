@@ -177,11 +177,15 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
 
             {/* Alertas Administrativas */}
             {(students || []).filter(s => {
-                const today = new Date();
-                const nextPay = s.next_payment_date ? new Date(s.next_payment_date) : null;
-                const nextCheck = s.next_checkin_date ? new Date(s.next_checkin_date) : null;
-                const nextVideo = s.next_videocall_date ? new Date(s.next_videocall_date) : null;
-                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today) || (nextVideo && nextVideo <= today);
+                const now = new Date();
+                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                const isPayDue = s.next_payment_date && s.next_payment_date <= todayStr;
+                const isCheckDue = s.next_checkin_date && s.next_checkin_date <= todayStr;
+                const nextVideoStr = s.next_videocall_date ? s.next_videocall_date.split('T')[0] : null;
+                const isVideoDue = nextVideoStr && nextVideoStr <= todayStr;
+
+                return isPayDue || isCheckDue || isVideoDue;
             }).length > 0 && (
                     <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 animate-in slide-in-from-left-4 duration-500">
                         <div className="flex items-center gap-3 mb-4 text-red-500">
@@ -190,16 +194,20 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {students.filter(s => {
-                                const today = new Date();
-                                const nextPay = s.next_payment_date ? new Date(s.next_payment_date) : null;
-                                const nextCheck = s.next_checkin_date ? new Date(s.next_checkin_date) : null;
-                                const nextVideo = s.next_videocall_date ? new Date(s.next_videocall_date) : null;
-                                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today) || (nextVideo && nextVideo <= today);
+                                const now = new Date();
+                                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                const isPayDue = s.next_payment_date && s.next_payment_date <= todayStr;
+                                const isCheckDue = s.next_checkin_date && s.next_checkin_date <= todayStr;
+                                const nextVideoStr = s.next_videocall_date ? s.next_videocall_date.split('T')[0] : null;
+                                const isVideoDue = nextVideoStr && nextVideoStr <= todayStr;
+                                return isPayDue || isCheckDue || isVideoDue;
                             }).map(s => {
-                                const today = new Date();
-                                const isPayOverdue = s.next_payment_date && new Date(s.next_payment_date) <= today;
-                                const isCheckOverdue = s.next_checkin_date && new Date(s.next_checkin_date) <= today;
-                                const isVideoOverdue = s.next_videocall_date && new Date(s.next_videocall_date) <= today;
+                                const now = new Date();
+                                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                const isPayOverdue = s.next_payment_date && s.next_payment_date <= todayStr;
+                                const isCheckOverdue = s.next_checkin_date && s.next_checkin_date <= todayStr;
+                                const nextVideoStr = s.next_videocall_date ? s.next_videocall_date.split('T')[0] : null;
+                                const isVideoOverdue = nextVideoStr && nextVideoStr <= todayStr;
 
                                 return (
                                     <div key={s.id} onClick={() => setSelectedStudent(s)} className="bg-black/40 border border-zinc-800 p-3 rounded-xl flex items-center justify-between hover:border-red-500/40 cursor-pointer transition-all">

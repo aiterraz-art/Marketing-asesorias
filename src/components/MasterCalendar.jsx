@@ -76,32 +76,33 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate, loading }) =
             const selectedDate = new Date(dateStr);
 
             if (schedulingData.type === 'payment') {
-                // El usuario está marcando que hoy (o el día seleccionado) se hizo un pago.
-                // Por lo tanto, el pago actual es el 'last_payment_date'.
-                // Y el sistema proyecta el 'next_payment_date' para 30 días después.
                 const nextPayDate = new Date(selectedDate);
                 nextPayDate.setDate(nextPayDate.getDate() + 30);
 
+                const npYear = nextPayDate.getFullYear();
+                const npMonth = String(nextPayDate.getMonth() + 1).padStart(2, '0');
+                const npDay = String(nextPayDate.getDate()).padStart(2, '0');
+
                 updates = {
                     last_payment_date: dateStr,
-                    next_payment_date: nextPayDate.toISOString().split('T')[0]
+                    next_payment_date: `${npYear}-${npMonth}-${npDay}`
                 };
             } else if (schedulingData.type === 'checkin') {
                 updates = { next_checkin_date: dateStr };
             } else if (schedulingData.type === 'videocall') {
                 const fullDateTime = new Date(`${dateStr}T${schedulingData.time}:00`).toISOString();
 
-                // Al programar video:
-                // 1. Programamos la video (next_videocall_date)
-                // 2. Seteamos 4 controles restantes (remaining_checks)
-                // 3. Programamos el PRIMER control para 7 días después de la video
                 const firstCheckDate = new Date(selectedDate);
                 firstCheckDate.setDate(firstCheckDate.getDate() + 7);
+
+                const fcYear = firstCheckDate.getFullYear();
+                const fcMonth = String(firstCheckDate.getMonth() + 1).padStart(2, '0');
+                const fcDay = String(firstCheckDate.getDate()).padStart(2, '0');
 
                 updates = {
                     next_videocall_date: fullDateTime,
                     remaining_checks: 4,
-                    next_checkin_date: firstCheckDate.toISOString().split('T')[0]
+                    next_checkin_date: `${fcYear}-${fcMonth}-${fcDay}`
                 };
             }
 
@@ -122,19 +123,66 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate, loading }) =
 
     // Mapear eventos por día
     const getEventsForDay = (day) => {
+        // Formatear fecha local YYYY-MM-DD
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const events = [];
 
         students.forEach(s => {
-            // Pagos
-            if (s.next_payment_date === dateStr) {
-                events.push({ type: 'payment', student: s, icon: <CreditCard size={10} />, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' });
+            // --- PAGOS ---
+            // Pago realizado (Historial)
+            if (s.last_payment_date === dateStr) {
+                events.push({
+                    type: 'payment_done',
+                    student: s,
+                    icon: <Check size={10} />,
+                    color: 'text-zinc-500 bg-zinc-500/10 border-zinc-500/20 opacity-60',
+                    title: 'Pago Recibido'
+                });
             }
-            // Check-ins
-            if (s.next_checkin_date === dateStr) {
+            // Pago Pendiente/Próximo (Futuro)
+            if (s.next_payment_date === dateStr) {
+                events.push({
+                    type: 'payment',
+                    student: s,
+                    icon: <CreditCard size={10} />,
+                    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+                    title: 'Vencimiento Pago'
+                });
+            }
+
+            // --- CONTROLES (Check-ins) ---
+            // Si tiene controles pendientes y una fecha de inicio, proyectamos la secuencia
+            if (s.next_checkin_date && s.remaining_checks >= 0) {
+                const startCheck = new Date(s.next_checkin_date);
+
+                // Proyectamos hasta 4 controles (el actual + los restantes)
+                for (let i = 0; i < s.remaining_checks; i++) {
+                    const projectedDate = new Date(startCheck);
+                    projectedDate.setDate(projectedDate.getDate() + (i * 7));
+
+                    const pYear = projectedDate.getFullYear();
+                    const pMonth = String(projectedDate.getMonth() + 1).padStart(2, '0');
+                    const pDay = String(projectedDate.getDate()).padStart(2, '0');
+                    const pDateStr = `${pYear}-${pMonth}-${pDay}`;
+
+                    if (pDateStr === dateStr) {
+                        events.push({
+                            type: 'checkin',
+                            student: s,
+                            icon: <Activity size={10} />,
+                            color: i === 0
+                                ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                                : 'text-amber-400/50 bg-amber-400/5 border-amber-400/10 border-dashed',
+                            title: `Control ${4 - s.remaining_checks + i + 1}/4`
+                        });
+                    }
+                }
+            } else if (s.next_checkin_date === dateStr) {
+                // Caso simple sin contador
                 events.push({ type: 'checkin', student: s, icon: <Activity size={10} />, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' });
             }
-            // Video llamadas
+
+            // --- VIDEO LLAMADAS ---
             if (s.next_videocall_date) {
                 const callDate = new Date(s.next_videocall_date);
                 if (callDate.getFullYear() === year && callDate.getMonth() === month && callDate.getDate() === day) {
@@ -143,7 +191,8 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate, loading }) =
                         student: s,
                         icon: <Video size={10} />,
                         color: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-                        time: callDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        time: callDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        title: 'Video Llamada'
                     });
                 }
             }

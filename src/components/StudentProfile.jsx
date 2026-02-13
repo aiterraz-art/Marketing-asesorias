@@ -217,14 +217,21 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     <div className="flex gap-2">
                                         {/* Días de Plan Restantes */}
                                         {student.next_payment_date && (
-                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${new Date(student.next_payment_date) > new Date()
-                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${(() => {
+                                                    const now = new Date();
+                                                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                    return student.next_payment_date > todayStr;
+                                                })()
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
                                                 }`}>
                                                 <Clock size={10} />
-                                                {Math.ceil((new Date(student.next_payment_date) - new Date()) / (1000 * 60 * 60 * 24)) > 0
-                                                    ? `${Math.ceil((new Date(student.next_payment_date) - new Date()) / (1000 * 60 * 60 * 24))} Días de Plan`
-                                                    : 'Plan Vencido'}
+                                                {(() => {
+                                                    const now = new Date();
+                                                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                    const diffDays = Math.ceil((new Date(student.next_payment_date) - new Date(todayStr)) / (1000 * 60 * 60 * 24));
+                                                    return diffDays > 0 ? `${diffDays} Días de Plan` : 'Plan Vencido';
+                                                })()}
                                             </span>
                                         )}
                                         {/* Controles Pendientes */}
