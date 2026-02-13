@@ -24,6 +24,7 @@ export default function AdCreativeStudio() {
     const [context, setContext] = useState('');
     const [adCopy, setAdCopy] = useState(null);
     const [themeColor, setThemeColor] = useState('#ff5722'); // Primary orange
+    const [layout, setLayout] = useState('vertical'); // 'vertical' or 'horizontal'
 
     const creativeRef = useRef(null);
 
@@ -142,6 +143,27 @@ export default function AdCreativeStudio() {
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Layout Selection */}
+                            <div className="space-y-3 pt-4 border-t border-zinc-800">
+                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                    <Layout size={16} /> Estilo de Diseño
+                                </label>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setLayout('vertical')}
+                                        className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all border ${layout === 'vertical' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700'}`}
+                                    >
+                                        Vertical (Story)
+                                    </button>
+                                    <button
+                                        onClick={() => setLayout('horizontal')}
+                                        className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all border ${layout === 'horizontal' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700'}`}
+                                    >
+                                        Lado a Lado
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -196,8 +218,8 @@ export default function AdCreativeStudio() {
                             </div>
 
                             {/* Images Container */}
-                            <div className="flex-1 px-4 flex flex-col gap-2 relative z-10">
-                                <div className="flex-1 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 relative shadow-lg">
+                            <div className={`flex-1 px-4 grid gap-2 relative z-10 ${layout === 'vertical' ? 'grid-rows-2' : 'grid-cols-2'}`}>
+                                <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 relative shadow-lg min-h-0">
                                     {beforeImage ? (
                                         <>
                                             <img src={beforeImage} className="w-full h-full object-cover" />
@@ -211,7 +233,7 @@ export default function AdCreativeStudio() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex-1 rounded-xl overflow-hidden border-2 bg-zinc-950 relative shadow-2xl" style={{ borderColor: themeColor }}>
+                                <div className="rounded-xl overflow-hidden border-2 bg-zinc-950 relative shadow-2xl min-h-0" style={{ borderColor: themeColor }}>
                                     {afterImage ? (
                                         <>
                                             <img src={afterImage} className="w-full h-full object-cover" />
