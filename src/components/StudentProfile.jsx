@@ -92,7 +92,9 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             height: student.height || '',
             body_fat_pct: student.body_fat_pct || '',
             activity_level: student.activity_level || 1.2,
-            goal: student.goal || 'maintenance'
+            goal: student.goal || 'maintenance',
+            last_payment_date: student.last_payment_date || '',
+            last_routine_date: student.last_routine_date || ''
         });
         setIsEditing(true);
     };
@@ -617,6 +619,97 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             {/* ─── AI Nutrition Assistant Section ─── */}
             {activeSection === 'ai_nutrition' && (
                 <NutritionAssistant selectedStudent={student} />
+            )}
+
+            {/* ─── Administrative Section ─── */}
+            {activeSection === 'admin' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+                    {/* Payment Control Card */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-6">
+                        <div className="flex items-center gap-3 text-emerald-400">
+                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                <Scale size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white">Gestión de Pagos</h4>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Estado Administrativo</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-black/40 border border-zinc-800 rounded-xl p-4 space-y-4">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-zinc-500">Último Pago</span>
+                                <span className="text-white font-medium">{student.last_payment_date ? new Date(student.last_payment_date).toLocaleDateString() : 'Ninguno'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-zinc-500">Próximo Pago</span>
+                                <span className={`font-bold ${new Date(student.next_payment_date) < new Date() ? 'text-red-500' : 'text-emerald-400'}`}>
+                                    {student.next_payment_date ? new Date(student.next_payment_date).toLocaleDateString() : 'Pendiente'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={async () => {
+                                const today = new Date();
+                                const nextMonth = new Date();
+                                nextMonth.setMonth(today.getMonth() + 1);
+                                await updateStudentData(student.id, {
+                                    last_payment_date: today.toISOString().split('T')[0],
+                                    next_payment_date: nextMonth.toISOString().split('T')[0]
+                                });
+                                if (onStudentUpdated) onStudentUpdated();
+                            }}
+                            className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold text-sm transition-all border border-zinc-700 flex items-center justify-center gap-2"
+                        >
+                            <Check size={16} className="text-emerald-400" />
+                            Registrar Pago Hoy
+                        </button>
+                    </div>
+
+                    {/* Routine Control Card */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-6">
+                        <div className="flex items-center gap-3 text-primary">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                                <Dumbbell size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white">Seguimiento de Protocolos</h4>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Estado de Rutina</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-black/40 border border-zinc-800 rounded-xl p-4 space-y-4">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-zinc-500">Última Rutina enviada</span>
+                                <span className="text-white font-medium">{student.last_routine_date ? new Date(student.last_routine_date).toLocaleDateString() : 'Ninguna'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-zinc-500">Próximo Control (Check-in)</span>
+                                <span className={`font-bold ${new Date(student.next_checkin_date) < new Date() ? 'text-red-500' : 'text-amber-400'}`}>
+                                    {student.next_checkin_date ? new Date(student.next_checkin_date).toLocaleDateString() : 'No programado'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={async () => {
+                                const today = new Date();
+                                const nextWeek = new Date();
+                                nextWeek.setDate(today.getDate() + 7);
+                                await updateStudentData(student.id, {
+                                    last_routine_date: today.toISOString().split('T')[0],
+                                    next_checkin_date: nextWeek.toISOString().split('T')[0]
+                                });
+                                if (onStudentUpdated) onStudentUpdated();
+                            }}
+                            className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold text-sm transition-all border border-zinc-700 flex items-center justify-center gap-2"
+                        >
+                            <Send size={16} className="text-primary" />
+                            Marcar Rutina Enviada Hoy
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

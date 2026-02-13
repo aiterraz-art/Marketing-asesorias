@@ -17,9 +17,10 @@ import {
     Download,
     History,
     X,
-    Check
+    Check,
+    Trash2
 } from 'lucide-react';
-import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement } from '../lib/supabase';
+import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement, deleteStudent } from '../lib/supabase';
 import { MOCK_STUDENT } from '../lib/mockData';
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTrainingAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
@@ -81,6 +82,23 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         } catch (err) {
             console.error("Error creating student:", err);
             alert("Error al crear el alumno.");
+        }
+    };
+
+    const handleDeleteStudent = async (id, name) => {
+        if (!window.confirm(`¿Estás seguro de que deseas eliminar a ${name}? Esta acción no se puede deshacer y borrará todos sus planes y registros.`)) {
+            return;
+        }
+
+        try {
+            await deleteStudent(id);
+            await loadStudents();
+            if (selectedStudent?.id === id) {
+                setSelectedStudent(null);
+            }
+        } catch (err) {
+            console.error("Error deleting student:", err);
+            alert("Error al eliminar el alumno.");
         }
     };
 
@@ -147,6 +165,51 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 <StatCard title="Último Registro" value={selectedStudent?.full_name ? selectedStudent.full_name.split(' ')[0] : '---'} icon={<TrendingUp className="text-emerald-500" size={20} />} trend="Contexto" />
             </div>
 
+            {/* Alertas Administrativas */}
+            {(students || []).filter(s => {
+                const today = new Date();
+                const nextPay = s.next_payment_date ? new Date(s.next_payment_date) : null;
+                const nextCheck = s.next_checkin_date ? new Date(s.next_checkin_date) : null;
+                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today);
+            }).length > 0 && (
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 animate-in slide-in-from-left-4 duration-500">
+                        <div className="flex items-center gap-3 mb-4 text-red-500">
+                            <Activity size={20} className="animate-pulse" />
+                            <h3 className="font-bold">Alertas Prioritarias</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {students.filter(s => {
+                                const today = new Date();
+                                const nextPay = s.next_payment_date ? new Date(s.next_payment_date) : null;
+                                const nextCheck = s.next_checkin_date ? new Date(s.next_checkin_date) : null;
+                                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today);
+                            }).map(s => {
+                                const today = new Date();
+                                const isPayOverdue = s.next_payment_date && new Date(s.next_payment_date) <= today;
+                                const isCheckOverdue = s.next_checkin_date && new Date(s.next_checkin_date) <= today;
+
+                                return (
+                                    <div key={s.id} onClick={() => setSelectedStudent(s)} className="bg-black/40 border border-zinc-800 p-3 rounded-xl flex items-center justify-between hover:border-red-500/40 cursor-pointer transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                                                {s.full_name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="text-white text-sm font-medium">{s.full_name}</p>
+                                                <div className="flex gap-2 mt-0.5">
+                                                    {isPayOverdue && <span className="text-[9px] font-bold text-red-400 uppercase tracking-tighter bg-red-400/10 px-1.5 py-0.5 rounded">Pago</span>}
+                                                    {isCheckOverdue && <span className="text-[9px] font-bold text-amber-400 uppercase tracking-tighter bg-amber-400/10 px-1.5 py-0.5 rounded">Control</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={14} className="text-zinc-700" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
             {/* Tabs */}
             <div className="flex border-b border-zinc-900">
                 <SubTab label="Alumnos" isActive={activeSubTab === 'alumnos'} onClick={() => setSubTab('alumnos')} icon={<Users size={18} />} />
@@ -172,6 +235,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                             selectedId={selectedStudent?.id}
                             onSelect={setSelectedStudent}
                             onHistory={setHistoryStudent}
+                            onDelete={handleDeleteStudent}
                         />
                     )
                 )}
@@ -260,7 +324,7 @@ const SubTab = ({ label, isActive, onClick, icon }) => (
     </button>
 );
 
-const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, selectedId, onHistory }) => (
+const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, selectedId, onHistory, onDelete }) => (
     <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
@@ -310,6 +374,13 @@ const StudentList = ({ students, loading, searchTerm, onSearchChange, onSelect, 
                             title="Ver historial"
                         >
                             <History size={18} />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(s.id, s.full_name); }}
+                            className="p-2 rounded-lg text-zinc-600 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                            title="Eliminar Alumno"
+                        >
+                            <Trash2 size={18} />
                         </button>
                         <ChevronRight className={`transition-colors ${selectedId === s.id ? 'text-primary' : 'text-zinc-700 group-hover:text-primary'}`} size={20} />
                     </div>

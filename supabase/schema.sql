@@ -108,7 +108,11 @@ create table if not exists public.students (
   weight numeric, -- in kg
   body_fat_pct numeric,
   activity_level numeric default 1.2, -- Sedentario (1.2) a Muy Activo (1.9)
-  goal text default 'maintenance' -- 'cut', 'bulk', 'recomp', 'maintenance'
+  goal text default 'maintenance', -- 'cut', 'bulk', 'recomp', 'maintenance'
+  last_payment_date date,
+  last_routine_date date,
+  next_payment_date date,
+  next_checkin_date date
 );
 
 -- Create Measurements Table (Progress Tracking)

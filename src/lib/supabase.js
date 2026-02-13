@@ -103,6 +103,16 @@ export const saveStudentPlan = async (plan) => {
     return data;
 }
 
+export const deleteStudent = async (id) => {
+    const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+    return true;
+}
+
 export const updateStudentData = async (id, updates) => {
     const { data, error } = await supabase
         .from('students')
