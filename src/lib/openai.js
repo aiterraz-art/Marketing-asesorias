@@ -20,51 +20,35 @@ TODO el negocio ocurre por:
 
 ⸻
 
-🧬 Identidad de la Marca
-	•	Enfoque: entrenamiento + nutrición realista
-	•	Público:
-	•	Personas reales
-	•	Sin vida fitness extrema
-	•	Quieren verse mejor, sentirse fuertes y sanos
-	•	Tono:
-	•	Directo
-	•	Cercano
+🧬 Identidad y Pilares de Marca Personal
+	1.	Autoridad Técnica: Datos específicos de nutrición, biomecánica de entrenamiento, desmitificación de suplementos y tips basados en ciencia pero explicados simple. El objetivo es que el usuario diga "este tipo sabe de lo que habla".
+	2.	Estilo de Vida (Lifestyle): Mostrar el detrás de cámara. Rutina diaria (qué haces al despertar), tus propios entrenamientos, tus comidas del día a día (lo que realmente comes, no solo lo perfecto).
+	3.	Resultados Reales: Casos de éxito y filosofía de disciplina > motivación.
+
+Tono:
+	•	Directo y cercano
 	•	Autoridad sin soberbia
+	•	Transparente (mostrar lo bueno y lo difícil)
 	•	Cero “vende humo”
-	•	Filosofía:
-	•	Resultados sostenibles
-	•	Disciplina > motivación
-	•	Nutrición inteligente, no extrema
 
 ⸻
 
 📌 Objetivo del GPT
 
 Ayudar a:
-	1.	Crear contenido para Reels y TikTok
-	2.	Construir autoridad y confianza
-	3.	Decidir qué contenido promocionar con Meta Ads
-	4.	Optimizar inversión en anuncios
-	5.	Convertir seguidores en mensajes y ventas de asesorías
+	1.	Crear contenido para Reels y TikTok que posicione al coach como un referente.
+	2.	Generar guiones que mezclen VALOR técnico con CONEXIÓN personal.
+	3.	Decidir qué contenido promocionar para atraer nuevos clientes.
 
 ⸻
 
-🎥 Contenido para Videos
+🎥 Estructura de Reels (OBLIGATORIO)
 
-Cuando el usuario pida contenido, debes entregar:
-	•	Hook (primeros 3 segundos)
-	•	Idea central clara
-	•	Desarrollo simple
-	•	CTA directo a DM o WhatsApp
-
-Tipos de contenido que debes priorizar:
-	•	Educativo práctico
-	•	Errores comunes
-	•	Mitos fitness
-	•	Comparaciones (antes / después conceptuales)
-	•	Rutinas reales
-	•	Nutrición explicada simple
-	•	Opinión experta (sin atacar personas)
+Cada guion debe incluir:
+	1.	Hook (0-3 seg): Un gancho visual o auditivo potente que detenga el scroll.
+	2.	Estructura del Reel: Qué tipo de tomas usar (A-roll hablando a cámara, B-roll entrenando, etc.).
+	3.	Guion (Script): El texto exacto a decir o subtitular.
+	4.	CTA (Call to Action): Una orden clara (DM, seguir, comentar).
 
 ⸻
 
@@ -325,35 +309,28 @@ export const generateContentIdeas = async (params) => {
 
 		if (mode === 'weekly') {
 			contentPrompt = `
-            ACTÚA COMO UN ESTRATEGA DE CONTENIDO FITNESS DE CLASE MUNDIAL.
-            Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) de contenido basada en el tema: "${idea}".
+            ACTÚA COMO UN ESTRATEGA DE MARCA PERSONAL FITNESS.
+            Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) para crecer la marca personal basada en: "${idea}".
             
-            ESTRUCTURA ESTRATÉGICA (EMBUDOS):
-            Debes balancear la semana usando niveles de consciencia:
-            - TOFU (Top of Funnel): Viral/Educativo para gente que no te conoce.
-            - MOFU (Middle of Funnel): Autoridad/Pruebas para los que ya te siguen.
-            - BOFU (Bottom of Funnel): Venta directa/Resultados para cerrar clientes.
+            PILARES A MEZCLAR:
+            - Conocimiento (Datos Nutrición/Entreno, Suplementos, Tips).
+            - Estilo de Vida (Rutina diaria, Qué comes, Cómo entrenas).
+            - Autoridad (Opinión sobre mitos, Demostración de resultados).
 
             Configuración:
             - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
             - Formato principal: ${type}
             
-            ESTRATEGIA DE ANUNCIOS (CRÍTICO):
-            - NO todo el contenido sirve para publicidad pagada.
-            - DEBES SELECCIONAR ESTRATÉGICAMENTE solo 1 o 2 piezas de la semana que tengan el mayor potencial de ROI (normalmente BOFU o TOFU muy potente).
-            - El resto debe ser contenido orgánico.
-            
-            Genera un JSON con una propiedad "strategySummary" (resumen ejecutivo de la semana en 2 frases) y una propiedad "weeklyPlan" que sea un ARRAY de 7 objetos.
-            Cada objeto debe tener:
-            - "day": Número del día (1-7)
-            - "title": Título del contenido (gancho fuerte)
+            Genera un JSON con una propiedad "strategySummary" y un array "weeklyPlan" de 7 objetos.
+            Cada objeto debe incluir:
+            - "day": 1-7
+            - "title": Gancho fuerte
             - "funnelLevel": "TOFU" | "MOFU" | "BOFU"
-            - "type": "${type}"
-            - "script": Guion detallado o estructura
-            - "productionPlan": Instrucciones de grabación rápidas
-            - "isAdCandidate": boolean (true SOLO si es una de las 1-2 piezas seleccionadas para Ads)
-            - "adsCopy": Caption persuasivo para venta (SOLO si isAdCandidate es true, sino null)
-            - "reasoning": Por qué este contenido y por qué ese nivel de embudo.
+            - "script": Guion completo con HOOK, ESTRUCTURA (tipo de tomas) y TEXTO.
+            - "productionPlan": Instrucciones de grabación (ej: B-roll desayunando, hablando a cámara).
+            - "isAdCandidate": boolean
+            - "adsCopy": null o caption persuasivo
+            - "reasoning": Por qué ayuda a la marca personal.
 
             Responde en formato JSON:
             {
@@ -367,19 +344,22 @@ export const generateContentIdeas = async (params) => {
 		} else {
 			// Single content mode
 			contentPrompt = `
-            ACTÚA COMO UN EXPERTO ESTRATEGA DE CONTENIDO FITNESS.
-            Misión: Generar un plan de contenido para un "${type}" basado en la idea: "${idea}".
+            ACTÚA COMO UN EXPERTO EN CONTENIDO PARA MARCA PERSONAL FITNESS.
+            Misión: Generar un GUION DE REEL/Tiktok profesional para "${type}" sobre: "${idea}".
             
-            Configuración:
-            - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
-            - Verificar Ganchos: ${settings.check?.verifyHooks ? "SÍ" : "NO"}
-            - Incluir CTA: ${settings.check?.includeCta ? "SÍ" : "NO"}
+            RESTRICCIÓN: Enfócate en demostrar CONOCIMIENTO (datos, suplementación, tips) o CONEXIÓN ( lifestyle, rutina diaria).
+            
+            Debe incluir obligatoriamente:
+            1. HOOK: Gancho inicial potente.
+            2. ESTRUCTURA: Secuencia de tomas (A-roll, B-roll).
+            3. SCRIPT: Texto a decir.
+            4. CTA: Llamado a la acción.
 
-            Genera una respuesta JSON estrictamente con:
+            Respuesta JSON:
             {
-                "script": "...",
-                "productionPlan": "...",
-                "adsCopy": "..."
+                "script": "Texto completo formateado",
+                "productionPlan": "Instrucciones de tomas y edición",
+                "adsCopy": "Caption de instagram con hashtags"
             }
             `;
 		}
@@ -456,11 +436,11 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 
         TU RESPUESTA DEBE ESTAR EN FORMATO JSON ESTRUCTURADO:
         {
-            "nutrition_plan": "Un plan alimentario detallado en formato Markdown, incluyendo ejemplos de comidas (desayuno, almuerzo, merienda, cena), consejos de hidratación y suplementación básica si aplica.",
+            "nutrition_plan": "Un plan alimentario detallado en formato Markdown. REGLAS: Incluye ejemplos de comidas (desayuno, almuerzo, merienda, cena). Cada comida DEBE estar en una tabla con columnas: Alimento, Cantidad, P, C, G, kcal. Al final de cada tabla de comida, indica el Total de Calorías de esa comida. Usa vocabulario chileno (palta, descremado).",
             "training_plan": "Una rutina de entrenamiento detallada en formato Markdown, especificando días, ejercicios, series, repeticiones y tiempos de descanso, alineada con el objetivo del alumno."
         }
 
-        REGLAS:
+        REGLAS ADICIONALES:
         - Tono profesional, motivador y directo.
         - Usa Markdown para dar formato profesional (negritas, listas, tablas).
         - El plan debe ser realista y sostenible.
@@ -550,7 +530,9 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Habla directamente al alumno en segunda persona (tú). NUNCA mensajes al coach.
         - Responde en español CHILENO: usa "descremado" (no desnatado), "palta" (no aguacate), "porotos" (no judías), "choclo" (no elote), "zapallo italiano" (no calabacín).
         - Usa SOLO alimentos comunes: pollo, carne de vacuno, huevos enteros (NUNCA claras solas, por facilidad), arroz, fideos, papas cocidas, avena, pan integral, palta, aceite de oliva, leche descremada, yogurt descremado, queso fresco, verduras, frutas.${macros.useWhey ? ' También proteína whey.' : ''}
-        - Cuando generes o modifiques una dieta, usa formato Markdown con tablas incluyendo macros EXACTOS por alimento (P, C, G en gramos).
+        - Cuando generes o modifiques una dieta, usa formato Markdown con tablas incluyendo macros EXACTOS por alimento (P, C, G en gramos) Y LAS CALORÍAS (kcal).
+        - Cada tabla de comida DEBE tener una columna llamada "kcal" con las calorías de ese alimento.
+        - Al final de cada comida (Desayuno, Almuerzo, etc.), indica el **Total de Calorías de esa comida**.
         - SIEMPRE muestra las cantidades en DOS formatos:
           1. Gramos exactos (para alumnos con pesa)
           2. Medida visual (cucharadas soperas, vasos, puños, palmas, unidades)

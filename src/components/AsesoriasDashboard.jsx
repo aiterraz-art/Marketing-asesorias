@@ -543,7 +543,9 @@ ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
 - Frutas: plátano, manzana, naranja (con moderación)
 
 REGLAS DE FORMATO OBLIGATORIAS:
-- Usa tablas con los macros EXACTOS de cada alimento (proteína, carbs, grasa en gramos).
+- Usa tablas con los macros EXACTOS de cada alimento (proteína, carbs, grasa en gramos) Y LAS CALORÍAS.
+- Cada tabla DEBE tener una columna llamada "kcal" con las calorías de ese alimento.
+- Al final de cada comida (Desayuno, Almuerzo, etc.), indica el **Total de Calorías de esa comida**.
 - Incluye: Desayuno, Media Mañana, Almuerzo, Merienda y Cena.
 - Los macros totales del día deben cuadrar lo más exacto posible con el objetivo.
 - Para CADA alimento, muestra DOS columnas de cantidad:
@@ -552,11 +554,11 @@ REGLAS DE FORMATO OBLIGATORIAS:
 - Al final muestra un RESUMEN con el total de macros del día vs. el objetivo.
 - Usa vocabulario CHILENO: descremado (no desnatado), palta (no aguacate), porotos (no judías), choclo (no elote).
 
-Ejemplo de formato:
-| Alimento | Gramos | Medida Visual | P | C | G |
-|----------|--------|---------------|---|---|---|
-| Pechuga de pollo | 150g | 1 palma | 46 | 0 | 3 |
-| Arroz cocido | 200g | 1 taza | 4 | 44 | 0 |`
+Ejemplo de formato de tabla:
+| Alimento | Cantidad | Medida Visual | P | C | G | kcal |
+|----------|----------|---------------|---|---|---|------|
+| Pechuga de pollo | 150g | 1 palma | 46 | 0 | 3 | 211 |
+| Arroz cocido | 200g | 1 taza | 4 | 44 | 0 | 204 |`
         };
         setChatMessages([initialMessage]);
 
