@@ -24,7 +24,8 @@ create table if not exists public.content_items (
   ads_copy text,
   
   -- Metadata
-  idea_prompt text
+  idea_prompt text,
+  image_url text
 );
 
 -- Enable Row Level Security (RLS)

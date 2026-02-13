@@ -623,3 +623,45 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
 		throw error;
 	}
 };
+
+/**
+ * Generates persuasive copy for Ad Creatives (Before/After)
+ */
+export const generateAdCopy = async (context, settings = {}) => {
+	try {
+		const prompt = `
+            ACTÚA COMO UN COPYWRITER EXPERTO EN META ADS PARA FITNESS.
+            Misión: Generar elementos de texto para un CREATIVO PUBLICITARIO (imagen/story) basado en: "${context}".
+            
+            ESTRUCTURA REQUERIDA (JSON):
+            {
+                "headline": "Título corto y disruptivo (Ej: -10kg en 90 días)",
+                "subheadline": "Frase de apoyo que genere curiosidad o autoridad",
+                "benefits": ["Beneficio 1", "Beneficio 2", "Beneficio 3"],
+                "cta": "Llamada a la acción corta (Ej: Dale clic / DM 'QUIERO')"
+            }
+
+            REGLAS:
+            - Sé agresivo pero profesional.
+            - Usa "tú" (Chilean Spanish persona: directo, motivador).
+            - Máximo 5 palabras por headline.
+            - Máximo 10 palabras por beneficio.
+
+            Tono de voz: ${settings.brandVoice ? settings.brandVoice.name : 'Profesional y motivador'}
+        `;
+
+		const response = await openai.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [
+				{ role: "system", content: SYSTEM_PROMPT },
+				{ role: "user", content: prompt }
+			],
+			response_format: { type: "json_object" }
+		});
+
+		return JSON.parse(response.choices[0].message.content);
+	} catch (error) {
+		console.error("Error generating Ad Copy:", error);
+		throw error;
+	}
+};

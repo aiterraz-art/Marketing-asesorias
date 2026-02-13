@@ -22,6 +22,7 @@ import AIChatAssistant from './components/AIChatAssistant';
 import AdsAnalytics from './components/AdsAnalytics';
 import UnifiedDashboard from './components/UnifiedDashboard';
 import AsesoriasDashboard from './components/AsesoriasDashboard';
+import AdCreativeStudio from './components/AdCreativeStudio';
 
 function App() {
   // Initialize from URL or default to 'home'
@@ -98,6 +99,8 @@ function App() {
         return <AIChatAssistant />;
       case 'analytics':
         return <AdsAnalytics />;
+      case 'creatives':
+        return <AdCreativeStudio />;
       default:
         return <UnifiedDashboard setActiveTab={setActiveTab} />;
     }
@@ -183,12 +186,17 @@ function App() {
                 onClick={() => { setActiveTab('generator'); setSidebarOpen(false); }}
               />
 
-              <div className="px-4 py-2 mt-4 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Métricas</div>
               <NavItem
                 icon={<BarChart3 size={20} />}
                 label="Analíticas Ads"
                 isActive={activeTab === 'analytics'}
                 onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
+              />
+              <NavItem
+                icon={<Layers size={20} />}
+                label="Diseño de Ads"
+                isActive={activeTab === 'creatives'}
+                onClick={() => { setActiveTab('creatives'); setSidebarOpen(false); }}
               />
             </>
           ) : (
