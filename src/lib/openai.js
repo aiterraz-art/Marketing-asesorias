@@ -48,13 +48,18 @@ Ayudar a:
 
 ⸻
 
-🎥 Estructura de Reels (OBLIGATORIO)
+🎥 Estructura de Contenidos (OBLIGATORIO)
 
 Cada guion debe incluir:
-	1.	Hook (0-3 seg): Un gancho visual o auditivo potente que detenga el scroll.
-	2.	Estructura del Reel: Qué tipo de tomas usar (A-roll hablando a cámara, B-roll entrenando, etc.).
-	3.	Guion (Script): El texto exacto a decir o subtitular.
-	4.	CTA (Call to Action): Una orden clara (DM, seguir, comentar).
+	1.	REELS/TIKTOK:
+		- Hook (0-3 seg): Gancho visual o auditivo potente.
+		- Estructura: Secuencia de tomas (A-roll, B-roll).
+		- Script: Texto exacto.
+		- CTA: Orden clara.
+	2.	STORIES (Historias):
+		- Secuencia de 3 a 5 historias por día.
+		- Elementos de Interacción: Encuestas, stickers de preguntas, barras de reacción.
+		- Mix: 50% Lifestyle/Rutina, 30% Valor/Ciencia, 20% Interacción/Venta.
 
 ⸻
 
@@ -320,6 +325,8 @@ export const generateContentIdeas = async (params) => {
             - Conocimiento (Datos Nutrición/Entreno, Suplementos, Tips).
             - Estilo de Vida (Rutina diaria, Qué comes, Cómo entrenas).
             - Autoridad (Opinión sobre mitos, Demostración de resultados).
+            
+            SI EL FORMATO ES "STORY": Genera una secuencia de 3 a 5 historias con stickers de interacción.
 
             Configuración:
             - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
@@ -349,9 +356,11 @@ export const generateContentIdeas = async (params) => {
 			// Single content mode
 			contentPrompt = `
             ACTÚA COMO UN EXPERTO EN CONTENIDO Y ADS PARA FITNESS.
-            Misión: Generar un GUION PROFESIONAL para "${type}" sobre: "${userIdea}".
+            Misión: Generar un PLAN PROFESIONAL para "${type}" sobre: "${userIdea}".
             
             SI EL TEMA ES "AUTÓNOMO": Elige un tema de alta autoridad (Ciencia o Datos técnicos) que posicione al coach como experto.
+            
+            SI EL FORMATO ES "STORY": Diseña una secuencia de 3 a 5 historias detalladas, incluyendo stickers sugeridos (encuestas, preguntas) para maximizar interacción.
             
             ESTRATEGIA: Si el tema permite demostrar CONOCIMIENTO CIENTÍFICO o desmitificar suplementos/nutrición con datos, trátalo como un "Ad Candidate" de altísima autoridad.
             
