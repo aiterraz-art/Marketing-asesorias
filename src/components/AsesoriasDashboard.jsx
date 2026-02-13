@@ -18,7 +18,9 @@ import {
     History,
     X,
     Check,
-    Trash2
+    Trash2,
+    Calendar as CalendarIcon,
+    Activity
 } from 'lucide-react';
 import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement, deleteStudent } from '../lib/supabase';
 import { MOCK_STUDENT } from '../lib/mockData';
@@ -26,6 +28,7 @@ import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTra
 import PlanGenerator from './PlanGenerator';
 import StudentHistory from './StudentHistory';
 import StudentProfile from './StudentProfile';
+import MasterCalendar from './MasterCalendar';
 import { getExerciseImageUrl } from '../lib/exerciseDatabase';
 import {
     LineChart,
@@ -132,11 +135,18 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
     const activeSubTab = activeTab === 'nutricion' ? 'calculadora' :
         activeTab === 'alumnos' ? 'alumnos' :
             activeTab === 'rutinas' ? 'rutinas' :
-                activeTab === 'progreso' ? 'progreso' : 'alumnos';
+                activeTab === 'progreso' ? 'progreso' :
+                    activeTab === 'calendario' ? 'calendario' : 'alumnos';
 
     const setSubTab = (tab) => {
         // Al hacer clic internamente, también actualizamos el estado global (sidebar)
-        const tabMap = { 'alumnos': 'alumnos', 'calculadora': 'nutricion', 'rutinas': 'rutinas', 'progreso': 'progreso' };
+        const tabMap = {
+            'alumnos': 'alumnos',
+            'calculadora': 'nutricion',
+            'rutinas': 'rutinas',
+            'progreso': 'progreso',
+            'calendario': 'calendario'
+        };
         setActiveTab(tabMap[tab] || 'alumnos');
     };
 
@@ -170,7 +180,8 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 const today = new Date();
                 const nextPay = s.next_payment_date ? new Date(s.next_payment_date) : null;
                 const nextCheck = s.next_checkin_date ? new Date(s.next_checkin_date) : null;
-                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today);
+                const nextVideo = s.next_videocall_date ? new Date(s.next_videocall_date) : null;
+                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today) || (nextVideo && nextVideo <= today);
             }).length > 0 && (
                     <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 animate-in slide-in-from-left-4 duration-500">
                         <div className="flex items-center gap-3 mb-4 text-red-500">
@@ -182,11 +193,13 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                                 const today = new Date();
                                 const nextPay = s.next_payment_date ? new Date(s.next_payment_date) : null;
                                 const nextCheck = s.next_checkin_date ? new Date(s.next_checkin_date) : null;
-                                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today);
+                                const nextVideo = s.next_videocall_date ? new Date(s.next_videocall_date) : null;
+                                return (nextPay && nextPay <= today) || (nextCheck && nextCheck <= today) || (nextVideo && nextVideo <= today);
                             }).map(s => {
                                 const today = new Date();
                                 const isPayOverdue = s.next_payment_date && new Date(s.next_payment_date) <= today;
                                 const isCheckOverdue = s.next_checkin_date && new Date(s.next_checkin_date) <= today;
+                                const isVideoOverdue = s.next_videocall_date && new Date(s.next_videocall_date) <= today;
 
                                 return (
                                     <div key={s.id} onClick={() => setSelectedStudent(s)} className="bg-black/40 border border-zinc-800 p-3 rounded-xl flex items-center justify-between hover:border-red-500/40 cursor-pointer transition-all">
@@ -197,8 +210,9 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                                             <div>
                                                 <p className="text-white text-sm font-medium">{s.full_name}</p>
                                                 <div className="flex gap-2 mt-0.5">
-                                                    {isPayOverdue && <span className="text-[9px] font-bold text-red-400 uppercase tracking-tighter bg-red-400/10 px-1.5 py-0.5 rounded">Pago</span>}
+                                                    {isPayOverdue && <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-tighter bg-emerald-400/10 px-1.5 py-0.5 rounded">Pago</span>}
                                                     {isCheckOverdue && <span className="text-[9px] font-bold text-amber-400 uppercase tracking-tighter bg-amber-400/10 px-1.5 py-0.5 rounded">Control</span>}
+                                                    {isVideoOverdue && <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter bg-blue-400/10 px-1.5 py-0.5 rounded">Video</span>}
                                                 </div>
                                             </div>
                                         </div>
@@ -216,6 +230,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 <SubTab label="Calculadora" isActive={activeSubTab === 'calculadora'} onClick={() => setSubTab('calculadora')} icon={<Calculator size={18} />} />
                 <SubTab label="Rutinas" isActive={activeSubTab === 'rutinas'} onClick={() => setSubTab('rutinas')} icon={<Dumbbell size={18} />} />
                 <SubTab label="Progreso" isActive={activeSubTab === 'progreso'} onClick={() => setSubTab('progreso')} icon={<TrendingUp size={18} />} />
+                <SubTab label="Calendario" isActive={activeSubTab === 'calendario'} onClick={() => setSubTab('calendario')} icon={<CalendarIcon size={18} />} />
             </div>
 
             <main className="min-h-[400px]">
@@ -281,6 +296,12 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                     />
                 )}
                 {activeSubTab === 'progreso' && <ProgressTracker selectedStudent={selectedStudent} />}
+                {activeSubTab === 'calendario' && (
+                    <MasterCalendar onSelectStudent={(s) => {
+                        setSelectedStudent(s);
+                        setSubTab('alumnos');
+                    }} />
+                )}
             </main>
 
             <StudentModal

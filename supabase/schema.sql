@@ -112,7 +112,8 @@ create table if not exists public.students (
   last_payment_date date,
   last_routine_date date,
   next_payment_date date,
-  next_checkin_date date
+  next_checkin_date date,
+  next_videocall_date timestamptz
 );
 
 -- Create Measurements Table (Progress Tracking)

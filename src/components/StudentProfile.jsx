@@ -5,7 +5,8 @@ import {
     ArrowLeft, User, Ruler, Weight, Target, Activity, Calendar,
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
-    Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles
+    Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles,
+    Video, Clock
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
@@ -40,6 +41,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const [newHip, setNewHip] = useState('');
     const [newPhoto, setNewPhoto] = useState(null);
     const [isSavingMeasure, setIsSavingMeasure] = useState(false);
+    const [nextVideoCall, setNextVideoCall] = useState(student.next_videocall_date ? new Date(student.next_videocall_date).toISOString().slice(0, 16) : '');
 
     useEffect(() => {
         if (student) loadData();
@@ -667,47 +669,65 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                         </button>
                     </div>
 
-                    {/* Routine Control Card */}
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-6">
-                        <div className="flex items-center gap-3 text-primary">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <Dumbbell size={20} />
+                    {/* Video Call Session Card */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-6 md:col-span-2 lg:col-span-1">
+                        <div className="flex items-center gap-3 text-blue-400">
+                            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                                <Video size={20} />
                             </div>
                             <div>
-                                <h4 className="font-bold text-white">Seguimiento de Protocolos</h4>
-                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Estado de Rutina</p>
+                                <h4 className="font-bold text-white">Sesiones de Video</h4>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Programación de Citas</p>
                             </div>
                         </div>
 
                         <div className="bg-black/40 border border-zinc-800 rounded-xl p-4 space-y-4">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-zinc-500">Última Rutina enviada</span>
-                                <span className="text-white font-medium">{student.last_routine_date ? new Date(student.last_routine_date).toLocaleDateString() : 'Ninguna'}</span>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Próxima video llamada</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="datetime-local"
+                                        value={nextVideoCall}
+                                        onChange={(e) => setNextVideoCall(e.target.value)}
+                                        className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:border-primary outline-none transition-colors"
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            if (!nextVideoCall) return;
+                                            try {
+                                                await updateStudentData(student.id, {
+                                                    next_videocall_date: new Date(nextVideoCall).toISOString()
+                                                });
+                                                if (onStudentUpdated) onStudentUpdated();
+                                                alert("Sesión programada con éxito");
+                                            } catch (err) {
+                                                console.error("Error scheduling videocall:", err);
+                                                alert("Error al programar la sesión");
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-2"
+                                    >
+                                        <Check size={16} /> Agendar
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-zinc-500">Próximo Control (Check-in)</span>
-                                <span className={`font-bold ${new Date(student.next_checkin_date) < new Date() ? 'text-red-500' : 'text-amber-400'}`}>
-                                    {student.next_checkin_date ? new Date(student.next_checkin_date).toLocaleDateString() : 'No programado'}
-                                </span>
-                            </div>
+
+                            {student.next_videocall_date && (
+                                <div className="flex items-center gap-2 text-xs text-blue-400 font-medium pt-2 border-t border-zinc-800/50">
+                                    <Clock size={12} />
+                                    Cita actual: {new Date(student.next_videocall_date).toLocaleString('es-CL', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </div>
+                            )}
                         </div>
 
-                        <button
-                            onClick={async () => {
-                                const today = new Date();
-                                const nextWeek = new Date();
-                                nextWeek.setDate(today.getDate() + 7);
-                                await updateStudentData(student.id, {
-                                    last_routine_date: today.toISOString().split('T')[0],
-                                    next_checkin_date: nextWeek.toISOString().split('T')[0]
-                                });
-                                if (onStudentUpdated) onStudentUpdated();
-                            }}
-                            className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold text-sm transition-all border border-zinc-700 flex items-center justify-center gap-2"
-                        >
-                            <Send size={16} className="text-primary" />
-                            Marcar Rutina Enviada Hoy
-                        </button>
+                        <div className="text-[10px] text-zinc-500 italic">
+                            * Al agendar, la sesión aparecerá automáticamente en el Calendario Maestro.
+                        </div>
                     </div>
                 </div>
             )}
