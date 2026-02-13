@@ -8,26 +8,40 @@ import {
     Activity,
     User,
     CheckCircle2,
-    Clock
+    Clock,
+    Plus,
+    X,
+    Check
 } from 'lucide-react';
-import { getStudents } from '../lib/supabase';
+import { getStudents, updateStudentData } from '../lib/supabase';
 
 const MasterCalendar = ({ onSelectStudent }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedDay, setSelectedDay] = useState(null);
+    const [schedulingData, setSchedulingData] = useState({
+        studentId: '',
+        type: 'videocall',
+        date: '',
+        time: '12:00'
+    });
+    const [isSaving, setIsSaving] = useState(false);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const data = await getStudents();
+            setStudents(data);
+        } catch (err) {
+            console.error("Error loading students for calendar:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const data = await getStudents();
-                setStudents(data);
-            } catch (err) {
-                console.error("Error loading students for calendar:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadData();
     }, []);
 
@@ -51,6 +65,48 @@ const MasterCalendar = ({ onSelectStudent }) => {
     const month = currentDate.getMonth();
     const totalDays = daysInMonth(year, month);
     const firstDay = firstDayOfMonth(year, month);
+
+    const handleOpenModal = (day = null) => {
+        const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : new Date().toISOString().split('T')[0];
+        setSchedulingData({
+            ...schedulingData,
+            date: dateStr
+        });
+        setSelectedDay(day);
+        setIsModalOpen(true);
+    };
+
+    const handleQuickSchedule = async () => {
+        if (!schedulingData.studentId || !schedulingData.date) {
+            alert("Por favor selecciona un alumno y una fecha.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            let updates = {};
+            const dateStr = schedulingData.date;
+
+            if (schedulingData.type === 'payment') {
+                updates = { next_payment_date: dateStr };
+            } else if (schedulingData.type === 'checkin') {
+                updates = { next_checkin_date: dateStr };
+            } else if (schedulingData.type === 'videocall') {
+                const fullDateTime = new Date(`${dateStr}T${schedulingData.time}:00`).toISOString();
+                updates = { next_videocall_date: fullDateTime };
+            }
+
+            await updateStudentData(schedulingData.studentId, updates);
+            await loadData();
+            setIsModalOpen(false);
+            setSchedulingData({ studentId: '', type: 'videocall', date: '', time: '12:00' });
+        } catch (err) {
+            console.error("Error saving schedule:", err);
+            alert("Error al guardar la programación.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // Mapear eventos
     const getEventsForDay = (day) => {
@@ -86,30 +142,34 @@ const MasterCalendar = ({ onSelectStudent }) => {
 
     const renderDays = () => {
         const days = [];
-        // Celdas vacías al inicio
         for (let i = 0; i < firstDay; i++) {
             days.push(<div key={`empty-${i}`} className="h-32 border border-zinc-900/50 bg-zinc-950/20"></div>);
         }
 
-        // Días del mes
         for (let d = 1; d <= totalDays; d++) {
             const events = getEventsForDay(d);
             const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
 
             days.push(
-                <div key={d} className={`h-32 border border-zinc-900/50 p-2 transition-colors hover:bg-zinc-900/20 ${isToday ? 'bg-primary/5' : 'bg-surface'}`}>
+                <div
+                    key={d}
+                    onClick={() => handleOpenModal(d)}
+                    className={`h-32 border border-zinc-900/50 p-2 transition-colors hover:bg-zinc-900/20 group cursor-pointer ${isToday ? 'bg-primary/5' : 'bg-surface'}`}
+                >
                     <div className="flex justify-between items-start mb-2">
                         <span className={`text-xs font-bold ${isToday ? 'text-primary' : 'text-zinc-500'}`}>
                             {d}
                         </span>
-                        {isToday && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(249,115,22,0.6)]" />}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Plus size={12} className="text-primary" />
+                        </div>
                     </div>
 
                     <div className="space-y-1 overflow-y-auto max-h-[80px] scrollbar-hide">
                         {events.map((e, idx) => (
                             <div
                                 key={idx}
-                                onClick={() => onSelectStudent(e.student)}
+                                onClick={(ev) => { ev.stopPropagation(); onSelectStudent(e.student); }}
                                 className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded border text-[9px] font-medium cursor-pointer hover:opacity-80 transition-opacity truncate ${e.color}`}
                                 title={`${e.student.full_name} - ${e.type === 'payment' ? 'Pago' : e.type === 'checkin' ? 'Control' : 'Video'}`}
                             >
@@ -126,7 +186,7 @@ const MasterCalendar = ({ onSelectStudent }) => {
     };
 
     return (
-        <div className="bg-surface border border-zinc-900 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-500">
+        <div className="bg-surface border border-zinc-900 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative">
             {/* Header Calendario */}
             <div className="p-6 border-b border-zinc-900 bg-zinc-900/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -135,12 +195,18 @@ const MasterCalendar = ({ onSelectStudent }) => {
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-white">{monthNames[month]} {year}</h2>
-                        <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mt-0.5">Calendario Maestro de Élite</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Calendario Maestro de Élite</p>
+                            <span className="w-1 h-1 rounded-full bg-zinc-800" />
+                            <button onClick={() => handleOpenModal()} className="text-[10px] text-primary hover:underline font-bold flex items-center gap-1">
+                                <Plus size={10} /> PROGRAMAR HITO
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="flex bg-black border border-zinc-800 rounded-lg p-1 mr-4">
+                    <div className="hidden lg:flex bg-black border border-zinc-800 rounded-lg p-1 mr-4">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-emerald-400 border-r border-zinc-800">
                             <CreditCard size={12} /> PAGOS
                         </div>
@@ -189,10 +255,103 @@ const MasterCalendar = ({ onSelectStudent }) => {
             <div className="p-4 bg-zinc-950 border-t border-zinc-900 flex items-center justify-between text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
                 <div className="flex gap-4">
                     <span className="flex items-center gap-1.5"><Clock size={12} /> {students.length} Alumnos Monitoreados</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle2 size={12} /> Automización de Fechas Activa</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 size={12} /> Registro Directo Habilitado</span>
                 </div>
-                <span>Versión Marketing OS 2.1</span>
+                <span>Versión Marketing OS 2.2</span>
             </div>
+
+            {/* Modal de Programación Rápida */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in slide-in-from-bottom-8 duration-500">
+                        <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                                    <Plus size={18} />
+                                </div>
+                                <h3 className="font-bold text-white">Programar Hito</h3>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {/* Alumno */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Alumno</label>
+                                <select
+                                    value={schedulingData.studentId}
+                                    onChange={(e) => setSchedulingData({ ...schedulingData, studentId: e.target.value })}
+                                    className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:border-primary outline-none transition-all"
+                                >
+                                    <option value="">Seleccionar alumno...</option>
+                                    {students.map(s => (
+                                        <option key={s.id} value={s.id}>{s.full_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Tipo */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    onClick={() => setSchedulingData({ ...schedulingData, type: 'payment' })}
+                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${schedulingData.type === 'payment' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'}`}
+                                >
+                                    <CreditCard size={18} />
+                                    <span className="text-[9px] font-bold">PAGO</span>
+                                </button>
+                                <button
+                                    onClick={() => setSchedulingData({ ...schedulingData, type: 'videocall' })}
+                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${schedulingData.type === 'videocall' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'}`}
+                                >
+                                    <Video size={18} />
+                                    <span className="text-[9px] font-bold">VIDEO</span>
+                                </button>
+                                <button
+                                    onClick={() => setSchedulingData({ ...schedulingData, type: 'checkin' })}
+                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${schedulingData.type === 'checkin' ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'}`}
+                                >
+                                    <Activity size={18} />
+                                    <span className="text-[9px] font-bold">CONTROL</span>
+                                </button>
+                            </div>
+
+                            {/* Fecha y Hora */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Fecha</label>
+                                    <input
+                                        type="date"
+                                        value={schedulingData.date}
+                                        onChange={(e) => setSchedulingData({ ...schedulingData, date: e.target.value })}
+                                        className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:border-primary outline-none transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Hora</label>
+                                    <input
+                                        type="time"
+                                        value={schedulingData.time}
+                                        onChange={(e) => setSchedulingData({ ...schedulingData, time: e.target.value })}
+                                        disabled={schedulingData.type !== 'videocall'}
+                                        className={`w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:border-primary outline-none transition-all ${schedulingData.type !== 'videocall' ? 'opacity-30' : ''}`}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleQuickSchedule}
+                                disabled={isSaving}
+                                className="w-full py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity mt-4 shadow-xl shadow-primary/10"
+                            >
+                                {isSaving ? <Clock className="animate-spin" size={20} /> : <Check size={20} />}
+                                {isSaving ? 'Guardando...' : 'Confirmar Programación'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
