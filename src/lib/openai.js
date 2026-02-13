@@ -638,7 +638,8 @@ export const generateAdCopy = async (context, settings = {}) => {
                 "headline": "Título corto y disruptivo (Ej: -10kg en 90 días)",
                 "subheadline": "Frase de apoyo que genere curiosidad o autoridad",
                 "benefits": ["Beneficio 1", "Beneficio 2", "Beneficio 3"],
-                "cta": "Llamada a la acción corta (Ej: Dale clic / DM 'QUIERO')"
+                "cta": "Llamada a la acción corta (Ej: Dale clic / DM 'QUIERO')",
+                "canva_image_prompt": "Prompt optimizado para generar el fondo o imagen en la IA de Canva (Magic Media)"
             }
 
             REGLAS:

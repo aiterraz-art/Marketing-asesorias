@@ -69,6 +69,11 @@ export default function AdCreativeStudio() {
         }
     };
 
+    const copyToClipboard = (text, label) => {
+        navigator.clipboard.writeText(text);
+        alert(`${label} copiado al portapapeles!`);
+    };
+
     return (
         <div className="p-6 h-auto lg:h-[calc(100vh-100px)] overflow-y-auto max-w-6xl mx-auto">
             <div className="flex flex-col lg:flex-row gap-8">
@@ -168,10 +173,89 @@ export default function AdCreativeStudio() {
                     </div>
 
                     {adCopy && (
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex gap-3 animate-in fade-in slide-in-from-top-2">
-                            <CheckCircle2 className="text-emerald-500 shrink-0" />
-                            <p className="text-sm text-emerald-200/80 italic">
-                                "Copy generado con enfoque de alto rendimiento. Las Headlines están optimizadas para detener el scroll."
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                                <div className="flex items-center gap-2 text-primary font-bold">
+                                    <Sparkles size={18} />
+                                    <span>Kit de Copy para Canva Pro</span>
+                                </div>
+                                <a
+                                    href="https://www.canva.com"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md transition-all"
+                                >
+                                    Abrir Canva ↗
+                                </a>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="group">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] text-zinc-500 uppercase font-black">Headline (Gancho)</span>
+                                        <button
+                                            onClick={() => copyToClipboard(adCopy.headline, 'Headline')}
+                                            className="text-[10px] text-primary hover:underline"
+                                        >
+                                            Copiar
+                                        </button>
+                                    </div>
+                                    <p className="text-sm text-white font-medium bg-zinc-950 p-2 rounded border border-zinc-800">{adCopy.headline}</p>
+                                </div>
+
+                                <div className="group">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] text-zinc-500 uppercase font-black">Subheadline</span>
+                                        <button
+                                            onClick={() => copyToClipboard(adCopy.subheadline, 'Subheadline')}
+                                            className="text-[10px] text-primary hover:underline"
+                                        >
+                                            Copiar
+                                        </button>
+                                    </div>
+                                    <p className="text-sm text-white bg-zinc-950 p-2 rounded border border-zinc-800">{adCopy.subheadline}</p>
+                                </div>
+
+                                <div className="group">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] text-zinc-500 uppercase font-black">Beneficios (Bullet Points)</span>
+                                        <button
+                                            onClick={() => copyToClipboard(adCopy.benefits.join('\n'), 'Beneficios')}
+                                            className="text-[10px] text-primary hover:underline"
+                                        >
+                                            Copiar todos
+                                        </button>
+                                    </div>
+                                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800 space-y-1">
+                                        {adCopy.benefits.map((b, i) => (
+                                            <p key={i} className="text-xs text-zinc-300">• {b}</p>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {adCopy.canva_image_prompt && (
+                                    <div className="pt-2 border-t border-zinc-800">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <div className="flex items-center gap-1">
+                                                <Sparkles size={10} className="text-primary" />
+                                                <span className="text-[10px] text-zinc-500 uppercase font-black">Prompt para IA de Canva</span>
+                                            </div>
+                                            <button
+                                                onClick={() => copyToClipboard(adCopy.canva_image_prompt, 'Prompt de IA')}
+                                                className="text-[10px] text-primary hover:underline"
+                                            >
+                                                Copiar Prompt
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 bg-zinc-950/50 p-2 rounded border border-dashed border-zinc-800 leading-relaxed">
+                                            {adCopy.canva_image_prompt}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <p className="text-[10px] text-zinc-600 italic">
+                                Sugerencia: Usa fuentes como 'Inter Bold' o 'Anton' en Canva para este copy.
                             </p>
                         </div>
                     )}
