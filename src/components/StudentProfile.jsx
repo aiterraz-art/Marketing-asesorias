@@ -14,8 +14,9 @@ import {
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    RadialBarChart, RadialBar
+    RadialBarChart, RadialBar, Legend
 } from 'recharts';
+import NutritionAssistant from './NutritionAssistant';
 
 const GOAL_LABELS = { cut: 'Definición', bulk: 'Volumen', maintenance: 'Mantenimiento', recomp: 'Recomposición' };
 const ACTIVITY_LABELS = { 1.2: 'Sedentario', 1.375: 'Ligero', 1.55: 'Moderado', 1.725: 'Intenso', 1.9: 'Muy Intenso' };
@@ -35,6 +36,9 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const [showAddMeasure, setShowAddMeasure] = useState(false);
     const [newWeight, setNewWeight] = useState('');
     const [newFat, setNewFat] = useState('');
+    const [newWaist, setNewWaist] = useState('');
+    const [newHip, setNewHip] = useState('');
+    const [newPhoto, setNewPhoto] = useState(null);
     const [isSavingMeasure, setIsSavingMeasure] = useState(false);
 
     useEffect(() => {
@@ -111,10 +115,16 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             await addStudentMeasurement({
                 student_id: student.id,
                 weight: parseFloat(newWeight),
-                body_fat_pct: newFat ? parseFloat(newFat) : null
+                body_fat_pct: newFat ? parseFloat(newFat) : null,
+                waist_cm: newWaist ? parseFloat(newWaist) : null,
+                hip_cm: newHip ? parseFloat(newHip) : null,
+                photo_url: newPhoto // Simplificado, idealmente subir a Storage
             });
             setNewWeight('');
             setNewFat('');
+            setNewWaist('');
+            setNewHip('');
+            setNewPhoto(null);
             setShowAddMeasure(false);
             await loadData();
         } catch (err) {
@@ -142,9 +152,10 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     // ─── Section Navigation ───
     const sections = [
         { id: 'dashboard', label: 'Resumen', icon: <BarChart3 size={16} /> },
-        { id: 'nutrition', label: 'Nutrición', icon: <Apple size={16} /> },
-        { id: 'training', label: 'Entrenamiento', icon: <Dumbbell size={16} /> },
-        { id: 'measures', label: 'Medidas', icon: <Scale size={16} /> },
+        { id: 'nutrition', label: 'Planes Nutri', icon: <Apple size={16} /> },
+        { id: 'training', label: 'Entrenamientos', icon: <Dumbbell size={16} /> },
+        { id: 'measures', label: 'Progresos', icon: <Scale size={16} /> },
+        { id: 'ai_nutrition', label: 'Asistente Pro', icon: <Sparkles size={16} /> },
     ];
 
     if (loading) {
@@ -493,6 +504,43 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     <X size={16} />
                                 </button>
                             </div>
+                            <div className="flex-1 space-y-1 w-full">
+                                <label className="text-[10px] text-zinc-600 uppercase font-bold">Cintura (cm)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={newWaist}
+                                    onChange={(e) => setNewWaist(e.target.value)}
+                                    placeholder="85"
+                                    className="w-full bg-black border border-zinc-800 rounded-lg p-2.5 text-white outline-none focus:border-primary text-sm"
+                                />
+                            </div>
+                            <div className="flex-1 space-y-1 w-full">
+                                <label className="text-[10px] text-zinc-600 uppercase font-bold">Cadera (cm)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={newHip}
+                                    onChange={(e) => setNewHip(e.target.value)}
+                                    placeholder="95"
+                                    className="w-full bg-black border border-zinc-800 rounded-lg p-2.5 text-white outline-none focus:border-primary text-sm"
+                                />
+                            </div>
+                            <div className="flex-1 space-y-1 w-full">
+                                <label className="text-[10px] text-zinc-600 uppercase font-bold">Foto de Progreso</label>
+                                <input
+                                    type="file"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => setNewPhoto(reader.result);
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                    className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-xs text-zinc-500 file:bg-zinc-800 file:border-none file:text-white file:px-2 file:py-1 file:rounded file:mr-2"
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -564,6 +612,11 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* ─── AI Nutrition Assistant Section ─── */}
+            {activeSection === 'ai_nutrition' && (
+                <NutritionAssistant selectedStudent={student} />
             )}
         </div>
     );

@@ -48,13 +48,14 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
 
         const element = document.getElementById('pdf-content');
         const opt = {
-            margin: [15, 15],
-            filename: `Plan_Fitness_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
+            margin: [0, 0],
+            filename: `Elite_Plan_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 1 },
             html2canvas: {
-                scale: 2,
+                scale: 3,
                 backgroundColor: '#ffffff',
-                useCORS: true
+                useCORS: true,
+                letterRendering: true
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
@@ -174,24 +175,58 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                         </div>
                     </div>
 
-                    {/* Hidden Copy for PDF (Light Theme optimized) - Off-screen instead of display:none */}
+                    {/* Hidden Copy for PDF (Elite Magazine Style) */}
                     <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                        <div id="pdf-content" style={{ width: '800px', padding: '60px', color: '#000', backgroundColor: '#fff', fontFamily: 'sans-serif', lineBreak: 'auto' }}>
-                            <h1 style={{ color: '#7c3aed', marginBottom: '20px' }}>Plan Fitness Personalizado</h1>
-                            <p><strong>Alumno:</strong> {selectedStudent.full_name}</p>
-                            <p><strong>Objetivo:</strong> {selectedStudent.goal}</p>
-                            <hr style={{ margin: '20px 0' }} />
-                            <div style={{ marginBottom: '40px' }}>
-                                <h2 style={{ color: '#7c3aed' }}>Nutrición</h2>
-                                <div className="markdown-pdf">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.nutrition_plan}</ReactMarkdown>
+                        <div id="pdf-content" style={{ width: '800px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Arial, sans-serif' }}>
+                            {/* Magazine Header */}
+                            <div style={{ backgroundColor: '#7c3aed', padding: '60px 40px', color: '#fff', textAlign: 'center' }}>
+                                <p style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '10px', opacity: 0.8 }}>Protocolo de Alto Rendimiento</p>
+                                <h1 style={{ fontSize: '48px', fontWeight: '900', textTransform: 'uppercase', margin: 0, fontStyle: 'italic', letterSpacing: '-1px' }}>
+                                    {selectedStudent.goal === 'cut' ? 'Sredded' : selectedStudent.goal === 'bulk' ? 'Titan' : 'Elite'} Profile
+                                </h1>
+                                <div style={{ height: '4px', width: '60px', backgroundColor: '#fff', margin: '25px auto' }}></div>
+                                <p style={{ fontSize: '18px', fontWeight: '700' }}>Alumno: {selectedStudent.full_name}</p>
+                            </div>
+
+                            {/* Body */}
+                            <div style={{ padding: '40px' }}>
+                                {/* Metrics Bar */}
+                                <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', borderBottom: '2px solid #f4f4f5', paddingBottom: '20px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '10px', fontWeight: '900', color: '#71717a', textTransform: 'uppercase', margin: 0 }}>Objetivo</p>
+                                        <p style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>{selectedStudent.goal.toUpperCase()}</p>
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '10px', fontWeight: '900', color: '#71717a', textTransform: 'uppercase', margin: 0 }}>Calorías Base</p>
+                                        <p style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>{macros.calories} kcal</p>
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '10px', fontWeight: '900', color: '#71717a', textTransform: 'uppercase', margin: 0 }}>Macros</p>
+                                        <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>P: {macros.protein}g | G: {macros.fat}g | C: {macros.carbs}g</p>
+                                    </div>
+                                </div>
+
+                                {/* Content Sections */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '40px' }}>
+                                    <div>
+                                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>Protocolo Nutricional</h2>
+                                        <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.nutrition_plan}</ReactMarkdown>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ borderTop: '1px solid #e4e4e7', pt: '40px' }}>
+                                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>Sistema de Entrenamiento</h2>
+                                        <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.training_plan}</ReactMarkdown>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <h2 style={{ color: '#7c3aed' }}>Entrenamiento</h2>
-                                <div className="markdown-pdf">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.training_plan}</ReactMarkdown>
-                                </div>
+
+                            {/* Footer */}
+                            <div style={{ backgroundColor: '#f9fafb', padding: '30px 40px', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
+                                <p style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', margin: 0 }}>Marketing OS - Coaching Automático de Clase Mundial</p>
                             </div>
                         </div>
                     </div>

@@ -666,3 +666,76 @@ export const generateAdCopy = async (context, settings = {}) => {
 		throw error;
 	}
 };
+
+/**
+ * Calcula equivalencias de alimentos (Motor de Sustitución)
+ */
+export const calculateFoodSubstitution = async (originalFood, targetFood, macros = {}) => {
+	try {
+		const prompt = `
+            ACTÚA COMO UN NUTRICIONISTA CLÍNICO Y DEPORTIVO.
+            Tarea: Calcular la equivalencia exacta entre dos alimentos manteniendo los macros lo más similares posible.
+            
+            Original: ${originalFood}
+            Sustituto deseado: ${targetFood}
+            
+            RETORNA UN JSON CON ESTA ESTRUCTURA:
+            {
+                "original_qty": "Cantidad original (ej: 100g)",
+                "substituted_qty": "Cantidad del nuevo alimento requerida",
+                "explanation": "Breve explicación técnica de por qué este cambio (máximo 15 palabras)",
+                "macros_difference": "Diferencia calórica estimada"
+            }
+        `;
+
+		const response = await openai.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [{ role: "user", content: prompt }],
+			response_format: { type: "json_object" }
+		});
+
+		return JSON.parse(response.choices[0].message.content);
+	} catch (error) {
+		console.error("Error calculating substitution:", error);
+		throw error;
+	}
+};
+
+/**
+ * Genera un protocolo de suplementación profesional
+ */
+export const generateSupplementsProtocol = async (student, goal) => {
+	try {
+		const prompt = `
+            ACTÚA COMO UN EXPERTO EN FARMACOLOGÍA Y SUPLEMENTACIÓN DEPORTIVA (BASADO EN EVIDENCIA).
+            Genera un protocolo de suplementación para:
+            Nombre: ${student.full_name}
+            Objetivo: ${goal}
+            Peso: ${student.weight}kg
+            
+            REGLAS:
+            - Solo suplementos con grado de evidencia A o B (Creatina, Cafeína, Proteína, etc).
+            - Indica dosis exactas basadas en su peso.
+            - Indica timing (cuándo tomarlo).
+            - Menciona el beneficio científico brevemente.
+
+            RETORNA UN JSON:
+            {
+                "protocol": "Texto formateado en Markdown con el protocolo completo",
+                "total_cost_estimate": "Estimado de costo mensual (clp)",
+                "key_benefit": "El beneficio principal de este stack"
+            }
+        `;
+
+		const response = await openai.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [{ role: "user", content: prompt }],
+			response_format: { type: "json_object" }
+		});
+
+		return JSON.parse(response.choices[0].message.content);
+	} catch (error) {
+		console.error("Error generating supplements:", error);
+		throw error;
+	}
+};
