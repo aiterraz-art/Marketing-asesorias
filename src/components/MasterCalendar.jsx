@@ -33,10 +33,12 @@ const MasterCalendar = ({ onSelectStudent }) => {
         setLoading(true);
         try {
             const data = await getStudents();
-            setStudents(data);
+            console.log("MasterCalendar: Alumnos cargados:", data);
+            setStudents(data || []);
         } catch (err) {
             console.error("Error loading students for calendar:", err);
         } finally {
+            console.log("MasterCalendar: Carga finalizada. Students state:", students);
             setLoading(false);
         }
     };
@@ -285,9 +287,11 @@ const MasterCalendar = ({ onSelectStudent }) => {
                                     onChange={(e) => setSchedulingData({ ...schedulingData, studentId: e.target.value })}
                                     className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:border-primary outline-none transition-all"
                                 >
-                                    <option value="">Seleccionar alumno...</option>
+                                    <option value="" className="bg-zinc-900 text-zinc-400">Seleccionar alumno...</option>
                                     {students.map(s => (
-                                        <option key={s.id} value={s.id}>{s.full_name}</option>
+                                        <option key={s.id} value={s.id} className="bg-zinc-900 text-white">
+                                            {s.full_name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
