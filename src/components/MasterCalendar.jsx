@@ -11,7 +11,8 @@ import {
     Clock,
     Plus,
     X,
-    Check
+    Check,
+    Users
 } from 'lucide-react';
 import { updateStudentData } from '../lib/supabase';
 
