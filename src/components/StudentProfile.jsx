@@ -5,7 +5,7 @@ import {
     ArrowLeft, User, Ruler, Weight, Target, Activity, Calendar,
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
-    Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download
+    Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
