@@ -124,6 +124,18 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                 hip_cm: newHip ? parseFloat(newHip) : null,
                 photo_url: newPhoto // Simplificado, idealmente subir a Storage
             });
+
+            // Lógica de decremento de controles
+            if (student.remaining_checks > 0) {
+                const nextCheckDate = new Date();
+                nextCheckDate.setDate(nextCheckDate.getDate() + 7);
+
+                await updateStudentData(student.id, {
+                    remaining_checks: student.remaining_checks - 1,
+                    next_checkin_date: student.remaining_checks > 1 ? nextCheckDate.toISOString().split('T')[0] : null
+                });
+            }
+
             setNewWeight('');
             setNewFat('');
             setNewWaist('');
@@ -131,6 +143,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             setNewPhoto(null);
             setShowAddMeasure(false);
             await loadData();
+            if (onStudentUpdated) onStudentUpdated();
         } catch (err) {
             console.error("Error adding measurement:", err);
             alert("Error al guardar la medida.");
@@ -188,16 +201,42 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             {student.full_name.charAt(0)}
                         </div>
                         <div>
-                            {isEditing ? (
-                                <input
-                                    type="text"
-                                    value={editData.full_name}
-                                    onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
-                                    className="bg-black border border-zinc-700 rounded-lg px-3 py-1 text-white text-xl font-bold outline-none focus:border-primary"
-                                />
-                            ) : (
-                                <h2 className="text-2xl font-bold text-white">{student.full_name}</h2>
-                            )}
+                            <div className="flex items-center gap-3">
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editData.full_name}
+                                        onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
+                                        className="bg-black border border-zinc-700 rounded-lg px-3 py-1 text-white text-xl font-bold outline-none focus:border-primary"
+                                    />
+                                ) : (
+                                    <h2 className="text-2xl font-bold text-white">{student.full_name}</h2>
+                                )}
+
+                                {!isEditing && (
+                                    <div className="flex gap-2">
+                                        {/* Días de Plan Restantes */}
+                                        {student.next_payment_date && (
+                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${new Date(student.next_payment_date) > new Date()
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                }`}>
+                                                <Clock size={10} />
+                                                {Math.ceil((new Date(student.next_payment_date) - new Date()) / (1000 * 60 * 60 * 24)) > 0
+                                                    ? `${Math.ceil((new Date(student.next_payment_date) - new Date()) / (1000 * 60 * 60 * 24))} Días de Plan`
+                                                    : 'Plan Vencido'}
+                                            </span>
+                                        )}
+                                        {/* Controles Pendientes */}
+                                        {(student.remaining_checks > 0) && (
+                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
+                                                <Activity size={10} />
+                                                {student.remaining_checks} Controles Pendientes
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500">
                                 <span className="flex items-center gap-1"><User size={13} /> {student.age} años</span>
                                 <span className="flex items-center gap-1"><Ruler size={13} /> {student.height}cm</span>

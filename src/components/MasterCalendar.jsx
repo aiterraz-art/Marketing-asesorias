@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { updateStudentData } from '../lib/supabase';
 
-const MasterCalendar = ({ onSelectStudent, students = [], onUpdate }) => {
+const MasterCalendar = ({ onSelectStudent, students = [], onUpdate, loading }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDay, setSelectedDay] = useState(null);
@@ -73,21 +73,45 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate }) => {
         try {
             let updates = {};
             const dateStr = schedulingData.date;
+            const selectedDate = new Date(dateStr);
 
             if (schedulingData.type === 'payment') {
-                updates = { next_payment_date: dateStr };
+                // El usuario está marcando que hoy (o el día seleccionado) se hizo un pago.
+                // Por lo tanto, el pago actual es el 'last_payment_date'.
+                // Y el sistema proyecta el 'next_payment_date' para 30 días después.
+                const nextPayDate = new Date(selectedDate);
+                nextPayDate.setDate(nextPayDate.getDate() + 30);
+
+                updates = {
+                    last_payment_date: dateStr,
+                    next_payment_date: nextPayDate.toISOString().split('T')[0]
+                };
             } else if (schedulingData.type === 'checkin') {
                 updates = { next_checkin_date: dateStr };
             } else if (schedulingData.type === 'videocall') {
                 const fullDateTime = new Date(`${dateStr}T${schedulingData.time}:00`).toISOString();
-                updates = { next_videocall_date: fullDateTime };
+
+                // Al programar video:
+                // 1. Programamos la video (next_videocall_date)
+                // 2. Seteamos 4 controles restantes (remaining_checks)
+                // 3. Programamos el PRIMER control para 7 días después de la video
+                const firstCheckDate = new Date(selectedDate);
+                firstCheckDate.setDate(firstCheckDate.getDate() + 7);
+
+                updates = {
+                    next_videocall_date: fullDateTime,
+                    remaining_checks: 4,
+                    next_checkin_date: firstCheckDate.toISOString().split('T')[0]
+                };
             }
 
             await updateStudentData(schedulingData.studentId, updates);
             if (onUpdate) await onUpdate(); // Sincronizar con el dashboard
             setIsModalOpen(false);
             setSchedulingData({ studentId: '', type: 'videocall', date: '', time: '12:00' });
-            alert("Hito programado correctamente");
+            alert(schedulingData.type === 'videocall'
+                ? "Video llamada programada. Se han configurado 4 controles semanales automáticos."
+                : "Hito programado correctamente");
         } catch (err) {
             console.error("Error saving schedule:", err);
             alert("Error al guardar la programación.");
@@ -230,14 +254,23 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate }) => {
             </div>
 
             {/* Grid del Calendario */}
-            <div className="grid grid-cols-7 bg-black min-h-[400px]">
-                {students.length === 0 && (
-                    <div className="absolute inset-0 z-10 bg-black/40 flex flex-col items-center justify-center pointer-events-none">
-                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3">
-                            <Users size={32} className="text-zinc-600" />
-                            <p className="text-sm font-bold text-zinc-400">Sin alumnos registrados</p>
-                        </div>
+            <div className="grid grid-cols-7 bg-black min-h-[400px] relative">
+                {loading ? (
+                    <div className="absolute inset-0 z-20 bg-black/60 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+                        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Sincronizando Alumnos...</span>
                     </div>
+                ) : (
+                    <>
+                        {students.length === 0 && (
+                            <div className="absolute inset-0 z-10 bg-black/40 flex flex-col items-center justify-center pointer-events-none">
+                                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3">
+                                    <Users size={32} className="text-zinc-600" />
+                                    <p className="text-sm font-bold text-zinc-400">Sin alumnos registrados</p>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
                 {renderDays()}
             </div>
@@ -248,7 +281,7 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate }) => {
                     <span className="flex items-center gap-1.5"><Clock size={12} /> {students.length} Alumnos Monitoreados</span>
                     <span className="flex items-center gap-1.5"><CheckCircle2 size={12} /> Sincronización Directa</span>
                 </div>
-                <span>Versión Marketing OS 2.3</span>
+                <span>Versión Marketing OS 2.4</span>
             </div>
 
             {/* Modal de Programación Rápida */}
@@ -284,7 +317,7 @@ const MasterCalendar = ({ onSelectStudent, students = [], onUpdate }) => {
                                         </option>
                                     ))}
                                 </select>
-                                {students.length === 0 && (
+                                {students.length === 0 && !loading && (
                                     <p className="text-[9px] text-red-400 font-bold ml-1 italic">No hay alumnos disponibles</p>
                                 )}
                             </div>

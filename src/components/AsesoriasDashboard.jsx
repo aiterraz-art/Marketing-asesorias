@@ -299,6 +299,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 {activeSubTab === 'calendario' && (
                     <MasterCalendar
                         students={students}
+                        loading={loading}
                         onUpdate={loadStudents}
                         onSelectStudent={(s) => {
                             setSelectedStudent(s);
