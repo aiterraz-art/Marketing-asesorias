@@ -67,19 +67,14 @@ Debes ser capaz de:
 
 ⸻
 
-📢 Meta Ads (clave)
-
-Cuando se hable de publicidad pagada:
-	•	Asumir presupuesto limitado
-	•	Priorizar:
-	•	Promocionar contenido que YA funcionó orgánicamente
-	•	Objetivo “Mensajes”
-	•	Indicar:
-	•	Qué post promocionar
-	•	Qué copy usar
-	•	CTA
-	•	Segmentación sugerida
-	•	Errores a evitar
+📢 Meta Ads y Estrategia de Captación
+	•	Filosofía de Anuncios: No vender directamente el servicio, sino vender la CONFIANZA.
+	•	Candidatos Ideales para Ads:
+		1. Autoridad Técnica: Reels que explican datos científicos de nutrición o entrenamiento de forma clara (demuestran que eres un profesional de élite).
+		2. Resultados y Pruebas: Transformaciones o testimonios.
+		3. Desmitificación: Romper un mito común con argumentos sólidos.
+	•	Objetivo: Generar curiosidad y "ganar" el derecho a vender mediante el conocimiento.
+	•	CTA en Ads: Siempre invitar al DM o WhatsApp para una "Evaluación Gratuita" o "Asesoría Personalizada".
 
 NO proponer:
 	•	Funnels complejos
@@ -326,11 +321,11 @@ export const generateContentIdeas = async (params) => {
             - "day": 1-7
             - "title": Gancho fuerte
             - "funnelLevel": "TOFU" | "MOFU" | "BOFU"
-            - "script": Guion completo con HOOK, ESTRUCTURA (tipo de tomas) y TEXTO.
-            - "productionPlan": Instrucciones de grabación (ej: B-roll desayunando, hablando a cámara).
-            - "isAdCandidate": boolean
-            - "adsCopy": null o caption persuasivo
-            - "reasoning": Por qué ayuda a la marca personal.
+            - "script": Guion completo con HOOK, ESTRUCTURA y TEXTO.
+            - "productionPlan": Instrucciones de grabación.
+            - "isAdCandidate": boolean (Marca como TRUE los contenidos con mayor carga de CONOCIMIENTO CIENTÍFICO o AUTORIDAD, ya que son los mejores para Ads).
+            - "adsCopy": Caption de venta persuasivo (SOLO si isAdCandidate es true).
+            - "reasoning": Por qué este contenido es clave para la marca personal o anuncios.
 
             Responde en formato JSON:
             {
@@ -344,10 +339,10 @@ export const generateContentIdeas = async (params) => {
 		} else {
 			// Single content mode
 			contentPrompt = `
-            ACTÚA COMO UN EXPERTO EN CONTENIDO PARA MARCA PERSONAL FITNESS.
-            Misión: Generar un GUION DE REEL/Tiktok profesional para "${type}" sobre: "${idea}".
+            ACTÚA COMO UN EXPERTO EN CONTENIDO Y ADS PARA FITNESS.
+            Misión: Generar un GUION PROFESIONAL para "${type}" sobre: "${idea}".
             
-            RESTRICCIÓN: Enfócate en demostrar CONOCIMIENTO (datos, suplementación, tips) o CONEXIÓN ( lifestyle, rutina diaria).
+            ESTRATEGIA: Si el tema permite demostrar CONOCIMIENTO CIENTÍFICO o desmitificar suplementos/nutrición con datos, trátalo como un "Ad Candidate" de altísima autoridad.
             
             Debe incluir obligatoriamente:
             1. HOOK: Gancho inicial potente.
