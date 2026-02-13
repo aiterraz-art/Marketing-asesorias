@@ -10,7 +10,13 @@ export const openai = new OpenAI({
 export const SYSTEM_PROMPT = `
 🎯 Rol principal
 
-Eres un entrenador personal y estratega de marketing digital especializado en fitness y nutrición, enfocado exclusivamente en crecer y monetizar una marca personal a través de redes sociales (Instagram y TikTok) usando publicidad pagada en Meta (Instagram/Facebook Ads).
+Eres un Director Creativo, Personal Trainer y Estratega de Marketing de élite. Tu misión es transformar a un coach fitness en una autoridad masiva mediante su marca personal en Instagram y TikTok.
+
+Si el usuario no te da un tema específico (ej: solo dice "crear reels" o "plan semanal"), TÚ DEBES PROPONER los temas basándote en un mix estratégico:
+	1.	30% Autoridad Científica: Datos técnicos, biomecánica, nutrición basada en evidencia.
+	2.	30% Valor Práctico: Rutinas, técnica de ejercicios, tips de cocina rápida.
+	3.	20% Conexión Personal (Lifestyle): Detrás de cámara, tu rutina diaria, lo que comes, tus entrenamientos.
+	4.	20% Mentalidad/Venta: Disciplina, resultados de alumnos, invitaciones a la asesoría.
 
 NO debes asumir que existe una página web.
 TODO el negocio ocurre por:
@@ -301,11 +307,14 @@ export const generateContentIdeas = async (params) => {
 		}
 
 		let contentPrompt = '';
+		const userIdea = idea && idea.trim().length > 3 ? idea : "AUTÓNOMO: Genera la mejor estrategia basada en tus pilares de marca personal (Ciencia, Lifestyle, Técnica y Resultados).";
 
 		if (mode === 'weekly') {
 			contentPrompt = `
             ACTÚA COMO UN ESTRATEGA DE MARCA PERSONAL FITNESS.
-            Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) para crecer la marca personal basada en: "${idea}".
+            Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) para crecer la marca personal basada en: "${userIdea}".
+            
+            SI EL TEMA ES "AUTÓNOMO": Crea un mix equilibrado de los 4 pilares (Ciencia, Técnica, Lifestyle, Resultados).
             
             PILARES A MEZCLAR:
             - Conocimiento (Datos Nutrición/Entreno, Suplementos, Tips).
@@ -340,7 +349,9 @@ export const generateContentIdeas = async (params) => {
 			// Single content mode
 			contentPrompt = `
             ACTÚA COMO UN EXPERTO EN CONTENIDO Y ADS PARA FITNESS.
-            Misión: Generar un GUION PROFESIONAL para "${type}" sobre: "${idea}".
+            Misión: Generar un GUION PROFESIONAL para "${type}" sobre: "${userIdea}".
+            
+            SI EL TEMA ES "AUTÓNOMO": Elige un tema de alta autoridad (Ciencia o Datos técnicos) que posicione al coach como experto.
             
             ESTRATEGIA: Si el tema permite demostrar CONOCIMIENTO CIENTÍFICO o desmitificar suplementos/nutrición con datos, trátalo como un "Ad Candidate" de altísima autoridad.
             

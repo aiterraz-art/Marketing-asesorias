@@ -170,7 +170,7 @@ export default function ContentGeneratorPanel() {
         });
     };
     const handleGenerate = async () => {
-        if (!idea.trim()) return;
+        // Allow empty idea for autonomous mode
         setIsGenerating(true);
         setResult(null);
         setGeneratedImage(null);
@@ -283,7 +283,7 @@ export default function ContentGeneratorPanel() {
                             <textarea
                                 value={idea}
                                 onChange={(e) => setIdea(e.target.value)}
-                                placeholder="Ej: 3 errores comunes al hacer sentadillas..."
+                                placeholder="Escribe un tema o deja vacío para que la IA decida por ti..."
                                 className="w-full h-32 bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-white placeholder-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none transition-all"
                             />
                         </div>
@@ -299,8 +299,8 @@ export default function ContentGeneratorPanel() {
 
                     <button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !idea.trim()}
-                        className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-semibold text-white transition-all mt-6 ${isGenerating || !idea.trim()
+                        disabled={isGenerating}
+                        className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-semibold text-white transition-all mt-6 ${isGenerating
                             ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                             : 'bg-gradient-to-r from-primary to-blue-600 hover:shadow-lg hover:shadow-primary/25'
                             }`}
