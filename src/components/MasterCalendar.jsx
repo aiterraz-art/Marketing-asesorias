@@ -13,12 +13,10 @@ import {
     X,
     Check
 } from 'lucide-react';
-import { getStudents, updateStudentData } from '../lib/supabase';
+import { updateStudentData } from '../lib/supabase';
 
-const MasterCalendar = ({ onSelectStudent }) => {
+const MasterCalendar = ({ onSelectStudent, students = [], onUpdate }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [students, setStudents] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDay, setSelectedDay] = useState(null);
     const [schedulingData, setSchedulingData] = useState({
@@ -29,23 +27,8 @@ const MasterCalendar = ({ onSelectStudent }) => {
     });
     const [isSaving, setIsSaving] = useState(false);
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const data = await getStudents();
-            console.log("MasterCalendar: Alumnos cargados:", data);
-            setStudents(data || []);
-        } catch (err) {
-            console.error("Error loading students for calendar:", err);
-        } finally {
-            console.log("MasterCalendar: Carga finalizada. Students state:", students);
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, []);
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
     const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
@@ -63,13 +46,14 @@ const MasterCalendar = ({ onSelectStudent }) => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     };
 
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
     const totalDays = daysInMonth(year, month);
     const firstDay = firstDayOfMonth(year, month);
 
     const handleOpenModal = (day = null) => {
-        const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : new Date().toISOString().split('T')[0];
+        // Si se hace clic en un día específico, usamos ese. Si no, hoy.
+        const targetDate = day ? new Date(year, month, day) : new Date();
+        const dateStr = targetDate.toISOString().split('T')[0];
+
         setSchedulingData({
             ...schedulingData,
             date: dateStr
@@ -99,9 +83,10 @@ const MasterCalendar = ({ onSelectStudent }) => {
             }
 
             await updateStudentData(schedulingData.studentId, updates);
-            await loadData();
+            if (onUpdate) await onUpdate(); // Sincronizar con el dashboard
             setIsModalOpen(false);
             setSchedulingData({ studentId: '', type: 'videocall', date: '', time: '12:00' });
+            alert("Hito programado correctamente");
         } catch (err) {
             console.error("Error saving schedule:", err);
             alert("Error al guardar la programación.");
@@ -110,7 +95,7 @@ const MasterCalendar = ({ onSelectStudent }) => {
         }
     };
 
-    // Mapear eventos
+    // Mapear eventos por día
     const getEventsForDay = (day) => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const events = [];
@@ -158,16 +143,16 @@ const MasterCalendar = ({ onSelectStudent }) => {
                     onClick={() => handleOpenModal(d)}
                     className={`h-32 border border-zinc-900/50 p-2 transition-colors hover:bg-zinc-900/20 group cursor-pointer ${isToday ? 'bg-primary/5' : 'bg-surface'}`}
                 >
-                    <div className="flex justify-between items-start mb-2">
-                        <span className={`text-xs font-bold ${isToday ? 'text-primary' : 'text-zinc-500'}`}>
+                    <div className="flex justify-between items-start mb-1">
+                        <span className={`text-[10px] font-bold ${isToday ? 'text-primary' : 'text-zinc-500'}`}>
                             {d}
                         </span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Plus size={12} className="text-primary" />
+                            <Plus size={12} className="text-primary/70" />
                         </div>
                     </div>
 
-                    <div className="space-y-1 overflow-y-auto max-h-[80px] scrollbar-hide">
+                    <div className="space-y-1 overflow-y-auto max-h-[90px] scrollbar-hide">
                         {events.map((e, idx) => (
                             <div
                                 key={idx}
@@ -244,28 +229,31 @@ const MasterCalendar = ({ onSelectStudent }) => {
             </div>
 
             {/* Grid del Calendario */}
-            <div className="grid grid-cols-7 bg-black">
-                {loading ? (
-                    <div className="col-span-7 h-96 flex flex-col items-center justify-center gap-3 text-zinc-500">
-                        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm font-medium">Sincronizando agenda...</span>
+            <div className="grid grid-cols-7 bg-black min-h-[400px]">
+                {students.length === 0 && (
+                    <div className="absolute inset-0 z-10 bg-black/40 flex flex-col items-center justify-center pointer-events-none">
+                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3">
+                            <Users size={32} className="text-zinc-600" />
+                            <p className="text-sm font-bold text-zinc-400">Sin alumnos registrados</p>
+                        </div>
                     </div>
-                ) : renderDays()}
+                )}
+                {renderDays()}
             </div>
 
             {/* Footer / Resumen */}
             <div className="p-4 bg-zinc-950 border-t border-zinc-900 flex items-center justify-between text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
                 <div className="flex gap-4">
                     <span className="flex items-center gap-1.5"><Clock size={12} /> {students.length} Alumnos Monitoreados</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle2 size={12} /> Registro Directo Habilitado</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 size={12} /> Sincronización Directa</span>
                 </div>
-                <span>Versión Marketing OS 2.2</span>
+                <span>Versión Marketing OS 2.3</span>
             </div>
 
             {/* Modal de Programación Rápida */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in slide-in-from-bottom-8 duration-500">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-8 duration-500">
                         <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
@@ -273,7 +261,7 @@ const MasterCalendar = ({ onSelectStudent }) => {
                                 </div>
                                 <h3 className="font-bold text-white">Programar Hito</h3>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
+                            <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors p-1">
                                 <X size={20} />
                             </button>
                         </div>
@@ -285,7 +273,8 @@ const MasterCalendar = ({ onSelectStudent }) => {
                                 <select
                                     value={schedulingData.studentId}
                                     onChange={(e) => setSchedulingData({ ...schedulingData, studentId: e.target.value })}
-                                    className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:border-primary outline-none transition-all"
+                                    className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:border-primary outline-none transition-all cursor-pointer appearance-none"
+                                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23666\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'m6 9 6 6 6-6\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                                 >
                                     <option value="" className="bg-zinc-900 text-zinc-400">Seleccionar alumno...</option>
                                     {students.map(s => (
@@ -294,6 +283,9 @@ const MasterCalendar = ({ onSelectStudent }) => {
                                         </option>
                                     ))}
                                 </select>
+                                {students.length === 0 && (
+                                    <p className="text-[9px] text-red-400 font-bold ml-1 italic">No hay alumnos disponibles</p>
+                                )}
                             </div>
 
                             {/* Tipo */}
@@ -347,7 +339,7 @@ const MasterCalendar = ({ onSelectStudent }) => {
                             <button
                                 onClick={handleQuickSchedule}
                                 disabled={isSaving}
-                                className="w-full py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity mt-4 shadow-xl shadow-primary/10"
+                                className="w-full py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity mt-2 shadow-xl shadow-primary/10"
                             >
                                 {isSaving ? <Clock className="animate-spin" size={20} /> : <Check size={20} />}
                                 {isSaving ? 'Guardando...' : 'Confirmar Programación'}

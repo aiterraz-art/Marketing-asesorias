@@ -297,10 +297,14 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 )}
                 {activeSubTab === 'progreso' && <ProgressTracker selectedStudent={selectedStudent} />}
                 {activeSubTab === 'calendario' && (
-                    <MasterCalendar onSelectStudent={(s) => {
-                        setSelectedStudent(s);
-                        setSubTab('alumnos');
-                    }} />
+                    <MasterCalendar
+                        students={students}
+                        onUpdate={loadStudents}
+                        onSelectStudent={(s) => {
+                            setSelectedStudent(s);
+                            setSubTab('alumnos');
+                        }}
+                    />
                 )}
             </main>
 
