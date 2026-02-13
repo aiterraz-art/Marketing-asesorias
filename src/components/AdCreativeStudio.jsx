@@ -302,8 +302,8 @@ export default function AdCreativeStudio() {
                             </div>
 
                             {/* Images Container */}
-                            <div className={`flex-1 px-4 grid gap-2 relative z-10 ${layout === 'vertical' ? 'grid-rows-2' : 'grid-cols-2'}`}>
-                                <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 relative shadow-lg min-h-0">
+                            <div className={`flex-1 px-4 flex gap-2 relative z-10 ${layout === 'vertical' ? 'flex-col' : 'flex-row'}`}>
+                                <div className="flex-1 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 relative shadow-lg min-h-0">
                                     {beforeImage ? (
                                         <>
                                             <img src={beforeImage} className="w-full h-full object-cover" />
@@ -317,7 +317,7 @@ export default function AdCreativeStudio() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="rounded-xl overflow-hidden border-2 bg-zinc-950 relative shadow-2xl min-h-0" style={{ borderColor: themeColor }}>
+                                <div className="flex-1 rounded-xl overflow-hidden border-2 bg-zinc-950 relative shadow-2xl min-h-0" style={{ borderColor: themeColor }}>
                                     {afterImage ? (
                                         <>
                                             <img src={afterImage} className="w-full h-full object-cover" />
