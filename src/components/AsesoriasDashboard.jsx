@@ -673,7 +673,7 @@ Ejemplo de formato de tabla:
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
             console.error("Error generating diet:", err);
-            setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error al generar la dieta. Inténtalo de nuevo.' }]);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: `❌ Error: ${err.message || 'Error desconocido'}. Inténtalo de nuevo.` }]);
         } finally {
             setIsChatLoading(false);
         }
@@ -695,7 +695,7 @@ Ejemplo de formato de tabla:
             setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (err) {
             console.error("Error in diet chat:", err);
-            setChatMessages(prev => [...prev, { role: 'assistant', content: '❌ Error en la respuesta. Inténtalo de nuevo.' }]);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: `❌ Error: ${err.message || 'Error desconocido'}. Inténtalo de nuevo.` }]);
         } finally {
             setIsChatLoading(false);
         }

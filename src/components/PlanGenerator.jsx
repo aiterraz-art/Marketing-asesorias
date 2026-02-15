@@ -36,7 +36,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
             setGeneratedPlan(plan);
         } catch (error) {
             console.error("Error generating plan:", error);
-            alert("Error al generar el plan con IA.");
+            alert(`Error al generar el plan con IA: ${error.message || 'Error desconocido'}`);
         } finally {
             setIsGenerating(false);
         }

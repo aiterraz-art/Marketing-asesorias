@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 
 const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-const REASONING_MODEL = import.meta.env.VITE_OPENAI_REASONING_MODEL || "gpt-5.2-codex";
+const REASONING_MODEL = import.meta.env.VITE_OPENAI_REASONING_MODEL || "gpt-5.2";
 
 export const openai = new OpenAI({
 	apiKey: apiKey,
@@ -489,17 +489,34 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         - Divide por días (Split sugerido).
         `;
 
-		const completion = await openai.chat.completions.create({
-			messages: [
-				{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
-				{ role: "user", content: planPrompt }
-			],
-			model: REASONING_MODEL,
-			response_format: { type: "json_object" }
-		});
+		try {
+			const completion = await openai.chat.completions.create({
+				messages: [
+					{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
+					{ role: "user", content: planPrompt }
+				],
+				model: REASONING_MODEL,
+				response_format: { type: "json_object" }
+			});
 
-		const content = completion.choices[0].message.content;
-		return JSON.parse(content);
+			const content = completion.choices[0].message.content;
+			return JSON.parse(content);
+		} catch (primaryError) {
+			console.warn(`Primary model ${REASONING_MODEL} failed, switching to fallback (gpt-4o). Error:`, primaryError);
+
+			// Fallback to GPT-4o
+			const fallbackCompletion = await openai.chat.completions.create({
+				messages: [
+					{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
+					{ role: "user", content: planPrompt }
+				],
+				model: "gpt-4o",
+				response_format: { type: "json_object" }
+			});
+
+			const content = fallbackCompletion.choices[0].message.content;
+			return JSON.parse(content);
+		}
 
 	} catch (error) {
 		console.error("Fitness Plan Gen Error:", error);
@@ -596,12 +613,23 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 			...chatHistory.map(m => ({ role: m.role, content: m.content }))
 		];
 
-		const completion = await openai.chat.completions.create({
-			messages: messages,
-			model: REASONING_MODEL
-		});
+		try {
+			const completion = await openai.chat.completions.create({
+				messages: messages,
+				model: REASONING_MODEL
+			});
 
-		return completion.choices[0].message.content;
+			return completion.choices[0].message.content;
+		} catch (primaryError) {
+			console.warn(`Diet Chat: Primary model ${REASONING_MODEL} failed, switching to fallback (gpt-4o). Error:`, primaryError);
+
+			const fallbackCompletion = await openai.chat.completions.create({
+				messages: messages,
+				model: "gpt-4o"
+			});
+
+			return fallbackCompletion.choices[0].message.content;
+		}
 	} catch (error) {
 		console.error("Diet Chat Error:", error);
 		throw error;
@@ -646,12 +674,23 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
 			...chatHistory.map(m => ({ role: m.role, content: m.content }))
 		];
 
-		const completion = await openai.chat.completions.create({
-			messages: messages,
-			model: "gpt-5.2"
-		});
+		try {
+			const completion = await openai.chat.completions.create({
+				messages: messages,
+				model: "gpt-5.2"
+			});
 
-		return completion.choices[0].message.content;
+			return completion.choices[0].message.content;
+		} catch (primaryError) {
+			console.warn(`Training Chat: Primary model gpt-5.2 failed, switching to fallback (gpt-4o). Error:`, primaryError);
+
+			const fallbackCompletion = await openai.chat.completions.create({
+				messages: messages,
+				model: "gpt-4o"
+			});
+
+			return fallbackCompletion.choices[0].message.content;
+		}
 	} catch (error) {
 		console.error("Training Chat Error:", error);
 		throw error;
