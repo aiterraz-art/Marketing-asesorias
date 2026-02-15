@@ -480,8 +480,7 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         3. REGLAS DE ESTÉTICA Y VOCABULARIO:
            - Usa negritas para resaltar las PORCIONES (ej: **1 Porción de CHO**).
            - Vocabulario Chileno: Palta, Marraqueta, Descremado (en la tabla de equivalencias).
-           - Al final del plan, incluye el Resumen de Macros Totales del día vs Objetivo.
-           - Incluye "Tips de Oro" (Hidratación, Sueño) para profesionalismo.
+           - Al final del plan, incluye "Tips de Oro" (Hidratación, Sueño) para profesionalismo.
 
         REGLAS PARA TRAINING_PLAN:
         - Rutina detallada con: Ejercicio, Series, Repeticiones, RPE/RIR y Descanso.
@@ -600,7 +599,6 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - El alumno buscará qué comer en la Tabla de Equivalencias.
         - Indica el **Total de Calorías** por comida en negrita.
         - Usa vocabulario CHILENO en las explicaciones.
-        - Incluye resumen final comparativo: Plan vs Objetivo.
 
         RESTRICCIONES:
         - PROHIBIDO: Intros, saludos, despedidas o frases como "aquí tienes tu plan". 
