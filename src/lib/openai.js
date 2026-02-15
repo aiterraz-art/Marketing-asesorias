@@ -422,49 +422,65 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 
 	try {
 		const planPrompt = `
-        ACTÚA COMO UN PREPARADOR FÍSICO Y NUTRICIONISTA DE ÉLITE.
-        Tu misión es generar un PLAN INTEGRAL DE FITNESS (Nutrición + Entrenamiento) para el siguiente alumno:
+        ACTÚA COMO UN PREPARADOR FÍSICO Y NUTRICIONISTA DE ÉLITE CON EXPERIENCIA EN CHILE.
+        Tu misión es generar un PLAN INTEGRAL DE FITNESS (Nutrición + Entrenamiento) basado en un SISTEMA DE PORCIONES.
 
         DATOS DEL ALUMNO:
         - Nombre: ${studentData.full_name}
         - Edad: ${studentData.age}
         - Peso: ${studentData.weight}kg
         - Altura: ${studentData.height}cm
-        - Nivel de actividad: ${studentData.activity_level}
         - Objetivo: ${studentData.goal}
         
         ${previousPlan ? `
         CONTEXTO HISTÓRICO (PLAN ANTERIOR):
-        El alumno ya ha seguido este plan previamente:
         Nutrición Previa: ${previousPlan.nutrition_plan_text?.substring(0, 300)}...
         Entrenamiento Previo: ${previousPlan.training_plan_text?.substring(0, 300)}...
-        
-        INSTRUCCIÓN DE EVOLUCIÓN:
-        Basándote en el plan anterior, genera una **evolución** o variación del mismo para evitar estancamientos. Aumenta la intensidad o ajusta los alimentos ligeramente para mantener la adherencia.
-        ` : 'Este es el PRIMER plan para este alumno. Diseña una base sólida.'}
+        ` : 'Este es el PRIMER plan para este alumno.'}
 
-        MACRONUTRIENTES CALCULADOS:
-        - Calorías objetivo: ${macros.calories} kcal
+        MACRONUTRIENTES OBJETIVO:
+        - Calorías: ${macros.calories} kcal
         - Proteína: ${macros.protein}g
         - Grasas: ${macros.fat}g
         - Carbohidratos: ${macros.carbs}g
 
-        TU RESPUESTA DEBE ESTAR EN FORMATO JSON ESTRUCTURADO:
+        ESTRUCTURA DE RESPUESTA (JSON):
         {
-            "nutrition_plan": "Un plan alimentario detallado en formato Markdown. REGLAS: Incluye ejemplos de comidas (desayuno, almuerzo, merienda, cena). Cada comida DEBE estar en una tabla con columnas: Alimento, Cantidad, P, C, G, kcal. Al final de cada tabla de comida, indica el Total de Calorías de esa comida. Usa vocabulario chileno (palta, descremado).",
-            "training_plan": "Una rutina de entrenamiento detallada en formato Markdown, especificando días, ejercicios, series, repeticiones y tiempos de descanso, alineada con el objetivo del alumno."
+            "nutrition_plan": "Markdown",
+            "training_plan": "Markdown"
         }
 
-        REGLAS ADICIONALES:
-        - Tono profesional, motivador y directo.
-        - Usa Markdown para dar formato profesional (negritas, listas, tablas).
-        - El plan debe ser realista y sostenible.
-        - **IMPORTANTE**: No uses claras de huevo solas. Usa siempre **huevos enteros** para mayor facilidad del alumno.
+        REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
+        
+        1. PÁGINA 1: TABLA DE EQUIVALENCIAS Y PORCIONES
+           - Define qué es una "porción" para cada grupo con Gramos y Medida Visual Chilena.
+           - GRUPO CARBOHIDRATOS: Marraqueta (unidades/trozos), Arroz cocido (tazas/cucharadas), Fideos cocidos (tazas), Papa cocida (unidades tamaño huevo).
+           - GRUPO PROTEÍNAS: Huevos enteros (unidades), Pechuga de Pollo (palma de mano), Vacuno/Cerdo (palma de mano), Atún (tarro/cucharadas).
+           - GRUPO GRASAS: Aceite de Oliva (cucharaditas), Palta (cucharadas/unidades).
+           - Ejemplo de fila: | Arroz | 100g | 3-4 cucharadas soperas colmadas |
+
+        2. PÁGINA 2: DISTRIBUCIÓN DIARIA
+           - Diseña el día completo (Desayuno, Almuerzo, Merienda, Cena).
+           - NO digas solo el alimento, di la cantidad de porciones.
+           - Ejemplo: "Desayuno: 1 porción de Carbohidrato + 2 porciones de Proteína + 1 porción de Grasa".
+           - Luego da un EJEMPLO CONCRETO: "Ej: 1 Marraqueta con 2 Huevos revueltos y 1/4 de Palta".
+           - Incluye una tabla para cada comida con Macros (P, C, G) y Kcal.
+
+        3. REGLAS CRÍTICAS:
+           - Vocabulario Chileno: Palta, Marraqueta, Porotos, Zapallo Italiano.
+           - Prohibido: Claras de huevo solas (usa huevos enteros).
+           - Al final de cada comida, indica el Total de Calorías de esa comida.
+           - Al final del plan, indica el Total Diario (debe coincidir con los macros objetivo).
+
+        REGLAS PARA TRAINING_PLAN:
+        - Rutina detallada con: Ejercicio, Series, Repeticiones, RPE/RIR y Descanso.
+        - Si hay plan previo, asegúrate de aplicar sobrecarga progresiva (más peso, más reps o variaciones).
+        - Divide por días (Split sugerido).
         `;
 
 		const completion = await openai.chat.completions.create({
 			messages: [
-				{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento." },
+				{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
 				{ role: "user", content: planPrompt }
 			],
 			model: "gpt-5.2",
@@ -525,7 +541,7 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 
 	try {
 		const systemPrompt = `
-        Eres un nutricionista deportivo de élite. Estás creando una dieta que va DIRECTAMENTE al alumno, NO al coach.
+        Eres un nutricionista deportivo de élite con experiencia en Chile. Estás creando o modificando una dieta que va DIRECTAMENTE al alumno.
 
         DATOS DEL ALUMNO:
         - Nombre: ${studentData.full_name}
@@ -539,22 +555,26 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Proteína: ${macros.protein}g
         - Grasas: ${macros.fat}g
         - Carbohidratos: ${macros.carbs}g
-        - Proteína Whey: ${macros.useWhey ? 'SÍ, incluir en la dieta' : 'NO, no usar suplementos'}
+        - Proteína Whey: ${macros.useWhey ? 'SÍ' : 'NO'}
 
-        REGLAS OBLIGATORIAS:
-        - Habla directamente al alumno en segunda persona (tú). NUNCA mensajes al coach.
-        - Responde en español CHILENO: usa "descremado" (no desnatado), "palta" (no aguacate), "porotos" (no judías), "choclo" (no elote), "zapallo italiano" (no calabacín).
-        - Usa SOLO alimentos comunes: pollo, carne de vacuno, huevos enteros (NUNCA claras solas, por facilidad), arroz, fideos, papas cocidas, avena, pan integral, palta, aceite de oliva, leche descremada, yogurt descremado, queso fresco, verduras, frutas.${macros.useWhey ? ' También proteína whey.' : ''}
-        - Cuando generes o modifiques una dieta, usa formato Markdown con tablas incluyendo macros EXACTOS por alimento (P, C, G en gramos) Y LAS CALORÍAS (kcal).
-        - Cada tabla de comida DEBE tener una columna llamada "kcal" con las calorías de ese alimento.
-        - Al final de cada comida (Desayuno, Almuerzo, etc.), indica el **Total de Calorías de esa comida**.
-        - SIEMPRE muestra las cantidades en DOS formatos:
-          1. Gramos exactos (para alumnos con pesa)
-          2. Medida visual (cucharadas soperas, vasos, puños, palmas, unidades)
-        - Los macros totales deben cuadrar lo más exacto posible con el objetivo.
-        - Al final de cada dieta, incluye un RESUMEN de macros totales vs. objetivo.
-        - **PROHIBIDO**: No incluyas intros ("Aquí tienes tu plan"), ni cierres ("Espero que te guste"), ni preguntas ("¿Quieres cambiar algo?"), ni comentarios técnicos.
-        - **SÓLO EL PLAN**: La respuesta debe ser el plan de alimentación y nada más. No opines, no preguntes, no sugieras.
+        SISTEMA DE PORCIONES (OBLIGATORIO):
+        1. TABLA DE EQUIVALENCIAS: Si el alumno pregunta o al inicio del plan, muestra qué es una porción.
+           - Carbohidratos: Marraqueta (unidades), Arroz cocido (tazas/cucharadas), Fideos cocidos (tazas), Papa cocida (unidades).
+           - Proteínas: Huevos enteros (unidades), Pollo/Vacuno/Cerdo (palma), Atún (tarro).
+           - Grasas: Aceite (cucharaditas), Palta (cucharadas).
+
+        REGLAS DE FORMATO:
+        - Habla en segunda persona (tú).
+        - Usa vocabulario CHILENO (palta, marraqueta, descremado).
+        - Estructura las comidas por PORCIONES. Ej: "Desayuno: 2 porciones de Proteína + 1 de Carbohidrato".
+        - Incluye una tabla con: Alimento, Cantidad (Gramos), Medida Visual, P, C, G, kcal.
+        - Indica el **Total de Calorías** al final de cada comida.
+        - Los macros totales deben cuadrar con el objetivo.
+
+        RESTRICCIONES:
+        - PROHIBIDO: Intros, saludos, despedidas o frases como "aquí tienes tu plan". 
+        - SÓLO EL PLAN O LA RESPUESTA TÉCNICA.
+        - No uses claras de huevo solas (siempre huevos enteros).
         `;
 
 		const messages = [
