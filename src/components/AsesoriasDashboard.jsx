@@ -696,7 +696,8 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                 fat_g: data.fat,
                 carbs_g: results.carbs,
                 goal: data.goal,
-                nutrition_plan_text: lastAIDiet || null
+                nutrition_plan_text: lastAIDiet || null,
+                training_plan_text: latestPlan?.training_plan_text || null
             });
         } finally {
             setIsSaving(false);
@@ -1506,6 +1507,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
             await onSavePlan({
                 student_id: selectedStudent.id,
                 training_plan_text: lastAIRoutined || null,
+                nutrition_plan_text: latestPlan?.nutrition_plan_text || null,
                 calories: latestPlan?.calories || 0,
                 protein_g: latestPlan?.protein_g || 0,
                 fat_g: latestPlan?.fat_g || 0,
