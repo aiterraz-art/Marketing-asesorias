@@ -452,25 +452,25 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 
         REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
         
-        1. PÁGINA 1: TABLA DE EQUIVALENCIAS Y PORCIONES
-           - Genera una tabla profesional que define qué es "1 PORCIÓN" para cada alimento.
+        1. PÁGINA 1: TABLA DE PORCIONES ISOCALÓRICAS (MATEMÁTICA EXACTA)
+           - Define "1 PORCIÓN" para cada grupo priorizando la EQUIVALENCIA CALÓRICA (Isocalórica), NO el peso.
+           - Ejemplo: Si fijas 1 porción de CHO en ~100 kcal, ajusta los gramos de Arroz vs Fideos para que AMBOS entreguen esas ~100 kcal.
            - OBLIGATORIO: Todas las tablas deben tener exactamente 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-           - GRUPO CARBOHIDRATOS: Marraqueta (unidades), Arroz cocido (tazas/cucharadas), Fideos cocidos (tazas), Papa cocida (unidades).
-           - GRUPO PROTEÍNAS: Huevos enteros (unidades), Pollo/Vacuno/Cerdo (palma), Atún (tarro).
-           - GRUPO GRASAS: Aceite de Oliva (cucharaditas), Palta (cucharadas).
-           - Ejemplo de fila: | Arroz cocido | 100g | 3-4 cucharadas colmadas | 3 | 28 | 0 | 130 |
+           - GRUPO CARBOHIDRATOS (CHO): Marraqueta, Arroz cocido, Fideos cocidos, Papa cocida.
+           - GRUPO PROTEÍNAS (PRO): Huevos enteros, Pollo, Vacuno/Cerdo, Atún.
+           - GRUPO GRASAS (FAT): Aceite de Oliva, Palta.
 
-        2. PÁGINA 2: DISTRIBUCIÓN DIARIA
+        2. PÁGINA 2: DISTRIBUCIÓN DIARIA Y PRECISIÓN
            - Diseña el día completo (Desayuno, Almuerzo, Merienda, Cena).
-           - Estructura: "Desayuno: 1 porción de Carbohidrato + 2 porciones de Proteína".
-           - Inmediatamente debajo, inserta la TABLA con el ejemplo concreto usando las mismas 7 columnas.
-           - Al final de cada tabla de comida, indica el **Total de Calorías de esa comida**.
+           - Estructura: "Desayuno: 2 porciones de PRO + 1 de CHO + 1 de FAT".
+           - Inmediatamente debajo, inserta la TABLA con el ejemplo concreto (7 columnas).
+           - **CRÍTICO: VALIDACIÓN DE MACROS**. Antes de responder, suma todos los macros del plan. El error máximo permitido respecto a los objetivos (${macros.calories} kcal) es del 3%. Debes ser matemático.
 
-        3. REGLAS CRÍTICAS DE ESTÉTICA:
-           - Usa negritas para resaltar títulos y totales.
+        3. REGLAS DE ESTÉTICA Y VOCABULARIO:
+           - Usa negritas para totales y títulos.
            - Vocabulario Chileno: Palta, Marraqueta, Descremado.
-           - Al final del plan, incluye un Resumen de Macros Totales del día.
-           - Agrega una pequeña sección de "Tips de Oro" (Hidratación, Sueño) para que el plan se vea más completo y profesional.
+           - Al final del plan, incluye el Resumen de Macros Totales del día vs Objetivo.
+           - Incluye "Tips de Oro" (Hidratación, Sueño) para profesionalismo.
 
         REGLAS PARA TRAINING_PLAN:
         - Rutina detallada con: Ejercicio, Series, Repeticiones, RPE/RIR y Descanso.
@@ -557,17 +557,17 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Carbohidratos: ${macros.carbs}g
         - Proteína Whey: ${macros.useWhey ? 'SÍ' : 'NO'}
 
-        SISTEMA DE PORCIONES (OBLIGATORIO):
-        1. TABLA DE EQUIVALENCIAS: Genera una tabla profesional definiendo qué es "1 PORCIÓN".
+        SISTEMA DE PORCIONES ISOCALÓRICAS (OBLIGATORIO):
+        1. TABLA DE PORCIONES: Define "1 PORCIÓN" equilibrando las CALORÍAS, no el peso.
+           - Ejemplo: Ajusta gramos de Arroz vs Papa para que una porción de ambos tenga las mismas kcal.
            - OBLIGATORIO: Usa siempre 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-           - Define Carbohidratos, Proteínas y Grasas con vocabulario Chileno.
 
-        REGLAS DE FORMATO PROFESIONAL:
-        - Habla en segunda persona (tú).
-        - Estructura las comidas por PORCIONES seguido de una TABLA de 7 columnas con el ejemplo.
-        - Indica el **Total de Calorías** al final de cada comida en negrita.
-        - El plan debe verse limpio, ordenado y de "Clase Mundial".
-        - Incluye un resumen final de macros diarios.
+        REGLAS DE PRECISIÓN Y FORMATO:
+        - El error calórico total final no debe superar el 3% del objetivo (${macros.calories} kcal).
+        - Estructura por PORCIONES seguido de una TABLA de 7 columnas.
+        - Indica el **Total de Calorías** por comida en negrita.
+        - Usa vocabulario CHILENO.
+        - Incluye resumen final comparativo: Plan vs Objetivo.
 
         RESTRICCIONES:
         - PROHIBIDO: Intros, saludos, despedidas o frases como "aquí tienes tu plan". 
