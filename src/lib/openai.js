@@ -453,24 +453,24 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
         
         1. PÁGINA 1: TABLA DE EQUIVALENCIAS Y PORCIONES
-           - Define qué es una "porción" para cada grupo con Gramos y Medida Visual Chilena.
-           - GRUPO CARBOHIDRATOS: Marraqueta (unidades/trozos), Arroz cocido (tazas/cucharadas), Fideos cocidos (tazas), Papa cocida (unidades tamaño huevo).
-           - GRUPO PROTEÍNAS: Huevos enteros (unidades), Pechuga de Pollo (palma de mano), Vacuno/Cerdo (palma de mano), Atún (tarro/cucharadas).
-           - GRUPO GRASAS: Aceite de Oliva (cucharaditas), Palta (cucharadas/unidades).
-           - Ejemplo de fila: | Arroz | 100g | 3-4 cucharadas soperas colmadas |
+           - Genera una tabla profesional que define qué es "1 PORCIÓN" para cada alimento.
+           - OBLIGATORIO: Todas las tablas deben tener exactamente 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
+           - GRUPO CARBOHIDRATOS: Marraqueta (unidades), Arroz cocido (tazas/cucharadas), Fideos cocidos (tazas), Papa cocida (unidades).
+           - GRUPO PROTEÍNAS: Huevos enteros (unidades), Pollo/Vacuno/Cerdo (palma), Atún (tarro).
+           - GRUPO GRASAS: Aceite de Oliva (cucharaditas), Palta (cucharadas).
+           - Ejemplo de fila: | Arroz cocido | 100g | 3-4 cucharadas colmadas | 3 | 28 | 0 | 130 |
 
         2. PÁGINA 2: DISTRIBUCIÓN DIARIA
            - Diseña el día completo (Desayuno, Almuerzo, Merienda, Cena).
-           - NO digas solo el alimento, di la cantidad de porciones.
-           - Ejemplo: "Desayuno: 1 porción de Carbohidrato + 2 porciones de Proteína + 1 porción de Grasa".
-           - Luego da un EJEMPLO CONCRETO: "Ej: 1 Marraqueta con 2 Huevos revueltos y 1/4 de Palta".
-           - Incluye una tabla para cada comida con Macros (P, C, G) y Kcal.
+           - Estructura: "Desayuno: 1 porción de Carbohidrato + 2 porciones de Proteína".
+           - Inmediatamente debajo, inserta la TABLA con el ejemplo concreto usando las mismas 7 columnas.
+           - Al final de cada tabla de comida, indica el **Total de Calorías de esa comida**.
 
-        3. REGLAS CRÍTICAS:
-           - Vocabulario Chileno: Palta, Marraqueta, Porotos, Zapallo Italiano.
-           - Prohibido: Claras de huevo solas (usa huevos enteros).
-           - Al final de cada comida, indica el Total de Calorías de esa comida.
-           - Al final del plan, indica el Total Diario (debe coincidir con los macros objetivo).
+        3. REGLAS CRÍTICAS DE ESTÉTICA:
+           - Usa negritas para resaltar títulos y totales.
+           - Vocabulario Chileno: Palta, Marraqueta, Descremado.
+           - Al final del plan, incluye un Resumen de Macros Totales del día.
+           - Agrega una pequeña sección de "Tips de Oro" (Hidratación, Sueño) para que el plan se vea más completo y profesional.
 
         REGLAS PARA TRAINING_PLAN:
         - Rutina detallada con: Ejercicio, Series, Repeticiones, RPE/RIR y Descanso.
@@ -558,18 +558,16 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Proteína Whey: ${macros.useWhey ? 'SÍ' : 'NO'}
 
         SISTEMA DE PORCIONES (OBLIGATORIO):
-        1. TABLA DE EQUIVALENCIAS: Si el alumno pregunta o al inicio del plan, muestra qué es una porción.
-           - Carbohidratos: Marraqueta (unidades), Arroz cocido (tazas/cucharadas), Fideos cocidos (tazas), Papa cocida (unidades).
-           - Proteínas: Huevos enteros (unidades), Pollo/Vacuno/Cerdo (palma), Atún (tarro).
-           - Grasas: Aceite (cucharaditas), Palta (cucharadas).
+        1. TABLA DE EQUIVALENCIAS: Genera una tabla profesional definiendo qué es "1 PORCIÓN".
+           - OBLIGATORIO: Usa siempre 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
+           - Define Carbohidratos, Proteínas y Grasas con vocabulario Chileno.
 
-        REGLAS DE FORMATO:
+        REGLAS DE FORMATO PROFESIONAL:
         - Habla en segunda persona (tú).
-        - Usa vocabulario CHILENO (palta, marraqueta, descremado).
-        - Estructura las comidas por PORCIONES. Ej: "Desayuno: 2 porciones de Proteína + 1 de Carbohidrato".
-        - Incluye una tabla con: Alimento, Cantidad (Gramos), Medida Visual, P, C, G, kcal.
-        - Indica el **Total de Calorías** al final de cada comida.
-        - Los macros totales deben cuadrar con el objetivo.
+        - Estructura las comidas por PORCIONES seguido de una TABLA de 7 columnas con el ejemplo.
+        - Indica el **Total de Calorías** al final de cada comida en negrita.
+        - El plan debe verse limpio, ordenado y de "Clase Mundial".
+        - Incluye un resumen final de macros diarios.
 
         RESTRICCIONES:
         - PROHIBIDO: Intros, saludos, despedidas o frases como "aquí tienes tu plan". 
