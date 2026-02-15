@@ -129,7 +129,18 @@ create table if not exists public.students (
   next_payment_date date,
   next_checkin_date date,
   next_videocall_date timestamptz,
-  remaining_checks integer default 0
+  remaining_checks integer default 0,
+  sex text default 'male',
+  -- 'male', 'female'
+  sleep_hours numeric,
+  stress_level text,
+  -- 'low', 'medium', 'high'
+  experience text,
+  -- 'beginner', 'intermediate', 'advanced'
+  equipment text,
+  -- 'gym', 'home', 'mixed'
+  injuries text,
+  main_motivation text
 );
 -- Create Measurements Table (Progress Tracking)
 create table if not exists public.student_measurements (

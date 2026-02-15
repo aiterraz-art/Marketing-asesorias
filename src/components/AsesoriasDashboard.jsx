@@ -22,13 +22,14 @@ import {
     Calendar as CalendarIcon,
     Activity
 } from 'lucide-react';
-import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement, deleteStudent } from '../lib/supabase';
+import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement, deleteStudent, addStudentSession, uploadPhoto } from '../lib/supabase';
 import { MOCK_STUDENT } from '../lib/mockData';
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTrainingAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
 import StudentHistory from './StudentHistory';
 import StudentProfile from './StudentProfile';
 import MasterCalendar from './MasterCalendar';
+import InitialMeetingAssistant from './InitialMeetingAssistant';
 import { getExerciseImageUrl } from '../lib/exerciseDatabase';
 import {
     LineChart,
@@ -56,6 +57,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
     });
     const [latestPlan, setLatestPlan] = useState(null);
     const [historyStudent, setHistoryStudent] = useState(null);
+    const [isInitialMeetingOpen, setIsInitialMeetingOpen] = useState(false);
 
     const loadStudents = async () => {
         setLoading(true);
@@ -91,6 +93,65 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         } catch (err) {
             console.error("Error creating student:", err);
             alert("Error al crear el alumno.");
+        }
+    };
+
+    const handleCreateFromWizard = async (wizardData) => {
+        try {
+            // 0. Subir foto si existe
+            let uploadedPhotoUrl = null;
+            if (wizardData.photoFile) {
+                try {
+                    uploadedPhotoUrl = await uploadPhoto(wizardData.photoFile);
+                } catch (uploadErr) {
+                    console.error("Error uploading photo:", uploadErr);
+                    // Silently fail or alert? Let's proceed with student creation anyway
+                }
+            }
+
+            // 1. Crear el alumno
+            const student = await createStudent({
+                full_name: wizardData.full_name,
+                age: wizardData.age,
+                sex: wizardData.sex,
+                weight: wizardData.weight,
+                height: wizardData.height,
+                body_fat_pct: wizardData.body_fat_pct,
+                activity_level: wizardData.activity_level,
+                goal: wizardData.goal,
+                sleep_hours: wizardData.sleep_hours,
+                stress_level: wizardData.stress_level,
+                experience: wizardData.experience,
+                equipment: wizardData.equipment,
+                injuries: wizardData.injuries,
+                main_motivation: wizardData.main_motivation
+            });
+
+            // 2. Crear sesión inicial
+            await addStudentSession({
+                student_id: student.id,
+                session_date: new Date().toISOString(),
+                session_type: 'initial',
+                notes: 'Reunión inicial realizada con el Asistente.'
+            });
+
+            // 3. Crear primera medición si hay peso
+            if (wizardData.weight) {
+                await addStudentMeasurement({
+                    student_id: student.id,
+                    weight: wizardData.weight,
+                    body_fat_pct: wizardData.body_fat_pct,
+                    photo_url: uploadedPhotoUrl
+                });
+            }
+
+            await loadStudents();
+            setIsInitialMeetingOpen(false);
+            setSelectedStudent(student);
+            alert("¡Alumno creado con éxito! Ya puedes ver su perfil completo.");
+        } catch (err) {
+            console.error("Error in intake wizard flow:", err);
+            alert("Error al procesar la reunión inicial.");
         }
     };
 
@@ -165,11 +226,18 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 </div>
                 <div className="flex items-center gap-3">
                     <button
+                        onClick={() => setIsInitialMeetingOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white border border-zinc-700 rounded-lg font-bold hover:bg-zinc-800 transition-all shadow-lg shadow-zinc-950/20"
+                    >
+                        <Sparkles size={18} className="text-primary" />
+                        Reunión Inicial
+                    </button>
+                    <button
                         onClick={() => setIsStudentModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:opacity-90 transition-opacity whitespace-nowrap shadow-lg shadow-primary/20"
                     >
                         <UserPlus size={18} />
-                        Nuevo Alumno
+                        Rápido
                     </button>
                 </div>
             </header>
@@ -332,6 +400,11 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 student={historyStudent}
                 isOpen={!!historyStudent}
                 onClose={() => setHistoryStudent(null)}
+            />
+            <InitialMeetingAssistant
+                isOpen={isInitialMeetingOpen}
+                onClose={() => setIsInitialMeetingOpen(false)}
+                onCreateStudent={handleCreateFromWizard}
             />
         </div>
     );
