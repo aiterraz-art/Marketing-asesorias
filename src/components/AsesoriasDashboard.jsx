@@ -62,6 +62,12 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         try {
             const data = await getStudents();
             setStudents(data);
+
+            // Sincronizar el alumno seleccionado con los nuevos datos de la DB
+            if (selectedStudent) {
+                const updated = data.find(s => s.id === selectedStudent.id);
+                if (updated) setSelectedStudent(updated);
+            }
         } catch (err) {
             console.error("Error loading students:", err);
         } finally {
