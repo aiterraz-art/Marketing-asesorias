@@ -452,19 +452,26 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 
         REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
         
-        1. PÁGINA 1: TABLA DE PORCIONES ISOCALÓRICAS (MATEMÁTICA EXACTA)
-           - Define "1 PORCIÓN" para cada grupo priorizando la EQUIVALENCIA CALÓRICA (Isocalórica), NO el peso.
-           - Ejemplo: Si fijas 1 porción de CHO en ~100 kcal, ajusta los gramos de Arroz vs Fideos para que AMBOS entreguen esas ~100 kcal.
+        REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
+        
+        1. PÁGINA 1: TABLA DE PORCIONES ISOCALÓRICAS (ESTÁNDAR FIJO)
+           - Define "1 PORCIÓN" basándote ESTRICTAMENTE en estas calorías objetivo por grupo:
+             * **1 Porción de CARBOHIDRATO (CHO) = 200 KCAL (aprox)**.
+             * **1 Porción de PROTEÍNA (PRO) = 150 KCAL (aprox)**.
+             * **1 Porción de GRASA (FAT) = 100 KCAL (aprox)**.
+           - TU TAREA MATEMÁTICA: Calcula los gramos de cada alimento para que CUMPLAN esas calorías.
+             * Ejemplo: Si 100g de Arroz = 130 kcal, entonces 1 Porción de Arroz (~200kcal) son ~150-160g.
+             * Ejemplo: Si 100g de Papa = 80 kcal, le corresponde MÁS cantidad (~250g) para llegar a las 200 kcal.
            - OBLIGATORIO: Todas las tablas deben tener exactamente 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-           - GRUPO CARBOHIDRATOS (CHO): Marraqueta, Arroz cocido, Fideos cocidos, Papa cocida.
+           - GRUPO CARBOHIDRATOS (CHO): Marraqueta, Arroz cocido, Fideos cocidos, Papa cocida, Avena, Pan Integral.
            - GRUPO PROTEÍNAS (PRO): Huevos enteros, Pollo, Vacuno/Cerdo, Atún.
-           - GRUPO GRASAS (FAT): Aceite de Oliva, Palta.
+           - GRUPO GRASAS (FAT): Aceite de Oliva, Palta, Frutos Secos.
 
-        2. PÁGINA 2: DISTRIBUCIÓN DIARIA Y PRECISIÓN
+        2. PÁGINA 2: DISTRIBUCIÓN DIARIA MATEMÁTICA
            - Diseña el día completo (Desayuno, Almuerzo, Merienda, Cena).
-           - Estructura: "Desayuno: 2 porciones de PRO + 1 de CHO + 1 de FAT".
+           - Estructura: "Desayuno: X porciones de PRO + Y de CHO...".
            - Inmediatamente debajo, inserta la TABLA con el ejemplo concreto (7 columnas).
-           - **CRÍTICO: VALIDACIÓN DE MACROS**. Antes de responder, suma todos los macros del plan. El error máximo permitido respecto a los objetivos (${macros.calories} kcal) es del 3%. Debes ser matemático.
+           - **VALIDACIÓN FINAL**: La suma de todas las porciones debe coincidir con el objetivo: ${macros.calories} kcal (±3%).
 
         3. REGLAS DE ESTÉTICA Y VOCABULARIO:
            - Usa negritas para totales y títulos.
@@ -558,15 +565,18 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
         - Proteína Whey: ${macros.useWhey ? 'SÍ' : 'NO'}
 
         SISTEMA DE PORCIONES ISOCALÓRICAS (OBLIGATORIO):
-        1. TABLA DE PORCIONES: Define "1 PORCIÓN" equilibrando las CALORÍAS, no el peso.
-           - Ejemplo: Ajusta gramos de Arroz vs Papa para que una porción de ambos tenga las mismas kcal.
+        1. TABLA DE PORCIONES ESTÁNDAR:
+           - **1 Porción de CARBOHIDRATO = 200 KCAL**.
+           - **1 Porción de PROTEÍNA = 150 KCAL**.
+           - **1 Porción de GRASA = 100 KCAL**.
+           - TU TAREA: Calcula los gramos de cada alimento para cumplir estas calorías (ej: Arroz vs Papa deben pesar distinto pero tener las mismas kcal).
            - OBLIGATORIO: Usa siempre 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
 
         REGLAS DE PRECISIÓN Y FORMATO:
         - El error calórico total final no debe superar el 3% del objetivo (${macros.calories} kcal).
         - Estructura por PORCIONES seguido de una TABLA de 7 columnas.
         - Indica el **Total de Calorías** por comida en negrita.
-        - Usa vocabulario CHILENO.
+        - Usa vocabulario CHILENO y medidas visuales.
         - Incluye resumen final comparativo: Plan vs Objetivo.
 
         RESTRICCIONES:
