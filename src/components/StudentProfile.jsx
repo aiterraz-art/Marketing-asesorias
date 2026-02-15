@@ -103,12 +103,31 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
 
     const handleSaveEdit = async () => {
         try {
-            await updateStudentData(student.id, editData);
+            // Limpiar datos para evitar errores de casting en PostgreSQL (strings vacíos en columnas numéricas/fecha)
+            const cleanData = { ...editData };
+
+            // Convertir a número o null si está vacío
+            const numericFields = ['age', 'weight', 'height', 'body_fat_pct', 'activity_level'];
+            numericFields.forEach(field => {
+                if (cleanData[field] === '' || cleanData[field] === undefined) {
+                    cleanData[field] = null;
+                } else {
+                    cleanData[field] = Number(cleanData[field]);
+                }
+            });
+
+            // Fechas vacías a null
+            const dateFields = ['last_payment_date', 'last_routine_date'];
+            dateFields.forEach(field => {
+                if (cleanData[field] === '') cleanData[field] = null;
+            });
+
+            await updateStudentData(student.id, cleanData);
             setIsEditing(false);
             if (onStudentUpdated) onStudentUpdated();
         } catch (err) {
             console.error("Error updating student:", err);
-            alert("Error al actualizar el alumno.");
+            alert(`Error al actualizar el alumno: ${err.message || 'Error desconocido'}`);
         }
     };
 
@@ -218,12 +237,12 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                         {/* Días de Plan Restantes */}
                                         {student.next_payment_date && (
                                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${(() => {
-                                                    const now = new Date();
-                                                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                                                    return student.next_payment_date > todayStr;
-                                                })()
-                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                const now = new Date();
+                                                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                return student.next_payment_date > todayStr;
+                                            })()
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
                                                 }`}>
                                                 <Clock size={10} />
                                                 {(() => {
