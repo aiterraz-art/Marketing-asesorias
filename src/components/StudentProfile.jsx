@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
-    updateStudentData
+    updateStudentData, getStudentSessions, addStudentSession
 } from '../lib/supabase';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -25,6 +25,7 @@ const ACTIVITY_LABELS = { 1.2: 'Sedentario', 1.375: 'Ligero', 1.55: 'Moderado', 
 const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const [plans, setPlans] = useState([]);
     const [measurements, setMeasurements] = useState([]);
+    const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState('dashboard');
     const [expandedPlan, setExpandedPlan] = useState(null);
@@ -50,12 +51,14 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [plansData, measurementsData] = await Promise.all([
+            const [plansData, measurementsData, sessionsData] = await Promise.all([
                 getStudentPlans(student.id),
-                getStudentMeasurements(student.id)
+                getStudentMeasurements(student.id),
+                getStudentSessions(student.id)
             ]);
             setPlans(plansData || []);
             setMeasurements(measurementsData || []);
+            setSessions(sessionsData || []);
         } catch (err) {
             console.error("Error loading student data:", err);
         } finally {
@@ -747,8 +750,8 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                         </div>
 
                         <div className="bg-black/40 border border-zinc-800 rounded-xl p-4 space-y-4">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Próxima video llamada</label>
+                            <div className="flex flex-col gap-3">
+                                <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Programar Siguiente Sesión</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="datetime-local"
@@ -778,17 +781,70 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             </div>
 
                             {student.next_videocall_date && (
-                                <div className="flex items-center gap-2 text-xs text-blue-400 font-medium pt-2 border-t border-zinc-800/50">
-                                    <Clock size={12} />
-                                    Cita actual: {new Date(student.next_videocall_date).toLocaleString('es-CL', {
-                                        day: '2-digit',
-                                        month: 'short',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs text-blue-400 font-bold uppercase">
+                                            <Clock size={14} /> Cita Pendiente
+                                        </div>
+                                        <div className="text-white font-bold text-sm">
+                                            {new Date(student.next_videocall_date).toLocaleString('es-CL', {
+                                                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={async () => {
+                                                if (!confirm("¿Marcar esta sesión como realizada?")) return;
+                                                try {
+                                                    await addStudentSession({
+                                                        student_id: student.id,
+                                                        session_date: student.next_videocall_date,
+                                                        session_type: sessions.length === 0 ? 'initial' : 'follow_up',
+                                                        notes: 'Sesión completada desde el panel'
+                                                    });
+                                                    await updateStudentData(student.id, {
+                                                        next_videocall_date: null
+                                                    });
+                                                    setNextVideoCall('');
+                                                    await loadData();
+                                                    if (onStudentUpdated) onStudentUpdated();
+                                                } catch (err) {
+                                                    console.error("Error completing session:", err);
+                                                    alert("Error al completar la sesión");
+                                                }
+                                            }}
+                                            className="flex-1 py-2 bg-emerald-500 text-white rounded-lg font-bold text-xs hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1.5"
+                                        >
+                                            <Check size={14} /> Marcar Realizada
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
+
+                        {/* Session History Mini List */}
+                        {sessions.length > 0 && (
+                            <div className="space-y-2 mt-2">
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest px-1">Historial de Sesiones</p>
+                                <div className="max-h-32 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                    {sessions.map(s => (
+                                        <div key={s.id} className="bg-black/20 border border-zinc-800/50 rounded-lg p-2 flex items-center justify-between text-[11px]">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${s.session_type === 'initial' ? 'bg-purple-500' : 'bg-blue-500'}`} />
+                                                <span className="text-zinc-300 font-medium">
+                                                    {s.session_type === 'initial' ? 'Sesión Inicial' : 'Seguimiento'}
+                                                </span>
+                                            </div>
+                                            <span className="text-zinc-500">
+                                                {new Date(s.session_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="text-[10px] text-zinc-500 italic">
                             * Al agendar, la sesión aparecerá automáticamente en el Calendario Maestro.

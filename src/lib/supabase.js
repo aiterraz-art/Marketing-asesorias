@@ -157,3 +157,25 @@ export const addStudentMeasurement = async (measurement) => {
     if (error) throw error;
     return data;
 }
+
+export const getStudentSessions = async (studentId) => {
+    const { data, error } = await supabase
+        .from('student_sessions')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('session_date', { ascending: false });
+
+    if (error) throw error;
+    return data;
+}
+
+export const addStudentSession = async (session) => {
+    const { data, error } = await supabase
+        .from('student_sessions')
+        .insert([session])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
