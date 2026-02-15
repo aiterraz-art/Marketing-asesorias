@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 
 const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+const REASONING_MODEL = import.meta.env.VITE_OPENAI_REASONING_MODEL || "gpt-5.2-codex";
 
 export const openai = new OpenAI({
 	apiKey: apiKey,
@@ -467,15 +468,18 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
            - GRUPO PROTEÍNAS (PRO): Huevos enteros, Pollo, Vacuno/Cerdo, Atún.
            - GRUPO GRASAS (FAT): Aceite de Oliva, Palta, Frutos Secos.
 
-        2. PÁGINA 2: DISTRIBUCIÓN DIARIA MATEMÁTICA
-           - Diseña el día completo (Desayuno, Almuerzo, Merienda, Cena).
-           - Estructura: "Desayuno: X porciones de PRO + Y de CHO...".
-           - Inmediatamente debajo, inserta la TABLA con el ejemplo concreto (7 columnas).
-           - **VALIDACIÓN FINAL**: La suma de todas las porciones debe coincidir con el objetivo: ${macros.calories} kcal (±3%).
+        2. PÁGINA 2: DISTRIBUCIÓN DIARIA (ABSTRACTA Y FLEXIBLE)
+           - En esta sección, **NO** menciones alimentos específicos (ej: No digas "Pollo con Arroz").
+           - Usa EXCLUSIVAMENTE el lenguaje de PORCIONES para que el alumno elija de la Tabla de Equivalencias.
+           - Estructura OBLIGATORIA:
+             * "Desayuno: **2 Porciones de PROTEÍNA** + **1 Porción de CARBOHIDRATO** + **1 Porción de GRASA**".
+             * "Almuerzo: **2 Porciones de PROTEÍNA** + **2 Porciones de CARBOHIDRATO** + Ensalada Libre".
+           - Inmediatamente debajo de cada comida, inserta una TABLA RESUMEN DE MACROS DE ESA COMIDA (Sin alimentos, solo conteo de macros y calorías).
+           - **VALIDACIÓN FINAL**: La suma de todas las porciones abstraídas debe coincidir con el objetivo: ${macros.calories} kcal.
 
         3. REGLAS DE ESTÉTICA Y VOCABULARIO:
-           - Usa negritas para totales y títulos.
-           - Vocabulario Chileno: Palta, Marraqueta, Descremado.
+           - Usa negritas para resaltar las PORCIONES (ej: **1 Porción de CHO**).
+           - Vocabulario Chileno: Palta, Marraqueta, Descremado (en la tabla de equivalencias).
            - Al final del plan, incluye el Resumen de Macros Totales del día vs Objetivo.
            - Incluye "Tips de Oro" (Hidratación, Sueño) para profesionalismo.
 
@@ -490,7 +494,7 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 				{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
 				{ role: "user", content: planPrompt }
 			],
-			model: "gpt-5.2",
+			model: REASONING_MODEL,
 			response_format: { type: "json_object" }
 		});
 
@@ -572,11 +576,13 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
            - TU TAREA: Calcula los gramos de cada alimento para cumplir estas calorías (ej: Arroz vs Papa deben pesar distinto pero tener las mismas kcal).
            - OBLIGATORIO: Usa siempre 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
 
-        REGLAS DE PRECISIÓN Y FORMATO:
+        REGLAS DE PRECISIÓN Y FORMATO DE MENÚ ABSTRACTO:
         - El error calórico total final no debe superar el 3% del objetivo (${macros.calories} kcal).
-        - Estructura por PORCIONES seguido de una TABLA de 7 columnas.
+        - **EN EL MENÚ DIARIO**: NO nombres alimentos específicos (ej: No digas "Pollo").
+        - **USA LENGUAJE DE PORCIONES**: "Almuerzo: 2 Porciones de PROTEÍNA + 1 Porción de GRASA".
+        - El alumno buscará qué comer en la Tabla de Equivalencias.
         - Indica el **Total de Calorías** por comida en negrita.
-        - Usa vocabulario CHILENO y medidas visuales.
+        - Usa vocabulario CHILENO en las explicaciones.
         - Incluye resumen final comparativo: Plan vs Objetivo.
 
         RESTRICCIONES:
@@ -592,7 +598,7 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 
 		const completion = await openai.chat.completions.create({
 			messages: messages,
-			model: "gpt-5.2"
+			model: REASONING_MODEL
 		});
 
 		return completion.choices[0].message.content;
