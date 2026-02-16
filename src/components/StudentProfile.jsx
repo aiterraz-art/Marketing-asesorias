@@ -964,7 +964,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             margin: [10, 10, 10, 10],
             filename: `Plan_${isNutrition ? 'Nutricion' : 'Entrenamiento'}_${studentName.replace(/\s+/g, '_')}_${new Date(plan.created_at).toLocaleDateString()}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
+            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 800, width: 800 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
@@ -1082,7 +1082,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                 }}>
                     {/* Header Premium */}
                     <div style={{
-                        backgroundColor: isNutrition ? '#10b981' : '#3b82f6', // Emerald o Blue
+                        backgroundColor: '#7c3aed', // Violet-600 (Morado Vibrante)
                         padding: '40px',
                         color: 'white',
                         display: 'flex',
@@ -1141,14 +1141,14 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
 
                         {/* Title Section */}
                         <div style={{
-                            borderBottom: `2px solid ${isNutrition ? '#10b981' : '#3b82f6'}`,
+                            borderBottom: '2px solid #7c3aed', // Violet-600
                             paddingBottom: '10px',
                             marginBottom: '30px'
                         }}>
                             <h2 style={{
                                 margin: 0,
                                 fontSize: '24px',
-                                color: '#111827',
+                                color: '#4c1d95', // Violet-900
                                 textTransform: 'uppercase',
                                 letterSpacing: '1px'
                             }}>
@@ -1163,10 +1163,10 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             color: '#374151'
                         }}>
                             <style>{`
-                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { color: #111827 !important; margin-top: 20px !important; margin-bottom: 10px !important; font-weight: 800 !important; }
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { color: #4c1d95 !important; margin-top: 20px !important; margin-bottom: 10px !important; font-weight: 800 !important; }
                                 .pdf-content-body h1 { fontSize: 20px !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-                                .pdf-content-body h2 { fontSize: 18px !important; color: ${isNutrition ? '#059669' : '#2563eb'} !important; }
-                                .pdf-content-body h3 { fontSize: 16px !important; }
+                                .pdf-content-body h2 { fontSize: 18px !important; color: #6d28d9 !important; }
+                                .pdf-content-body h3 { fontSize: 16px !important; color: #7c3aed !important; }
                                 .pdf-content-body p { margin-bottom: 10px !important; }
                                 .pdf-content-body ul, .pdf-content-body ol { margin-bottom: 10px !important; padding-left: 20px !important; }
                                 .pdf-content-body li { margin-bottom: 5px !important; }
