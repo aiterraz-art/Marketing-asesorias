@@ -361,7 +361,22 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                                 alert("¡Plan guardado con éxito!");
                             } catch (err) {
                                 console.error("Error saving plan:", err);
-                                alert("Error al guardar el plan.");
+                                // Intento de fallback: Si falla por la columna de suplementación, intentar guardar sin ella
+                                if (err.message && (err.message.includes('supplementation_plan_text') || err.message.includes('column'))) {
+                                    try {
+                                        const { supplementation_plan_text, ...planWithoutSupps } = plan;
+                                        await saveStudentPlan(planWithoutSupps);
+                                        const updatedPlan = await getStudentPlan(selectedStudent.id);
+                                        const updatedAll = await getStudentPlans(selectedStudent.id);
+                                        setLatestPlan(updatedPlan);
+                                        setHistoricalPlans(updatedAll);
+                                        alert("⚠️ Plan guardado PARCIALMENTE.\n\nLa suplementación no se guardó porque falta actualizar la base de datos.\nEjecuta el comando SQL en Supabase.");
+                                    } catch (retryErr) {
+                                        alert("Error crítico al guardar: " + (retryErr.message || "Desconocido"));
+                                    }
+                                } else {
+                                    alert("Error al guardar el plan: " + (err.message || "Desconocido"));
+                                }
                             }
                         }}
                     />
