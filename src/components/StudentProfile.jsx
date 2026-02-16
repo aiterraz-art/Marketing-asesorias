@@ -1163,17 +1163,35 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             color: '#374151'
                         }}>
                             <style>{`
-                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { color: #4c1d95 !important; margin-top: 20px !important; margin-bottom: 10px !important; font-weight: 800 !important; }
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { 
+                                    color: #4c1d95 !important; 
+                                    margin-top: 20px !important; 
+                                    margin-bottom: 10px !important; 
+                                    font-weight: 800 !important; 
+                                    page-break-after: avoid !important;
+                                    break-after: avoid !important;
+                                }
                                 .pdf-content-body h1 { fontSize: 20px !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
                                 .pdf-content-body h2 { fontSize: 18px !important; color: #6d28d9 !important; }
                                 .pdf-content-body h3 { fontSize: 16px !important; color: #7c3aed !important; }
-                                .pdf-content-body p { margin-bottom: 10px !important; }
+                                .pdf-content-body p { margin-bottom: 10px !important; orphans: 3; widows: 3; }
                                 .pdf-content-body ul, .pdf-content-body ol { margin-bottom: 10px !important; padding-left: 20px !important; }
                                 .pdf-content-body li { margin-bottom: 5px !important; }
                                 .pdf-content-body strong { color: #000 !important; font-weight: bold !important; }
-                                .pdf-content-body table { width: 100% !important; border-collapse: collapse !important; margin: 20px 0 !important; font-size: 12px !important; }
+                                .pdf-content-body table { 
+                                    width: 100% !important; 
+                                    border-collapse: collapse !important; 
+                                    margin: 20px 0 !important; 
+                                    font-size: 12px !important; 
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                }
                                 .pdf-content-body th { background-color: #f3f4f6 !important; padding: 8px !important; text-align: left !important; border: 1px solid #e5e7eb !important; }
                                 .pdf-content-body td { padding: 8px !important; border: 1px solid #e5e7eb !important; }
+                                .pdf-content-body tr { 
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                }
                                 .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
                             `}</style>
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>

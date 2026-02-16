@@ -52,10 +52,11 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
             filename: `Elite_Plan_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 1 },
             html2canvas: {
-                scale: 3,
+                scale: 2,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                letterRendering: true
+                windowWidth: 800,
+                width: 800
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
@@ -177,12 +178,44 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
 
                     {/* Hidden Copy for PDF (Elite Magazine Style) */}
                     <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                        <div id="pdf-content" style={{ width: '800px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Arial, sans-serif' }}>
+                        <div id="pdf-content" style={{ width: '800px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                            <style>{`
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { 
+                                    color: #4c1d95 !important; 
+                                    margin-top: 20px !important; 
+                                    margin-bottom: 10px !important; 
+                                    font-weight: 800 !important; 
+                                    page-break-after: avoid !important;
+                                    break-after: avoid !important;
+                                }
+                                .pdf-content-body h1 { fontSize: 20px !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+                                .pdf-content-body h2 { fontSize: 18px !important; color: #6d28d9 !important; }
+                                .pdf-content-body h3 { fontSize: 16px !important; color: #7c3aed !important; }
+                                .pdf-content-body p { margin-bottom: 10px !important; orphans: 3; widows: 3; }
+                                .pdf-content-body ul, .pdf-content-body ol { margin-bottom: 10px !important; padding-left: 20px !important; }
+                                .pdf-content-body li { margin-bottom: 5px !important; }
+                                .pdf-content-body strong { color: #000 !important; font-weight: bold !important; }
+                                .pdf-content-body table { 
+                                    width: 100% !important; 
+                                    border-collapse: collapse !important; 
+                                    margin: 20px 0 !important; 
+                                    font-size: 12px !important; 
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                }
+                                .pdf-content-body th { background-color: #f3f4f6 !important; padding: 8px !important; text-align: left !important; border: 1px solid #e5e7eb !important; }
+                                .pdf-content-body td { padding: 8px !important; border: 1px solid #e5e7eb !important; }
+                                .pdf-content-body tr { 
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                }
+                                .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
+                            `}</style>
                             {/* Magazine Header */}
                             <div style={{ backgroundColor: '#7c3aed', padding: '60px 40px', color: '#fff', textAlign: 'center' }}>
-                                <p style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '10px', opacity: 0.8 }}>Protocolo de Alto Rendimiento</p>
+                                <p style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '10px', opacity: 0.8 }}>ALFREDO TERRAZA</p>
                                 <h1 style={{ fontSize: '48px', fontWeight: '900', textTransform: 'uppercase', margin: 0, fontStyle: 'italic', letterSpacing: '-1px' }}>
-                                    {selectedStudent.goal === 'cut' ? 'Sredded' : selectedStudent.goal === 'bulk' ? 'Titan' : 'Elite'} Profile
+                                    {selectedStudent.goal === 'cut' ? 'Definición' : selectedStudent.goal === 'bulk' ? 'Volumen' : 'Elite'} Profile
                                 </h1>
                                 <div style={{ height: '4px', width: '60px', backgroundColor: '#fff', margin: '25px auto' }}></div>
                                 <p style={{ fontSize: '18px', fontWeight: '700' }}>Alumno: {selectedStudent.full_name}</p>
@@ -210,14 +243,14 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '40px' }}>
                                     <div>
                                         <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>Protocolo Nutricional</h2>
-                                        <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
+                                        <div className="pdf-content-body" style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.nutrition_plan}</ReactMarkdown>
                                         </div>
                                     </div>
 
                                     <div style={{ borderTop: '1px solid #e4e4e7', pt: '40px' }}>
                                         <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>Sistema de Entrenamiento</h2>
-                                        <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
+                                        <div className="pdf-content-body" style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.training_plan}</ReactMarkdown>
                                         </div>
                                     </div>
@@ -226,7 +259,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
 
                             {/* Footer */}
                             <div style={{ backgroundColor: '#f9fafb', padding: '30px 40px', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
-                                <p style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', margin: 0 }}>Marketing OS - Coaching Automático de Clase Mundial</p>
+                                <p style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', margin: 0 }}>Alfredo Terraza • Asesor de Nutrición y Entrenamiento</p>
                             </div>
                         </div>
                     </div>
