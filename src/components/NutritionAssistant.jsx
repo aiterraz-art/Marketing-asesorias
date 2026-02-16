@@ -6,6 +6,7 @@ import { saveStudentPlan } from '../lib/supabase';
 export default function NutritionAssistant({ selectedStudent, latestPlan, onPlanSaved }) {
     const [isSavingStack, setIsSavingStack] = useState(false);
     const [targetFood, setTargetFood] = useState('');
+    const [originalFood, setOriginalFood] = useState('');
     const [isCalculating, setIsCalculating] = useState(false);
     const [substitutionResult, setSubstitutionResult] = useState(null);
     const [isGeneratingSupps, setIsGeneratingSupps] = useState(false);
