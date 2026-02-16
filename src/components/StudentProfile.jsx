@@ -204,6 +204,11 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             if (expandedPlan === `n-${planId}` || expandedPlan === `t-${planId}`) {
                 setExpandedPlan(null);
             }
+
+            // Sincronizar con el dashboard principal
+            if (onStudentUpdated) await onStudentUpdated();
+
+            alert("Plan eliminado correctamente.");
         } catch (err) {
             console.error("Error deleting plan:", err);
             alert("Error al eliminar el plan.");
@@ -951,7 +956,8 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
 
     const handleExportPDF = (e) => {
         e.stopPropagation();
-        const element = contentRef.current;
+        // Usar el ID estático para asegurar que el elemento existe incluso si el acordeón está colapsado
+        const element = document.getElementById(`pdf-content-${plan.id}`);
         if (!element) return;
 
         const opt = {
@@ -1061,13 +1067,26 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     </div>
                 </div>
             )}
-            {
-                isExpanded && !content && (
-                    <div className="border-t border-zinc-900 p-6 text-center text-zinc-600 text-sm">
-                        Este plan fue guardado solo con macros (sin texto generado por IA).
+            {isExpanded && !content && (
+                <div className="border-t border-zinc-900 p-6 text-center text-zinc-600 text-sm">
+                    Este plan fue guardado solo con macros (sin texto generado por IA).
+                </div>
+            )}
+            {/* Contenido oculto para exportación PDF (Siempre en el DOM para handleExportPDF) */}
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div id={`pdf-content-${plan.id}`} className="p-8 bg-white text-zinc-900" style={{ width: '680px' }}>
+                    <h1 className="text-2xl font-bold mb-4 border-b pb-2">
+                        {isNutrition ? '🍎 Plan Nutricional' : '💪 Plan de Entrenamiento'} - v{versionNumber}
+                    </h1>
+                    <div className="prose prose-sm max-w-none text-zinc-800">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {isNutrition
+                                ? `${plan.nutrition_plan_text || ''}\n\n${plan.supplementation_plan_text || ''}`
+                                : (plan.training_plan_text || '')}
+                        </ReactMarkdown>
                     </div>
-                )
-            }
+                </div>
+            </div>
         </div >
     );
 };
