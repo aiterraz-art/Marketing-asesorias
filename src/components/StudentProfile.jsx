@@ -473,16 +473,22 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             <p className="text-zinc-500 text-sm mt-1">Genera un plan desde la pestaña de Calculadora o Rutinas.</p>
                         </div>
                     ) : (
-                        nutritionPlans.map((plan) => (
-                            <PlanCard
-                                key={plan.id}
-                                plan={plan}
-                                type="nutrition"
-                                isExpanded={expandedPlan === `n-${plan.id}`}
-                                onToggle={() => setExpandedPlan(expandedPlan === `n-${plan.id}` ? null : `n-${plan.id}`)}
-                                studentName={student.full_name}
-                            />
-                        ))
+                        plans.filter(p => p.nutrition_plan_text).map((plan) => {
+                            // Encontrar el índice original en 'plans' para el número de versión global
+                            const globalIndex = plans.findIndex(p => p.id === plan.id);
+                            const version = plans.length - globalIndex;
+                            return (
+                                <PlanCard
+                                    key={plan.id}
+                                    plan={plan}
+                                    type="nutrition"
+                                    versionNumber={version}
+                                    isExpanded={expandedPlan === `n-${plan.id}`}
+                                    onToggle={() => setExpandedPlan(expandedPlan === `n-${plan.id}` ? null : `n-${plan.id}`)}
+                                    studentName={student.full_name}
+                                />
+                            );
+                        })
                     )}
                 </div>
             )}
@@ -504,16 +510,21 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             <p className="text-zinc-500 text-sm mt-1">Genera un plan desde la pestaña de Rutinas.</p>
                         </div>
                     ) : (
-                        trainingPlans.map((plan) => (
-                            <PlanCard
-                                key={plan.id}
-                                plan={plan}
-                                type="training"
-                                isExpanded={expandedPlan === `t-${plan.id}`}
-                                onToggle={() => setExpandedPlan(expandedPlan === `t-${plan.id}` ? null : `t-${plan.id}`)}
-                                studentName={student.full_name}
-                            />
-                        ))
+                        plans.filter(p => p.training_plan_text).map((plan) => {
+                            const globalIndex = plans.findIndex(p => p.id === plan.id);
+                            const version = plans.length - globalIndex;
+                            return (
+                                <PlanCard
+                                    key={plan.id}
+                                    plan={plan}
+                                    type="training"
+                                    versionNumber={version}
+                                    isExpanded={expandedPlan === `t-${plan.id}`}
+                                    onToggle={() => setExpandedPlan(expandedPlan === `t-${plan.id}` ? null : `t-${plan.id}`)}
+                                    studentName={student.full_name}
+                                />
+                            );
+                        })
                     )}
                 </div>
             )}
@@ -688,7 +699,11 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
 
             {/* ─── AI Nutrition Assistant Section ─── */}
             {activeSection === 'ai_nutrition' && (
-                <NutritionAssistant selectedStudent={student} />
+                <NutritionAssistant
+                    selectedStudent={student}
+                    latestPlan={plans[0]}
+                    onPlanSaved={onStudentUpdated}
+                />
             )}
 
             {/* ─── Administrative Section ─── */}
@@ -889,7 +904,7 @@ const EditField = ({ label, value, onChange, type = 'text' }) => (
     </div>
 );
 
-const PlanCard = ({ plan, type, isExpanded, onToggle, studentName }) => {
+const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber }) => {
     const content = type === 'nutrition' ? plan.nutrition_plan_text : plan.training_plan_text;
     const isNutrition = type === 'nutrition';
     const contentRef = useRef(null);
@@ -924,10 +939,19 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName }) => {
                         {isNutrition ? <Apple size={18} /> : <Dumbbell size={18} />}
                     </div>
                     <div className="text-left">
-                        <p className="text-white font-medium text-sm">
-                            {new Date(plan.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
+                        <div className="flex items-center gap-2">
+                            <p className="text-white font-bold text-sm">
+                                {new Date(plan.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </p>
+                            <span className="text-[10px] bg-primary/20 text-primary border border-primary/30 px-1.5 py-0.5 rounded font-black uppercase">
+                                VERSIÓN {versionNumber}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-zinc-500 mt-1 uppercase font-bold tracking-wider">
+                            <span className="flex items-center gap-1">
+                                <Clock size={10} />
+                                {new Date(plan.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                             {(plan.calories > 0 || plan.protein_g > 0 || plan.fat_g > 0 || plan.carbs_g > 0) && (
                                 <>
                                     <span>{plan.calories} kcal</span>

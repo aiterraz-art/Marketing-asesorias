@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Apple, ArrowRightLeft, Sparkles, Loader2, Pill, Clipboard, CheckCircle2 } from 'lucide-react';
 import { calculateFoodSubstitution, generateSupplementsProtocol } from '../lib/openai';
+import { saveStudentPlan } from '../lib/supabase';
 
-export default function NutritionAssistant({ selectedStudent }) {
-    const [originalFood, setOriginalFood] = useState('');
+export default function NutritionAssistant({ selectedStudent, latestPlan, onPlanSaved }) {
+    const [isSavingStack, setIsSavingStack] = useState(false);
     const [targetFood, setTargetFood] = useState('');
     const [isCalculating, setIsCalculating] = useState(false);
     const [substitutionResult, setSubstitutionResult] = useState(null);
@@ -33,6 +34,32 @@ export default function NutritionAssistant({ selectedStudent }) {
             console.error("Error generating supplements:", error);
         } finally {
             setIsGeneratingSupps(false);
+        }
+    };
+
+    const handleSaveStack = async () => {
+        if (!suppsResult || !selectedStudent) return;
+        setIsSavingStack(true);
+        try {
+            await saveStudentPlan({
+                student_id: selectedStudent.id,
+                supplementation_plan_text: suppsResult.protocol,
+                // Mantener datos anteriores si existen
+                nutrition_plan_text: latestPlan?.nutrition_plan_text || null,
+                training_plan_text: latestPlan?.training_plan_text || null,
+                calories: latestPlan?.calories || 0,
+                protein_g: latestPlan?.protein_g || 0,
+                fat_g: latestPlan?.fat_g || 0,
+                carbs_g: latestPlan?.carbs_g || 0,
+                goal: latestPlan?.goal || selectedStudent.goal || 'maintenance'
+            });
+            alert("Protocolo de suplementación guardado en la ficha del alumno.");
+            if (onPlanSaved) onPlanSaved();
+        } catch (error) {
+            console.error("Error saving stack:", error);
+            alert("Error al guardar el stack.");
+        } finally {
+            setIsSavingStack(false);
         }
     };
 
@@ -176,9 +203,19 @@ export default function NutritionAssistant({ selectedStudent }) {
                                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                             <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">Validado Científicamente</span>
                                         </div>
-                                        <button onClick={() => copyToClipboard(suppsResult.protocol)} className="text-zinc-600 hover:text-white transition-colors">
-                                            <Clipboard size={16} />
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={handleSaveStack}
+                                                disabled={isSavingStack}
+                                                className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-black uppercase hover:bg-primary/20 transition-all disabled:opacity-50"
+                                            >
+                                                {isSavingStack ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                                                Guardar en Ficha
+                                            </button>
+                                            <button onClick={() => copyToClipboard(suppsResult.protocol)} className="text-zinc-600 hover:text-white transition-colors">
+                                                <Clipboard size={16} />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="prose prose-invert prose-xs max-w-none text-zinc-400 font-medium leading-relaxed max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">

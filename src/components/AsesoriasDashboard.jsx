@@ -58,6 +58,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
     const [latestPlan, setLatestPlan] = useState(null);
     const [historyStudent, setHistoryStudent] = useState(null);
     const [isInitialMeetingOpen, setIsInitialMeetingOpen] = useState(false);
+    const [historicalPlans, setHistoricalPlans] = useState([]);
 
     const loadStudents = async () => {
         setLoading(true);
@@ -177,7 +178,10 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         const loadPlan = async () => {
             if (selectedStudent) {
                 try {
-                    const plan = await getStudentPlan(selectedStudent.id);
+                    const allPlans = await getStudentPlans(selectedStudent.id);
+                    setHistoricalPlans(allPlans);
+
+                    const plan = allPlans[0]; // El más reciente
                     setLatestPlan(plan);
                     if (plan) {
                         setCurrentMacros({
@@ -189,10 +193,11 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                         });
                     }
                 } catch (err) {
-                    console.error("Error loading plan:", err);
+                    console.error("Error loading plans:", err);
                 }
             } else {
                 setLatestPlan(null);
+                setHistoricalPlans([]);
             }
         };
         loadPlan();
@@ -343,13 +348,16 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                         students={students}
                         onSelectStudent={setSelectedStudent}
                         latestPlan={latestPlan}
+                        historicalPlans={historicalPlans}
                         onMacrosUpdate={setCurrentMacros}
                         onSavePlan={async (plan) => {
                             try {
                                 await saveStudentPlan(plan);
                                 // Recargar plan después de guardar
                                 const updatedPlan = await getStudentPlan(selectedStudent.id);
+                                const updatedAll = await getStudentPlans(selectedStudent.id);
                                 setLatestPlan(updatedPlan);
+                                setHistoricalPlans(updatedAll);
                                 alert("¡Plan guardado con éxito!");
                             } catch (err) {
                                 console.error("Error saving plan:", err);
@@ -364,11 +372,14 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                         students={students}
                         onSelectStudent={setSelectedStudent}
                         latestPlan={latestPlan}
+                        historicalPlans={historicalPlans}
                         onSavePlan={async (plan) => {
                             try {
                                 await saveStudentPlan(plan);
                                 const updatedPlan = await getStudentPlan(selectedStudent.id);
+                                const updatedAll = await getStudentPlans(selectedStudent.id);
                                 setLatestPlan(updatedPlan);
+                                setHistoricalPlans(updatedAll);
                                 alert("¡Rutina guardada con éxito!");
                             } catch (err) {
                                 console.error("Error saving routine:", err);
@@ -592,7 +603,7 @@ const StudentModal = ({ isOpen, onClose, onCreate }) => {
     );
 };
 
-const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, latestPlan, onMacrosUpdate, onSavePlan }) => {
+const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, latestPlan, historicalPlans = [], onMacrosUpdate, onSavePlan }) => {
     const [data, setData] = useState({
         weight: selectedStudent?.weight || 80,
         height: selectedStudent?.height || 180,
@@ -630,11 +641,26 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                 protein: latestPlan?.protein_g || 160,
                 fat: latestPlan?.fat_g || 70
             }));
+
+            // Solo resetear el chat si el ID del alumno cambió realmente
+            // Esto evita que al guardar (que actualiza latestPlan) se borre el chat
         }
-        // Resetear chat al cambiar de alumno
-        setChatMessages([]);
-        setShowChat(false);
-    }, [selectedStudent, latestPlan]);
+    }, [selectedStudent?.id, latestPlan?.id]);
+
+    // Resetear chat solo cuando cambia el alumno
+    const prevStudentId = useRef(selectedStudent?.id);
+    useEffect(() => {
+        if (selectedStudent?.id !== prevStudentId.current) {
+            if (latestPlan?.nutrition_plan_text) {
+                setChatMessages([{ role: 'assistant', content: latestPlan.nutrition_plan_text }]);
+                setShowChat(true);
+            } else {
+                setChatMessages([]);
+                setShowChat(false);
+            }
+            prevStudentId.current = selectedStudent?.id;
+        }
+    }, [selectedStudent?.id, latestPlan]); // También depender de latestPlan para la carga inicial
 
     // Cálculo con Harris-Benedict Revisada
     const calculate = () => {
@@ -697,7 +723,8 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                 carbs_g: results.carbs,
                 goal: data.goal,
                 nutrition_plan_text: lastAIDiet || null,
-                training_plan_text: latestPlan?.training_plan_text || null
+                training_plan_text: latestPlan?.training_plan_text || null,
+                supplementation_plan_text: latestPlan?.supplementation_plan_text || null
             });
         } finally {
             setIsSaving(false);
@@ -1004,6 +1031,38 @@ Ejemplo de formato de tabla:
                                 {isDemoMode ? "Probar Generar Dieta IA" : "Generar Dieta IA"}
                             </button>
                         </div>
+
+                        {/* History Selector */}
+                        {historicalPlans.length > 1 && (
+                            <div className="pt-4 border-t border-zinc-800 mt-4">
+                                <label className="text-[10px] text-zinc-600 uppercase font-black tracking-widest block mb-2">Cargar Versión Anterior</label>
+                                <div className="flex gap-2">
+                                    <select
+                                        className="flex-1 bg-black border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none focus:border-primary"
+                                        onChange={(e) => {
+                                            const selected = historicalPlans.find(p => p.id === parseInt(e.target.value));
+                                            if (selected && selected.nutrition_plan_text) {
+                                                setChatMessages([{ role: 'assistant', content: selected.nutrition_plan_text }]);
+                                                setShowChat(true);
+                                                setData(prev => ({
+                                                    ...prev,
+                                                    goal: selected.goal,
+                                                    protein: selected.protein_g,
+                                                    fat: selected.fat_g
+                                                }));
+                                            }
+                                        }}
+                                        defaultValue={latestPlan?.id}
+                                    >
+                                        {historicalPlans.map((p, i) => (
+                                            <option key={p.id} value={p.id}>
+                                                Plan del {new Date(p.created_at).toLocaleDateString()} - v{historicalPlans.length - i}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -1425,7 +1484,7 @@ const ProgressTracker = ({ selectedStudent }) => {
     );
 };
 
-const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestPlan, onSavePlan }) => {
+const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestPlan, historicalPlans = [], onSavePlan }) => {
     const [data, setData] = useState({
         split: 'PPL (Push/Pull/Legs)',
         daysPerWeek: 4,
@@ -1444,11 +1503,19 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
     const isDemoMode = !selectedStudent;
     const activeStudent = selectedStudent || MOCK_STUDENT;
 
+    const prevStudentId = useRef(selectedStudent?.id);
     useEffect(() => {
-        // Reset chat when student changes
-        setChatMessages([]);
-        setShowChat(false);
-    }, [selectedStudent]);
+        if (selectedStudent?.id !== prevStudentId.current) {
+            if (latestPlan?.training_plan_text) {
+                setChatMessages([{ role: 'assistant', content: latestPlan.training_plan_text }]);
+                setShowChat(true);
+            } else {
+                setChatMessages([]);
+                setShowChat(false);
+            }
+            prevStudentId.current = selectedStudent?.id;
+        }
+    }, [selectedStudent?.id, latestPlan]);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1508,6 +1575,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                 student_id: selectedStudent.id,
                 training_plan_text: lastAIRoutined || null,
                 nutrition_plan_text: latestPlan?.nutrition_plan_text || null,
+                supplementation_plan_text: latestPlan?.supplementation_plan_text || null,
                 calories: latestPlan?.calories || 0,
                 protein_g: latestPlan?.protein_g || 0,
                 fat_g: latestPlan?.fat_g || 0,
@@ -1788,6 +1856,30 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                         </button>
                     )}
                 </div>
+
+                {/* Training History Selector */}
+                {historicalPlans.length > 1 && (
+                    <div className="pt-4 border-t border-zinc-900 mt-4">
+                        <label className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block mb-2 text-center underline italic decoration-blue-500/50">Historial de Rutinas Guardadas</label>
+                        <select
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500 transition-all text-center"
+                            onChange={(e) => {
+                                const selected = historicalPlans.find(p => p.id === parseInt(e.target.value));
+                                if (selected && selected.training_plan_text) {
+                                    setChatMessages([{ role: 'assistant', content: selected.training_plan_text }]);
+                                    setShowChat(true);
+                                }
+                            }}
+                            defaultValue={latestPlan?.id}
+                        >
+                            {historicalPlans.map((p, i) => (
+                                <option key={p.id} value={p.id}>
+                                    Versión {historicalPlans.length - i} — {new Date(p.created_at).toLocaleDateString()} {new Date(p.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             {/* Chat Assistant */}
