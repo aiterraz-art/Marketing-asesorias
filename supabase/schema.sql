@@ -219,7 +219,8 @@ create table if not exists public.student_plans (
   carbs_g integer not null,
   goal text,
   nutrition_plan_text text,
-  training_plan_text text
+  training_plan_text text,
+  supplementation_plan_text text
 );
 -- RLS for Student Plans
 alter table public.student_plans enable row level security;

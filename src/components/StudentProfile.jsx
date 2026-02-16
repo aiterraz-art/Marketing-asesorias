@@ -6,7 +6,7 @@ import {
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
     Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles,
-    Video, Clock
+    Video, Clock, Pill
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
@@ -85,7 +85,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const lastWeight = measurements.length > 0 ? parseFloat(measurements[measurements.length - 1].weight) : null;
     const weightChange = firstWeight && lastWeight ? (lastWeight - firstWeight).toFixed(1) : null;
     const latestPlan = plans.length > 0 ? plans[0] : null;
-    const nutritionPlans = plans.filter(p => p.nutrition_plan_text);
+    const nutritionPlans = plans.filter(p => p.nutrition_plan_text || p.supplementation_plan_text || p.calories > 0);
     const trainingPlans = plans.filter(p => p.training_plan_text);
 
     // ─── Handlers ───
@@ -905,8 +905,10 @@ const EditField = ({ label, value, onChange, type = 'text' }) => (
 );
 
 const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber }) => {
-    const content = type === 'nutrition' ? plan.nutrition_plan_text : plan.training_plan_text;
     const isNutrition = type === 'nutrition';
+    const content = isNutrition
+        ? (plan.nutrition_plan_text || plan.supplementation_plan_text)
+        : plan.training_plan_text;
     const contentRef = useRef(null);
 
     const handleExportPDF = (e) => {
@@ -979,10 +981,35 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     {isExpanded ? <ChevronUp size={18} className="text-zinc-500" /> : <ChevronDown size={18} className="text-zinc-500" />}
                 </div>
             </button>
-            {isExpanded && content && (
-                <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300">
-                    <div ref={contentRef} className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-black/20 p-4 rounded-lg">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            {isExpanded && (plan.nutrition_plan_text || plan.supplementation_plan_text || plan.training_plan_text) && (
+                <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300 space-y-6">
+                    <div ref={contentRef} className="space-y-6">
+                        {isNutrition && plan.nutrition_plan_text && (
+                            <div className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-black/20 p-4 rounded-lg border border-zinc-800/50">
+                                <div className="flex items-center gap-2 mb-4 text-primary uppercase text-[10px] font-black tracking-widest border-b border-primary/20 pb-2">
+                                    <Apple size={12} /> Plan de Alimentación
+                                </div>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan.nutrition_plan_text}</ReactMarkdown>
+                            </div>
+                        )}
+
+                        {isNutrition && plan.supplementation_plan_text && (
+                            <div className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-emerald-500/5 p-4 rounded-lg border border-emerald-500/20">
+                                <div className="flex items-center gap-2 mb-4 text-emerald-400 uppercase text-[10px] font-black tracking-widest border-b border-emerald-500/20 pb-2">
+                                    <Pill size={12} /> Protocolo de Suplementación
+                                </div>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan.supplementation_plan_text}</ReactMarkdown>
+                            </div>
+                        )}
+
+                        {!isNutrition && plan.training_plan_text && (
+                            <div className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-black/20 p-4 rounded-lg border border-zinc-800/50">
+                                <div className="flex items-center gap-2 mb-4 text-blue-400 uppercase text-[10px] font-black tracking-widest border-b border-blue-400/20 pb-2">
+                                    <Dumbbell size={12} /> Plan de Entrenamiento
+                                </div>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan.training_plan_text}</ReactMarkdown>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
