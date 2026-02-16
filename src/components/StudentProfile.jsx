@@ -6,11 +6,11 @@ import {
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
     Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles,
-    Video, Clock, Pill
+    Video, Clock, Pill, Trash2
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
-    updateStudentData, getStudentSessions, addStudentSession
+    updateStudentData, getStudentSessions, addStudentSession, deleteStudentPlan
 } from '../lib/supabase';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -191,6 +191,22 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             alert("Error al guardar la medida.");
         } finally {
             setIsSavingMeasure(false);
+        }
+    };
+
+    const handleDeletePlan = async (planId) => {
+        if (!confirm('¿Estás seguro de que quieres eliminar este plan? Esta acción no se puede deshacer.')) return;
+
+        try {
+            await deleteStudentPlan(planId);
+            await loadData();
+            // Si el plan eliminado era el expandido, colapsarlo
+            if (expandedPlan === `n-${planId}` || expandedPlan === `t-${planId}`) {
+                setExpandedPlan(null);
+            }
+        } catch (err) {
+            console.error("Error deleting plan:", err);
+            alert("Error al eliminar el plan.");
         }
     };
 
@@ -506,6 +522,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     isExpanded={expandedPlan === `n-${plan.id}`}
                                     onToggle={() => setExpandedPlan(expandedPlan === `n-${plan.id}` ? null : `n-${plan.id}`)}
                                     studentName={student.full_name}
+                                    onDelete={() => handleDeletePlan(plan.id)}
                                 />
                             );
                         })
@@ -542,6 +559,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     isExpanded={expandedPlan === `t-${plan.id}`}
                                     onToggle={() => setExpandedPlan(expandedPlan === `t-${plan.id}` ? null : `t-${plan.id}`)}
                                     studentName={student.full_name}
+                                    onDelete={() => handleDeletePlan(plan.id)}
                                 />
                             );
                         })
@@ -924,7 +942,7 @@ const EditField = ({ label, value, onChange, type = 'text' }) => (
     </div>
 );
 
-const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber }) => {
+const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber, onDelete }) => {
     const isNutrition = type === 'nutrition';
     const content = isNutrition
         ? (plan.nutrition_plan_text || plan.supplementation_plan_text)
@@ -998,9 +1016,19 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             <Download size={18} />
                         </button>
                     )}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                        className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
+                        title="Eliminar Plan"
+                    >
+                        <Trash2 size={18} />
+                    </button>
                     {isExpanded ? <ChevronUp size={18} className="text-zinc-500" /> : <ChevronDown size={18} className="text-zinc-500" />}
                 </div>
-            </button>
+            </button >
             {isExpanded && (plan.nutrition_plan_text || plan.supplementation_plan_text || plan.training_plan_text) && (
                 <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300 space-y-6">
                     <div ref={contentRef} className="space-y-6">
@@ -1033,12 +1061,14 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     </div>
                 </div>
             )}
-            {isExpanded && !content && (
-                <div className="border-t border-zinc-900 p-6 text-center text-zinc-600 text-sm">
-                    Este plan fue guardado solo con macros (sin texto generado por IA).
-                </div>
-            )}
-        </div>
+            {
+                isExpanded && !content && (
+                    <div className="border-t border-zinc-900 p-6 text-center text-zinc-600 text-sm">
+                        Este plan fue guardado solo con macros (sin texto generado por IA).
+                    </div>
+                )
+            }
+        </div >
     );
 };
 
