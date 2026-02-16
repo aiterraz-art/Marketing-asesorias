@@ -51,15 +51,34 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [plansData, measurementsData, sessionsData] = await Promise.all([
+            const results = await Promise.allSettled([
                 getStudentPlans(student.id),
                 getStudentMeasurements(student.id),
                 getStudentSessions(student.id)
             ]);
-            setPlans(plansData || []);
-            console.log("Plans loaded raw:", plansData);
-            setMeasurements(measurementsData || []);
-            setSessions(sessionsData || []);
+
+            const [plansResult, measurementsResult, sessionsResult] = results;
+
+            if (plansResult.status === 'fulfilled') {
+                setPlans(plansResult.value || []);
+                console.log("Plans loaded:", plansResult.value);
+            } else {
+                console.error("Error loading plans:", plansResult.reason);
+            }
+
+            if (measurementsResult.status === 'fulfilled') {
+                setMeasurements(measurementsResult.value || []);
+            } else {
+                console.error("Error loading measurements:", measurementsResult.reason);
+            }
+
+            if (sessionsResult.status === 'fulfilled') {
+                setSessions(sessionsResult.value || []);
+            } else {
+                // Si falla sessions (probablemente tabla no existe), no romper el resto
+                console.warn("Could not load sessions (table might be missing):", sessionsResult.reason);
+                setSessions([]);
+            }
         } catch (err) {
             console.error("Error loading student data:", err);
         } finally {
