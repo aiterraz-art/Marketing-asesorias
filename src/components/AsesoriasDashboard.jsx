@@ -22,7 +22,7 @@ import {
     Calendar as CalendarIcon,
     Activity
 } from 'lucide-react';
-import { getStudents, getStudentPlan, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement, deleteStudent, addStudentSession, uploadPhoto } from '../lib/supabase';
+import { getStudents, getStudentPlan, getStudentPlans, saveStudentPlan, updateStudentData, createStudent, getStudentMeasurements, addStudentMeasurement, deleteStudent, addStudentSession, uploadPhoto } from '../lib/supabase';
 import { MOCK_STUDENT } from '../lib/mockData';
 import { generateFitnessPlan, analyzeStudentProgress, chatDietAssistant, chatTrainingAssistant } from '../lib/openai';
 import PlanGenerator from './PlanGenerator';
