@@ -57,6 +57,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                 getStudentSessions(student.id)
             ]);
             setPlans(plansData || []);
+            console.log("Plans loaded raw:", plansData);
             setMeasurements(measurementsData || []);
             setSessions(sessionsData || []);
         } catch (err) {
@@ -85,7 +86,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const lastWeight = measurements.length > 0 ? parseFloat(measurements[measurements.length - 1].weight) : null;
     const weightChange = firstWeight && lastWeight ? (lastWeight - firstWeight).toFixed(1) : null;
     const latestPlan = plans.length > 0 ? plans[0] : null;
-    const nutritionPlans = plans.filter(p => p.nutrition_plan_text || p.supplementation_plan_text || p.calories > 0);
+    const nutritionPlans = plans; // DEBUG MODE: Mostrar TODOS los planes
     const trainingPlans = plans.filter(p => p.training_plan_text);
 
     // ─── Handlers ───
@@ -473,7 +474,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             <p className="text-zinc-500 text-sm mt-1">Genera un plan desde la pestaña de Calculadora o Rutinas.</p>
                         </div>
                     ) : (
-                        plans.filter(p => p.nutrition_plan_text).map((plan) => {
+                        nutritionPlans.map((plan) => {
                             // Encontrar el índice original en 'plans' para el número de versión global
                             const globalIndex = plans.findIndex(p => p.id === plan.id);
                             const version = plans.length - globalIndex;
