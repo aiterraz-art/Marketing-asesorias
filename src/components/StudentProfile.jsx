@@ -1074,16 +1074,129 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             )}
             {/* Contenido oculto para exportación PDF (Siempre en el DOM para handleExportPDF) */}
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                <div id={`pdf-content-${plan.id}`} className="p-8 bg-white text-zinc-900" style={{ width: '680px' }}>
-                    <h1 className="text-2xl font-bold mb-4 border-b pb-2">
-                        {isNutrition ? '🍎 Plan Nutricional' : '💪 Plan de Entrenamiento'} - v{versionNumber}
-                    </h1>
-                    <div className="prose prose-sm max-w-none text-zinc-800">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {isNutrition
-                                ? `${plan.nutrition_plan_text || ''}\n\n${plan.supplementation_plan_text || ''}`
-                                : (plan.training_plan_text || '')}
-                        </ReactMarkdown>
+                <div id={`pdf-content-${plan.id}`} style={{
+                    width: '800px',
+                    backgroundColor: '#ffffff',
+                    color: '#1a1a1a',
+                    fontFamily: 'Helvetica, Arial, sans-serif',
+                }}>
+                    {/* Header Premium */}
+                    <div style={{
+                        backgroundColor: isNutrition ? '#10b981' : '#3b82f6', // Emerald o Blue
+                        padding: '40px',
+                        color: 'white',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '40px'
+                    }}>
+                        <div>
+                            <p style={{
+                                textTransform: 'uppercase',
+                                fontSize: '12px',
+                                letterSpacing: '4px',
+                                opacity: 0.9,
+                                margin: 0,
+                                fontWeight: 'bold'
+                            }}>
+                                Plan Personalizado
+                            </p>
+                            <h1 style={{
+                                fontSize: '42px',
+                                margin: '5px 0',
+                                fontWeight: '900',
+                                letterSpacing: '-1px'
+                            }}>
+                                {studentName}
+                            </h1>
+                            <div style={{
+                                display: 'flex',
+                                gap: '15px',
+                                marginTop: '15px',
+                                fontSize: '14px',
+                                opacity: 0.9
+                            }}>
+                                <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '4px' }}>
+                                    {isNutrition ? '🍎 Nutrición' : '💪 Entrenamiento'}
+                                </span>
+                                <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '4px' }}>
+                                    v{versionNumber}
+                                </span>
+                                <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '4px', textTransform: 'capitalize' }}>
+                                    {plan.goal === 'cut' ? 'Definición' : plan.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}
+                                </span>
+                            </div>
+                        </div>
+                        <div style={{ textAlign: 'right', opacity: 0.8 }}>
+                            <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>ALFREDO TERRAZA</p>
+                            <p style={{ margin: 0, fontSize: '10px' }}>Asesor de Nutrición y Entrenamiento</p>
+                            <div style={{ marginTop: '10px', fontSize: '12px' }}>
+                                {new Date(plan.created_at).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Body Content */}
+                    <div style={{ padding: '0 50px 50px 50px' }}>
+
+                        {/* Title Section */}
+                        <div style={{
+                            borderBottom: `2px solid ${isNutrition ? '#10b981' : '#3b82f6'}`,
+                            paddingBottom: '10px',
+                            marginBottom: '30px'
+                        }}>
+                            <h2 style={{
+                                margin: 0,
+                                fontSize: '24px',
+                                color: '#111827',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px'
+                            }}>
+                                {isNutrition ? 'Protocolo Nutricional' : 'Sistema de Entrenamiento'}
+                            </h2>
+                        </div>
+
+                        {/* Markdown Content con estilos forzados */}
+                        <div className="pdf-content-body" style={{
+                            fontSize: '14px',
+                            lineHeight: '1.6',
+                            color: '#374151'
+                        }}>
+                            <style>{`
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { color: #111827 !important; margin-top: 20px !important; margin-bottom: 10px !important; font-weight: 800 !important; }
+                                .pdf-content-body h1 { fontSize: 20px !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+                                .pdf-content-body h2 { fontSize: 18px !important; color: ${isNutrition ? '#059669' : '#2563eb'} !important; }
+                                .pdf-content-body h3 { fontSize: 16px !important; }
+                                .pdf-content-body p { margin-bottom: 10px !important; }
+                                .pdf-content-body ul, .pdf-content-body ol { margin-bottom: 10px !important; padding-left: 20px !important; }
+                                .pdf-content-body li { margin-bottom: 5px !important; }
+                                .pdf-content-body strong { color: #000 !important; font-weight: bold !important; }
+                                .pdf-content-body table { width: 100% !important; border-collapse: collapse !important; margin: 20px 0 !important; font-size: 12px !important; }
+                                .pdf-content-body th { background-color: #f3f4f6 !important; padding: 8px !important; text-align: left !important; border: 1px solid #e5e7eb !important; }
+                                .pdf-content-body td { padding: 8px !important; border: 1px solid #e5e7eb !important; }
+                                .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
+                            `}</style>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {isNutrition
+                                    ? `${plan.nutrition_plan_text || ''}\n\n${plan.supplementation_plan_text ? `## Suplementación\n\n${plan.supplementation_plan_text}` : ''}`
+                                    : (plan.training_plan_text || '')}
+                            </ReactMarkdown>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{
+                        marginTop: '50px',
+                        padding: '30px 50px',
+                        backgroundColor: '#f9fafb',
+                        borderTop: '1px solid #e5e7eb',
+                        textAlign: 'center',
+                        color: '#9ca3af',
+                        fontSize: '10px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '2px'
+                    }}>
+                        Alfredo Terraza • Asesor de Nutrición y Entrenamiento
                     </div>
                 </div>
             </div>
