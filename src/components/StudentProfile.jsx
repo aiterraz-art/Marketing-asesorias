@@ -1183,14 +1183,25 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                     border-collapse: collapse !important; 
                                     margin: 20px 0 !important; 
                                     font-size: 12px !important; 
-                                    page-break-inside: avoid !important;
-                                    break-inside: avoid !important;
+                                    page-break-inside: auto !important;
+                                    break-inside: auto !important;
                                 }
                                 .pdf-content-body th { background-color: #f3f4f6 !important; padding: 8px !important; text-align: left !important; border: 1px solid #e5e7eb !important; }
                                 .pdf-content-body td { padding: 8px !important; border: 1px solid #e5e7eb !important; }
                                 .pdf-content-body tr { 
                                     page-break-inside: avoid !important;
                                     break-inside: avoid !important;
+                                    page-break-after: auto !important;
+                                    break-after: auto !important;
+                                }
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3, .pdf-content-body h4 {
+                                    page-break-after: avoid !important;
+                                    break-after: avoid !important;
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                    margin-top: 40px !important;
+                                    margin-bottom: 20px !important;
+                                    display: block !important;
                                 }
                                 .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
                             `}</style>

@@ -182,11 +182,14 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                             <style>{`
                                 .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { 
                                     color: #4c1d95 !important; 
-                                    margin-top: 20px !important; 
-                                    margin-bottom: 10px !important; 
+                                    margin-top: 40px !important; 
+                                    margin-bottom: 20px !important; 
                                     font-weight: 800 !important; 
                                     page-break-after: avoid !important;
                                     break-after: avoid !important;
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                    display: block !important;
                                 }
                                 .pdf-content-body h1 { fontSize: 20px !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
                                 .pdf-content-body h2 { fontSize: 18px !important; color: #6d28d9 !important; }
@@ -200,14 +203,20 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                     border-collapse: collapse !important; 
                                     margin: 20px 0 !important; 
                                     font-size: 12px !important; 
-                                    page-break-inside: avoid !important;
-                                    break-inside: avoid !important;
+                                    page-break-inside: auto !important;
+                                    break-inside: auto !important;
                                 }
                                 .pdf-content-body th { background-color: #f3f4f6 !important; padding: 8px !important; text-align: left !important; border: 1px solid #e5e7eb !important; }
                                 .pdf-content-body td { padding: 8px !important; border: 1px solid #e5e7eb !important; }
                                 .pdf-content-body tr { 
                                     page-break-inside: avoid !important;
                                     break-inside: avoid !important;
+                                    page-break-after: auto !important;
+                                    break-after: auto !important;
+                                }
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3, .pdf-content-body h4 {
+                                    page-break-after: avoid !important;
+                                    break-after: avoid !important;
                                 }
                                 .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
                             `}</style>

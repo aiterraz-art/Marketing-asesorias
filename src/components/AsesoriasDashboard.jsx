@@ -173,6 +173,20 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
         }
     };
 
+    const handleMarkVideoComplete = async (studentId, e) => {
+        e.stopPropagation();
+        if (!confirm("¿Marcar la reunión por video como realizada?")) return;
+
+        try {
+            await updateStudentData(studentId, { next_videocall_date: null });
+            await loadStudents();
+            alert("Reunión marcada como realizada.");
+        } catch (err) {
+            console.error("Error updating video status:", err);
+            alert("Error al actualizar el estado.");
+        }
+    };
+
     // Cargar último plan del alumno seleccionado
     useEffect(() => {
         const loadPlan = async () => {
@@ -272,7 +286,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                             <h3 className="font-bold">Alertas Prioritarias</h3>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {students.filter(s => {
+                            {(students || []).filter(s => {
                                 const now = new Date();
                                 const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                                 const isPayDue = s.next_payment_date && s.next_payment_date <= todayStr;
@@ -299,7 +313,18 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                                                 <div className="flex gap-2 mt-0.5">
                                                     {isPayOverdue && <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-tighter bg-emerald-400/10 px-1.5 py-0.5 rounded">Pago</span>}
                                                     {isCheckOverdue && <span className="text-[9px] font-bold text-amber-400 uppercase tracking-tighter bg-amber-400/10 px-1.5 py-0.5 rounded">Control</span>}
-                                                    {isVideoOverdue && <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter bg-blue-400/10 px-1.5 py-0.5 rounded">Video</span>}
+                                                    {isVideoOverdue && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter bg-blue-400/10 px-1.5 py-0.5 rounded">Video</span>
+                                                            <button
+                                                                onClick={(e) => handleMarkVideoComplete(s.id, e)}
+                                                                className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors"
+                                                                title="Marcar como realizada"
+                                                            >
+                                                                <Check size={10} />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -432,7 +457,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 onClose={() => setIsInitialMeetingOpen(false)}
                 onCreateStudent={handleCreateFromWizard}
             />
-        </div>
+        </div >
     );
 };
 
@@ -758,34 +783,34 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             role: 'user',
             content: `Genera un plan de alimentación completo y detallado para ${activeStudent.full_name}.
 
-IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
-PROHIBIDO: No incluyas saludos, ni despedidas, ni preguntas, ni comentarios introductorios. Sólo entrega el plan de alimentación y las tablas.
+            IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
+            PROHIBIDO: No incluyas saludos, ni despedidas, ni preguntas, ni comentarios introductorios. Sólo entrega el plan de alimentación y las tablas.
 
-ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
-- Proteínas: pollo, carne de vacuno, huevos enteros${useWhey ? ', proteína whey' : ''}
-- Carbohidratos: arroz, fideos, papas cocidas, avena, pan integral
-- Grasas: palta, aceite de oliva
-- Lácteos: leche descremada, yogurt descremado, queso fresco
-- Verduras: lechuga, tomate, pepino, brócoli, zapallo italiano (libres)
-- Frutas: plátano, manzana, naranja (con moderación)
+            ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
+            - Proteínas: pollo, carne de vacuno, huevos enteros${useWhey ? ', proteína whey' : ''}
+            - Carbohidratos: arroz, fideos, papas cocidas, avena, pan integral
+            - Grasas: palta, aceite de oliva
+            - Lácteos: leche descremada, yogurt descremado, queso fresco
+            - Verduras: lechuga, tomate, pepino, brócoli, zapallo italiano (libres)
+            - Frutas: plátano, manzana, naranja (con moderación)
 
-REGLAS DE FORMATO OBLIGATORIAS:
-- Usa tablas con los macros EXACTOS de cada alimento (proteína, carbs, grasa en gramos) Y LAS CALORÍAS.
-- Cada tabla DEBE tener una columna llamada "kcal" con las calorías de ese alimento.
-- Al final de cada comida (Desayuno, Almuerzo, etc.), indica el **Total de Calorías de esa comida**.
-- Incluye: Desayuno, Media Mañana, Almuerzo, Merienda y Cena.
-- Los macros totales del día deben cuadrar lo más exacto posible con el objetivo.
-- Para CADA alimento, muestra DOS columnas de cantidad:
-  1. **Gramos exactos** (para alumnos con pesa de cocina)
-  2. **Medida visual** (cucharadas soperas, vasos, puños, unidades) para alumnos SIN pesa
-- Al final muestra un RESUMEN con el total de macros del día vs. el objetivo.
-- Usa vocabulario CHILENO: descremado (no desnatado), palta (no aguacate), porotos (no judías), choclo (no elote).
+            REGLAS DE FORMATO OBLIGATORIAS:
+            - Usa tablas con los macros EXACTOS de cada alimento (proteína, carbs, grasa en gramos) Y LAS CALORÍAS.
+            - Cada tabla DEBE tener una columna llamada "kcal" con las calorías de ese alimento.
+            - Al final de cada comida (Desayuno, Almuerzo, etc.), indica el **Total de Calorías de esa comida**.
+            - Incluye: Desayuno, Media Mañana, Almuerzo, Merienda y Cena.
+            - Los macros totales del día deben cuadrar lo más exacto posible con el objetivo.
+            - Para CADA alimento, muestra DOS columnas de cantidad:
+            1. **Gramos exactos** (para alumnos con pesa de cocina)
+            2. **Medida visual** (cucharadas soperas, vasos, puños, unidades) para alumnos SIN pesa
+            - Al final muestra un RESUMEN con el total de macros del día vs. el objetivo.
+            - Usa vocabulario CHILENO: descremado (no desnatado), palta (no aguacate), porotos (no judías), choclo (no elote).
 
-Ejemplo de formato de tabla:
-| Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-|----------|----------|---------------|---|---|---|------|
-| Pechuga de pollo | 150g | 1 palma | 46 | 0 | 3 | 211 |
-| Arroz cocido | 200g | 1 taza | 4 | 44 | 0 | 204 |`
+            Ejemplo de formato de tabla:
+            | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
+            |----------|----------|---------------|---|---|---|------|
+            | Pechuga de pollo | 150g | 1 palma | 46 | 0 | 3 | 211 |
+            | Arroz cocido | 200g | 1 taza | 4 | 44 | 0 | 204 |`
         };
         setChatMessages([initialMessage]);
 

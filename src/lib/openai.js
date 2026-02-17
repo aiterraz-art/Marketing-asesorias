@@ -439,6 +439,12 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         Entrenamiento Previo: ${previousPlan.training_plan_text?.substring(0, 300)}...
         ` : 'Este es el PRIMER plan para este alumno.'}
 
+        ⚠️ REGLA CRÍTICA DE SALIDA (LÍMITES DE SEGURIDAD):
+        - Tu respuesta DEBE ser el PLAN FINAL Y LIMPIO para el cliente.
+        - PROHIBIDO incluir "Meta-Comentarios", "Notas de autocrítica", "Razonamientos internos" o frases como "Ajuste necesario...", "Recorté 100kcal porque...", "Para cuadrar el objetivo...".
+        - Si necesitas ajustar macros internamente, HAZLO EN SILENCIO y entrega solo el resultado final perfecto.
+        - El cliente NO DEBE SABER que tuviste que recalcular.
+
         MACRONUTRIENTES OBJETIVO:
         - Calorías: ${macros.calories} kcal
         - Proteína: ${macros.protein}g
@@ -602,6 +608,7 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 
         RESTRICCIONES:
         - PROHIBIDO: Intros, saludos, despedidas o frases como "aquí tienes tu plan". 
+        - PROHIBIDO: Incluir tu proceso de pensamiento o ajustes (ej: "Para llegar a las calorías tuve que..."). SOLO EL RESULTADO FINAL.
         - SÓLO EL PLAN O LA RESPUESTA TÉCNICA.
         - No uses claras de huevo solas (siempre huevos enteros).
         `;
