@@ -817,3 +817,92 @@ export const generateSupplementsProtocol = async (student, goal) => {
 		throw error;
 	}
 };
+
+/**
+ * Analiza composición corporal a partir de una foto usando Vision AI
+ */
+export const analyzeBodyComposition = async (imageBase64, studentData, previousAnalyses = []) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const previousContext = previousAnalyses.length > 0
+			? `\nANÁLISIS ANTERIORES (del más reciente al más antiguo):\n${previousAnalyses.map((a, i) =>
+				`- Foto ${i + 1} (${a.photo_date}): Grasa estimada: ${a.ai_analysis?.body_fat_estimated || 'N/A'}%, Nota: ${a.ai_analysis?.summary || 'Sin análisis'}`
+			).join('\n')}`
+			: '\nEsta es la PRIMERA foto del alumno. No hay análisis anteriores para comparar.';
+
+		const systemPrompt = `
+        ACTÚA COMO UN PREPARADOR FÍSICO Y EXPERTO EN COMPOSICIÓN CORPORAL DE ÉLITE.
+        Tu misión es analizar visualmente la foto de progreso de un alumno y proporcionar un análisis técnico detallado.
+
+        DATOS DEL ALUMNO:
+        - Nombre: ${studentData.full_name}
+        - Edad: ${studentData.age || 'No especificada'} años
+        - Peso actual: ${studentData.weight || 'No especificado'} kg
+        - Altura: ${studentData.height || 'No especificada'} cm
+        - Objetivo: ${studentData.goal === 'cut' ? 'Definición' : studentData.goal === 'bulk' ? 'Volumen' : studentData.goal === 'recomp' ? 'Recomposición' : 'Mantenimiento'}
+        ${previousContext}
+
+        INSTRUCCIONES DE ANÁLISIS:
+        1. PRIMERO: Detecta la perspectiva de la foto — ¿es frontal, lateral o de espalda?
+        2. Estima el porcentaje de grasa corporal basándote en indicadores visuales (definición abdominal, vascularización, septos musculares visibles, acúmulo adiposo en flancos/abdomen).
+        3. Evalúa la distribución muscular visible (tren superior vs inferior, simetría).
+        4. Identifica puntos fuertes y áreas a mejorar.
+        5. Si hay análisis anteriores, compara y detecta cambios.
+
+        RETORNA EXCLUSIVAMENTE UN JSON VÁLIDO (sin markdown, sin backticks):
+        {
+            "detected_category": "<front|side|back>",
+            "body_fat_estimated": <número entre 5 y 45>,
+            "body_fat_range": "<rango, ej: '14-16%'>",
+            "muscle_quality": "<Excelente|Buena|Promedio|Baja>",
+            "muscle_distribution": {
+                "upper_body": "<Desarrollado|Proporcionado|Por mejorar>",
+                "core": "<Definido|Normal|Por definir>",
+                "lower_body": "<Desarrollado|Proporcionado|Por mejorar>"
+            },
+            "symmetry": "<Simétrico|Leve asimetría|Asimetría notable>",
+            "strong_points": ["Punto fuerte 1", "Punto fuerte 2"],
+            "areas_to_improve": ["Área 1", "Área 2"],
+            "comparison_with_previous": "<texto comparativo si hay fotos anteriores, o null>",
+            "recommendations": ["Recomendación 1", "Recomendación 2", "Recomendación 3"],
+            "summary": "<Resumen de 2-3 líneas del estado general del alumno>"
+        }
+
+        ⚠️ IMPORTANTE: Si la foto NO es una foto de physique/cuerpo (ej: es un paisaje, objeto, etc), devuelve:
+        { "error": "La imagen no parece ser una foto de progreso físico. Por favor, sube una foto de cuerpo." }
+        `;
+
+		const messages = [
+			{ role: "system", content: systemPrompt },
+			{
+				role: "user",
+				content: [
+					{ type: "text", text: "Analiza esta foto de progreso del alumno y dame tu evaluación técnica completa." },
+					{
+						type: "image_url",
+						image_url: {
+							url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`,
+							detail: "high"
+						}
+					}
+				]
+			}
+		];
+
+		const completion = await openai.chat.completions.create({
+			messages: messages,
+			model: "gpt-4o",
+			max_tokens: 1500
+		});
+
+		const content = completion.choices[0].message.content;
+		// Intentar parsear JSON limpiando posibles markdown wrappers
+		const cleanJson = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+		return JSON.parse(cleanJson);
+
+	} catch (error) {
+		console.error("Body Composition Analysis Error:", error);
+		throw error;
+	}
+};

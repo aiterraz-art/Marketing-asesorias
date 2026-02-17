@@ -6,12 +6,14 @@ import {
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
     Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles,
-    Video, Clock, Pill, Trash2
+    Video, Clock, Pill, Trash2, Camera, ZoomIn, Image, Eye, Upload
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
-    updateStudentData, getStudentSessions, addStudentSession, deleteStudentPlan
+    updateStudentData, getStudentSessions, addStudentSession, deleteStudentPlan,
+    getStudentPhotos, addStudentPhoto, deleteStudentPhoto, uploadPhoto
 } from '../lib/supabase';
+import { analyzeBodyComposition } from '../lib/openai';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -42,6 +44,16 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const [newHip, setNewHip] = useState('');
     const [newPhoto, setNewPhoto] = useState(null);
     const [isSavingMeasure, setIsSavingMeasure] = useState(false);
+
+    // Photo Gallery
+    const [photos, setPhotos] = useState([]);
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [selectedPhoto, setSelectedPhoto] = useState(null);
+    const [photoFiles, setPhotoFiles] = useState([]);
+    const [photoPreviews, setPhotoPreviews] = useState([]);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+    const photoInputRef = useRef(null);
     const [nextVideoCall, setNextVideoCall] = useState(student.next_videocall_date ? new Date(student.next_videocall_date).toISOString().slice(0, 16) : '');
 
     useEffect(() => {
@@ -54,10 +66,11 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             const results = await Promise.allSettled([
                 getStudentPlans(student.id),
                 getStudentMeasurements(student.id),
-                getStudentSessions(student.id)
+                getStudentSessions(student.id),
+                getStudentPhotos(student.id)
             ]);
 
-            const [plansResult, measurementsResult, sessionsResult] = results;
+            const [plansResult, measurementsResult, sessionsResult, photosResult] = results;
 
             if (plansResult.status === 'fulfilled') {
                 setPlans(plansResult.value || []);
@@ -75,9 +88,15 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             if (sessionsResult.status === 'fulfilled') {
                 setSessions(sessionsResult.value || []);
             } else {
-                // Si falla sessions (probablemente tabla no existe), no romper el resto
                 console.warn("Could not load sessions (table might be missing):", sessionsResult.reason);
                 setSessions([]);
+            }
+
+            if (photosResult.status === 'fulfilled') {
+                setPhotos(photosResult.value || []);
+            } else {
+                console.warn("Could not load photos (table might be missing):", photosResult.reason);
+                setPhotos([]);
             }
         } catch (err) {
             console.error("Error loading student data:", err);
@@ -230,11 +249,82 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     };
 
     // ─── Section Navigation ───
+    const CATEGORY_LABELS = { front: 'Frontal', side: 'Lateral', back: 'Espalda' };
+    const CATEGORY_COLORS = { front: 'bg-blue-500/20 text-blue-400', side: 'bg-amber-500/20 text-amber-400', back: 'bg-emerald-500/20 text-emerald-400' };
+
+    const handlePhotoUpload = async () => {
+        if (photoFiles.length === 0) return;
+        setIsUploadingPhoto(true);
+        setUploadProgress({ current: 0, total: photoFiles.length });
+        try {
+            for (let i = 0; i < photoFiles.length; i++) {
+                const file = photoFiles[i];
+                setUploadProgress({ current: i + 1, total: photoFiles.length });
+                setIsAnalyzing(true);
+
+                // 1. Subir foto a Supabase Storage
+                const publicUrl = await uploadPhoto(file);
+
+                // 2. Leer como base64 para análisis IA
+                const base64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+
+                // 3. Analizar con IA (detecta categoría automáticamente)
+                let aiAnalysis = null;
+                try {
+                    aiAnalysis = await analyzeBodyComposition(base64, student, photos);
+                } catch (aiErr) {
+                    console.error(`AI analysis failed for file ${i + 1}:`, aiErr);
+                    aiAnalysis = { error: 'El análisis IA no pudo completarse. La foto se guardó correctamente.', detected_category: 'front' };
+                }
+                setIsAnalyzing(false);
+
+                // 4. Guardar registro con categoría detectada por IA
+                const detectedCat = aiAnalysis?.detected_category || 'front';
+                await addStudentPhoto({
+                    student_id: student.id,
+                    photo_url: publicUrl,
+                    category: detectedCat,
+                    ai_analysis: aiAnalysis,
+                    notes: ''
+                });
+            }
+
+            // 5. Limpiar y recargar
+            setPhotoFiles([]);
+            setPhotoPreviews([]);
+            await loadData();
+        } catch (err) {
+            console.error('Error uploading photos:', err);
+            alert(`Error al subir fotos: ${err.message}`);
+        } finally {
+            setIsUploadingPhoto(false);
+            setIsAnalyzing(false);
+            setUploadProgress({ current: 0, total: 0 });
+        }
+    };
+
+    const handleDeletePhoto = async (photo) => {
+        if (!confirm('¿Eliminar esta foto y su análisis? Esta acción no se puede deshacer.')) return;
+        try {
+            await deleteStudentPhoto(photo.id, photo.photo_url);
+            setSelectedPhoto(null);
+            await loadData();
+        } catch (err) {
+            console.error('Error deleting photo:', err);
+            alert('Error al eliminar la foto.');
+        }
+    };
+
     const sections = [
         { id: 'dashboard', label: 'Resumen', icon: <BarChart3 size={16} /> },
         { id: 'nutrition', label: 'Planes Nutri', icon: <Apple size={16} /> },
         { id: 'training', label: 'Entrenamientos', icon: <Dumbbell size={16} /> },
         { id: 'measures', label: 'Progresos', icon: <Scale size={16} /> },
+        { id: 'gallery', label: 'Galería', icon: <Camera size={16} /> },
         { id: 'ai_nutrition', label: 'Asistente Pro', icon: <Sparkles size={16} /> },
     ];
 
@@ -737,6 +827,343 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* ─── Photo Gallery Section ─── */}
+            {activeSection === 'gallery' && (
+                <div className="space-y-6">
+                    {/* Upload Zone */}
+                    <div className="bg-surface border border-zinc-900 rounded-2xl p-6">
+                        <h3 className="text-white font-bold flex items-center gap-2 mb-1">
+                            <Camera size={18} className="text-primary" />
+                            Subir Fotos de Progreso
+                        </h3>
+                        <p className="text-zinc-600 text-xs mb-4">Selecciona una o varias fotos. La IA detectará automáticamente si es frontal, lateral o espalda.</p>
+
+                        <div className="flex flex-col gap-4">
+                            {/* Drop Zone */}
+                            <div
+                                onClick={() => photoInputRef.current?.click()}
+                                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary'); }}
+                                onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-primary'); }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.currentTarget.classList.remove('border-primary');
+                                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                                    if (files.length > 0) {
+                                        setPhotoFiles(prev => [...prev, ...files]);
+                                        files.forEach(file => {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => setPhotoPreviews(prev => [...prev, reader.result]);
+                                            reader.readAsDataURL(file);
+                                        });
+                                    }
+                                }}
+                                className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${photoPreviews.length > 0 ? 'border-primary/40 bg-primary/5' : 'border-zinc-800'
+                                    }`}
+                            >
+                                {photoPreviews.length > 0 ? (
+                                    <div className="w-full">
+                                        <div className="flex flex-wrap gap-3 justify-center">
+                                            {photoPreviews.map((prev, idx) => (
+                                                <div key={idx} className="relative group">
+                                                    <img src={prev} alt={`Preview ${idx + 1}`} className="h-24 w-20 rounded-lg object-cover border border-zinc-700" />
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPhotoFiles(pf => pf.filter((_, i) => i !== idx));
+                                                            setPhotoPreviews(pp => pp.filter((_, i) => i !== idx));
+                                                        }}
+                                                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                    <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/70 backdrop-blur-sm rounded text-[8px] text-zinc-300 font-mono">{idx + 1}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-center text-zinc-500 text-xs mt-3">Haz clic para agregar más fotos</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Upload size={32} className="text-zinc-600 mb-2" />
+                                        <p className="text-zinc-500 text-sm text-center">Arrastra fotos aquí o haz clic para seleccionar</p>
+                                        <p className="text-zinc-700 text-xs mt-1">JPG, PNG — Puedes seleccionar varias a la vez</p>
+                                    </>
+                                )}
+                                <input
+                                    ref={photoInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+                                        if (files.length > 0) {
+                                            setPhotoFiles(prev => [...prev, ...files]);
+                                            files.forEach(file => {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => setPhotoPreviews(prev => [...prev, reader.result]);
+                                                reader.readAsDataURL(file);
+                                            });
+                                        }
+                                        e.target.value = '';
+                                    }}
+                                />
+                            </div>
+
+                            {/* Action bar */}
+                            {photoFiles.length > 0 && (
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-zinc-400 text-xs">{photoFiles.length} foto{photoFiles.length > 1 ? 's' : ''} seleccionada{photoFiles.length > 1 ? 's' : ''}</span>
+                                        <button
+                                            onClick={() => { setPhotoFiles([]); setPhotoPreviews([]); }}
+                                            className="text-zinc-600 text-xs hover:text-white transition-colors flex items-center gap-1"
+                                        >
+                                            <X size={12} /> Limpiar
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={handlePhotoUpload}
+                                        disabled={isUploadingPhoto}
+                                        className="py-2.5 px-6 bg-primary text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                    >
+                                        {isUploadingPhoto ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                {isAnalyzing
+                                                    ? `Analizando ${uploadProgress.current}/${uploadProgress.total}...`
+                                                    : `Subiendo ${uploadProgress.current}/${uploadProgress.total}...`
+                                                }
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles size={16} />
+                                                Subir y Analizar ({photoFiles.length})
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Photo Timeline Grid */}
+                    {photos.length === 0 ? (
+                        <div className="bg-surface border border-zinc-900 rounded-xl p-12 text-center">
+                            <Image size={48} className="mx-auto mb-3 text-zinc-700" />
+                            <p className="text-white font-medium">Sin fotos de progreso</p>
+                            <p className="text-zinc-500 text-sm mt-1">Sube la primera foto para comenzar a rastrear el avance visual.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <h3 className="text-white font-bold flex items-center gap-2">
+                                <Image size={18} className="text-primary" />
+                                Timeline de Progreso ({photos.length} fotos)
+                            </h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {photos.map((photo) => {
+                                    const analysis = photo.ai_analysis;
+                                    const fatPct = analysis?.body_fat_estimated;
+                                    return (
+                                        <div
+                                            key={photo.id}
+                                            onClick={() => setSelectedPhoto(photo)}
+                                            className="group relative bg-surface border border-zinc-900 rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all"
+                                        >
+                                            <div className="aspect-[3/4] overflow-hidden">
+                                                <img
+                                                    src={photo.photo_url}
+                                                    alt={`Progreso ${photo.category}`}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                />
+                                            </div>
+                                            {/* Overlay badges */}
+                                            <div className="absolute top-2 left-2 flex flex-col gap-1">
+                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${CATEGORY_COLORS[photo.category] || 'bg-zinc-800 text-zinc-400'}`}>
+                                                    {CATEGORY_LABELS[photo.category] || photo.category}
+                                                </span>
+                                                {fatPct && (
+                                                    <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-black/70 text-white backdrop-blur-sm">
+                                                        🔥 {fatPct}% grasa
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
+                                                    <ZoomIn size={14} className="text-white" />
+                                                </div>
+                                            </div>
+                                            <div className="p-3">
+                                                <p className="text-zinc-500 text-[10px] font-medium">
+                                                    {new Date(photo.photo_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </p>
+                                                {analysis?.muscle_quality && (
+                                                    <p className="text-zinc-400 text-[10px] mt-0.5">Calidad muscular: {analysis.muscle_quality}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Photo Detail Modal */}
+                    {selectedPhoto && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedPhoto(null)}>
+                            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                {/* Modal Header */}
+                                <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+                                    <div className="flex items-center gap-3">
+                                        <Eye size={18} className="text-primary" />
+                                        <div>
+                                            <h3 className="text-white font-bold text-sm">Análisis de Composición Corporal</h3>
+                                            <p className="text-zinc-500 text-xs">
+                                                {new Date(selectedPhoto.photo_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                {' · '}
+                                                <span className={`${CATEGORY_COLORS[selectedPhoto.category]?.split(' ')[1] || 'text-zinc-400'}`}>
+                                                    {CATEGORY_LABELS[selectedPhoto.category] || selectedPhoto.category}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleDeletePhoto(selectedPhoto)}
+                                            className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                            title="Eliminar foto"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedPhoto(null)}
+                                            className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Modal Body */}
+                                <div className="flex flex-col md:flex-row">
+                                    {/* Photo */}
+                                    <div className="md:w-1/2 p-4">
+                                        <img
+                                            src={selectedPhoto.photo_url}
+                                            alt="Progreso"
+                                            className="w-full rounded-xl object-contain max-h-[60vh]"
+                                        />
+                                    </div>
+
+                                    {/* Analysis */}
+                                    <div className="md:w-1/2 p-4 space-y-4 border-t md:border-t-0 md:border-l border-zinc-800">
+                                        {selectedPhoto.ai_analysis?.error ? (
+                                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                                                <p className="text-amber-400 text-sm">{selectedPhoto.ai_analysis.error}</p>
+                                            </div>
+                                        ) : selectedPhoto.ai_analysis ? (
+                                            <>
+                                                {/* Fat Percentage Hero */}
+                                                <div className="bg-gradient-to-br from-primary/20 to-purple-900/20 border border-primary/20 rounded-xl p-5 text-center">
+                                                    <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-1">% Grasa Estimado</p>
+                                                    <p className="text-4xl font-black text-white">
+                                                        {selectedPhoto.ai_analysis.body_fat_estimated || '—'}
+                                                        <span className="text-lg text-zinc-400">%</span>
+                                                    </p>
+                                                    <p className="text-zinc-500 text-xs mt-1">Rango: {selectedPhoto.ai_analysis.body_fat_range || '—'}</p>
+                                                </div>
+
+                                                {/* Muscle Distribution */}
+                                                {selectedPhoto.ai_analysis.muscle_distribution && (
+                                                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                                                        <h4 className="text-[10px] text-zinc-600 uppercase font-bold tracking-wider mb-3">Distribución Muscular</h4>
+                                                        <div className="space-y-2">
+                                                            {Object.entries(selectedPhoto.ai_analysis.muscle_distribution).map(([key, val]) => {
+                                                                const labels = { upper_body: 'Tren Superior', core: 'Core', lower_body: 'Tren Inferior' };
+                                                                const colors = { 'Desarrollado': 'text-emerald-400', 'Proporcionado': 'text-blue-400', 'Definido': 'text-emerald-400', 'Normal': 'text-blue-400', 'Por mejorar': 'text-amber-400', 'Por definir': 'text-amber-400' };
+                                                                return (
+                                                                    <div key={key} className="flex justify-between items-center">
+                                                                        <span className="text-zinc-400 text-xs">{labels[key] || key}</span>
+                                                                        <span className={`text-xs font-bold ${colors[val] || 'text-zinc-300'}`}>{val}</span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Quality & Symmetry */}
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-center">
+                                                        <p className="text-[10px] text-zinc-600 uppercase font-bold">Calidad Muscular</p>
+                                                        <p className="text-white font-bold text-sm mt-1">{selectedPhoto.ai_analysis.muscle_quality || '—'}</p>
+                                                    </div>
+                                                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-center">
+                                                        <p className="text-[10px] text-zinc-600 uppercase font-bold">Simetría</p>
+                                                        <p className="text-white font-bold text-sm mt-1">{selectedPhoto.ai_analysis.symmetry || '—'}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Strong Points */}
+                                                {selectedPhoto.ai_analysis.strong_points?.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-[10px] text-emerald-500 uppercase font-bold tracking-wider">✅ Puntos Fuertes</h4>
+                                                        {selectedPhoto.ai_analysis.strong_points.map((p, i) => (
+                                                            <p key={i} className="text-zinc-300 text-xs pl-3">• {p}</p>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Areas to Improve */}
+                                                {selectedPhoto.ai_analysis.areas_to_improve?.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-[10px] text-amber-500 uppercase font-bold tracking-wider">⚡ Áreas a Mejorar</h4>
+                                                        {selectedPhoto.ai_analysis.areas_to_improve.map((a, i) => (
+                                                            <p key={i} className="text-zinc-300 text-xs pl-3">• {a}</p>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Recommendations */}
+                                                {selectedPhoto.ai_analysis.recommendations?.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-[10px] text-blue-500 uppercase font-bold tracking-wider">💡 Recomendaciones</h4>
+                                                        {selectedPhoto.ai_analysis.recommendations.map((r, i) => (
+                                                            <p key={i} className="text-zinc-300 text-xs pl-3">{i + 1}. {r}</p>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Comparison */}
+                                                {selectedPhoto.ai_analysis.comparison_with_previous && (
+                                                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                                                        <h4 className="text-[10px] text-primary uppercase font-bold tracking-wider mb-1">📊 Comparación con Fotos Anteriores</h4>
+                                                        <p className="text-zinc-300 text-xs">{selectedPhoto.ai_analysis.comparison_with_previous}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* Summary */}
+                                                {selectedPhoto.ai_analysis.summary && (
+                                                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                                                        <h4 className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Resumen General</h4>
+                                                        <p className="text-zinc-300 text-sm leading-relaxed">{selectedPhoto.ai_analysis.summary}</p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 text-center">
+                                                <Sparkles size={24} className="mx-auto mb-2 text-zinc-600" />
+                                                <p className="text-zinc-500 text-sm">Sin análisis IA disponible para esta foto</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

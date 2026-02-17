@@ -207,3 +207,51 @@ export const uploadPhoto = async (file, bucket = 'student-assets') => {
 
     return publicUrl;
 }
+
+// ─── Student Progress Photos ───
+
+export const getStudentPhotos = async (studentId) => {
+    const { data, error } = await supabase
+        .from('student_progress_photos')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('photo_date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export const addStudentPhoto = async (photo) => {
+    const { data, error } = await supabase
+        .from('student_progress_photos')
+        .insert([photo])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export const deleteStudentPhoto = async (id, photoUrl) => {
+    // Extraer el nombre del archivo del URL para borrar de Storage
+    try {
+        const url = new URL(photoUrl);
+        const pathParts = url.pathname.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        if (fileName) {
+            await supabase.storage
+                .from('student-assets')
+                .remove([fileName]);
+        }
+    } catch (e) {
+        console.warn('Could not delete file from storage:', e);
+    }
+
+    const { error } = await supabase
+        .from('student_progress_photos')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+    return true;
+}
