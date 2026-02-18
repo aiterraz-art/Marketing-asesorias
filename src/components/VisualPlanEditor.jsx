@@ -177,6 +177,10 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                         const categoryFoods = foods.filter(f => normalizeCategory(f.category) === block.category);
                         const availableFoods = categoryFoods.length > 0 ? categoryFoods : foods;
 
+                        // Calculate visuals
+                        const currentFood = availableFoods.find(f => f.name === block.name) || foods.find(f => f.name === block.name);
+                        const currentKcal = currentFood ? Math.round(currentFood.calories_per_100g * (parseInt(block.quantity) / 100)) : 0;
+
                         return (
                             <div key={block.id} className="flex items-center gap-2 p-2 bg-zinc-900/40 rounded border border-zinc-800/50 hover:border-primary/30 transition-colors group">
                                 <div className="text-[10px] uppercase font-bold text-zinc-600 w-16 text-right shrink-0">
@@ -197,6 +201,14 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                                         ))}
                                     </optgroup>
                                 </select>
+
+                                {/* Calorie Badge */}
+                                <div className="hidden sm:flex items-center justify-center w-20 bg-black/40 rounded border border-zinc-800/50 px-2 py-1 mr-2">
+                                    <span className={`text-xs font-mono font-bold ${currentKcal > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                        {currentKcal > 0 ? `${currentKcal}` : '-'}
+                                    </span>
+                                    <span className="text-[9px] text-zinc-600 ml-1">kcal</span>
+                                </div>
 
                                 <div className="flex items-center gap-1 bg-black rounded border border-zinc-800 px-2 py-1">
                                     <input
