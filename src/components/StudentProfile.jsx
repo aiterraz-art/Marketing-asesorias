@@ -1860,9 +1860,14 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                 </div>
             )}
 
+            import PortionReference from './PortionReference';
+
             {/* Read Mode Content */}
             {!isEditing && isExpanded && (plan.nutrition_plan_text || plan.supplementation_plan_text || plan.training_plan_text) && (
                 <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300 space-y-6">
+
+                    {/* Portion Reference Guide */}
+                    {plan.nutrition_plan_text && <PortionReference />}
                     <div ref={contentRef} className="space-y-6">
                         {isNutrition && plan.nutrition_plan_text && (
                             <div className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-black/20 p-4 rounded-lg border border-zinc-800/50">
