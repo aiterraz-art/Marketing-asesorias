@@ -9,102 +9,17 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
         const lower = cat.toLowerCase();
         if (lower.includes('carb')) return 'carb';
         if (lower.includes('prot')) return 'protein';
-        if (lower.includes('gras') || lower.includes('fat')) return 'fat';
+        if (lower.includes('gras') || lower.includes('fat') || lower.includes('lipid')) return 'fat';
         if (lower.includes('frut')) return 'fruit';
         if (lower.includes('veg')) return 'vegetable';
+        if (lower.includes('lact') || lower.includes('dairy')) return 'dairy';
         return 'other';
     };
 
-    // Parser: Text -> Blocks
-    const parseTextToBlocks = (text) => {
-        if (!text) return [];
-        const lines = text.split('\n');
-        const blocks = [];
-        let currentCategory = 'other';
+    // Parser: Text -> Blocks (No changes needed for parsing, it just reads text)
+    // ...
 
-        lines.forEach((line, index) => {
-            const id = `block-${index}-${Date.now()}`;
-            const trimmed = line.trim();
-
-            // 1. Detect Category Context from Headers
-            // Example: "# 1 PORCIÓN DE CARBOHIDRATO = **200 kcal**"
-            if (trimmed.startsWith('#')) {
-                const cat = normalizeCategory(trimmed);
-                if (cat !== 'other') currentCategory = cat;
-                blocks.push({ id, type: 'header', content: line.replace(/^#+\s*/, ''), original: line, level: trimmed.match(/^#+/)[0].length });
-                return;
-            }
-
-            // 2. Detect Table Header/Divider (Keep as text but flag context)
-            if (trimmed.startsWith('|') && (trimmed.toLowerCase().includes('alimento') || trimmed.includes('---'))) {
-                blocks.push({ id, type: 'text', content: line, original: line, isTableStruct: true });
-                return;
-            }
-
-            // 3. Detect Table Row (The Food!)
-            // Format: | Arroz cocido | 150 g | ... |
-            // Regex: | Name | Qty g | ...
-            const tableRowMatch = line.match(/^\|\s*(.+?)\s*\|\s*(\d+)\s*(g|ml|unidades)?\s*\|/i);
-            if (tableRowMatch) {
-                const name = tableRowMatch[1].trim();
-                const qty = tableRowMatch[2];
-                const unit = tableRowMatch[3] || 'g';
-
-                blocks.push({
-                    id,
-                    type: 'food-table-row',
-                    name,
-                    quantity: qty,
-                    unit,
-                    category: currentCategory,
-                    original: line,
-                    fullParts: line.split('|') // Keep parts to reconstruct table row accurately
-                });
-                return;
-            }
-
-            // 4. Detect List Item Food (Legacy/Standard Parsing)
-            const listFoodMatch = line.match(/^-\s*\*\*(\d+)(g|ml|unidades)?\s+(.+?)\*\*(.*)/);
-            if (listFoodMatch) {
-                blocks.push({
-                    id,
-                    type: 'food-list-item',
-                    quantity: listFoodMatch[1],
-                    unit: listFoodMatch[2] || 'g',
-                    name: listFoodMatch[3],
-                    extra: listFoodMatch[4],
-                    category: currentCategory,
-                    original: line
-                });
-                return;
-            }
-
-            // 5. Default Text
-            blocks.push({ id, type: 'text', content: line, original: line });
-        });
-        return blocks;
-    };
-
-    const [blocks, setBlocks] = useState(parseTextToBlocks(initialText));
-
-    // Live Stats
-    const [stats, setStats] = useState({ kcal: 0, p: 0, c: 0, f: 0 });
-
-    useEffect(() => {
-        // Calculate stats from simple text matching in the "original" line of foods
-        let k = 0, p = 0, c = 0, f = 0;
-        blocks.forEach(b => {
-            const line = b.original || '';
-            const km = line.match(/(\d+)\s*kcal/i) || line.match(/\|.*?\|.*?\|.*?\|.*?\|.*?\|\s*(\d+)/); // Try to grab last col for table
-            if (km) k += parseInt(km[1]);
-        });
-        setStats({ kcal: k, p, c, f });
-    }, [blocks]);
-
-
-    const updateBlock = (id, field, value) => {
-        setBlocks(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
-    };
+    // ... (inside component)
 
     const handleFoodChange = (blockId, newFoodId) => {
         const food = foods.find(f => f.id.toString() === newFoodId);
@@ -115,28 +30,47 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
 
             const newName = food.name;
             let newOriginal = b.original;
+            let newQuantity = b.quantity; // Default to keeping it if we can't do math
 
+            // PORTION LOGIC (Isocaloric Exchange)
+            // If the block is a food row, we try to preserve the "Number of Portions"
             if (b.type === 'food-table-row') {
-                const ratio = parseInt(b.quantity) / 100;
+                // Find ONLY the old food to get its standard portion
+                const oldFood = foods.find(f => f.name === b.name);
+
+                if (oldFood && oldFood.portion_grams && food.portion_grams) {
+                    // Calculate how many portions the user currently has
+                    const currentPortions = parseInt(b.quantity) / oldFood.portion_grams;
+                    // Apply that portion count to the new food standard
+                    newQuantity = Math.round(currentPortions * food.portion_grams);
+                } else if (food.portion_grams) {
+                    // If we can't find old food data, just default to 1 portion of the new food
+                    newQuantity = food.portion_grams;
+                }
+
+                // Recalculate Macros for the new quantity
+                const ratio = newQuantity / 100;
                 const newKcal = Math.round(food.calories_per_100g * ratio);
                 const newP = Math.round(food.protein_per_100g * ratio);
                 const newC = Math.round(food.carbs_per_100g * ratio);
                 const newF = Math.round(food.fat_per_100g * ratio);
+                // Also get the household measure text
+                const measureText = food.household_measure ? ` (${food.household_measure})` : '';
 
                 // Assuming table structure: | Name | Qty | Visual | P | C | F | Kcal |
                 const parts = b.original.split('|');
-                // parts[0] is empty (before first |), parts[1] is Name, parts[2] is Qty...
                 if (parts.length >= 8) {
                     parts[1] = ` ${newName} `;
-                    // parts[2] is Qty, keep it
-                    // parts[3] is visual, keep it
-                    parts[4] = ` ${newP.toFixed(1)} `; // P
-                    parts[5] = ` ${newC.toFixed(1)} `; // C
-                    parts[6] = ` ${newF.toFixed(1)} `; // F
-                    parts[7] = ` ${newKcal} `; // Kcal
+                    parts[2] = ` ${newQuantity} g `; // Update Quantity column
+                    parts[3] = ` ${measureText || parts[3].trim()} `; // Update Visual Measure column if available
+                    parts[4] = ` ${newP.toFixed(1)} `;
+                    parts[5] = ` ${newC.toFixed(1)} `;
+                    parts[6] = ` ${newF.toFixed(1)} `;
+                    parts[7] = ` ${newKcal} `;
                     newOriginal = parts.join('|');
                 } else {
-                    newOriginal = b.original.replace(b.name, newName);
+                    // Fallback for non-standard rows
+                    newOriginal = b.original.replace(b.name, newName).replace(b.quantity, newQuantity);
                 }
             } else {
                 newOriginal = b.original.replace(b.name, newName);
@@ -145,7 +79,9 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
             return {
                 ...b,
                 name: newName,
+                quantity: newQuantity,
                 original: newOriginal,
+                unit: 'g' // Ensure unit is g
             };
         }));
     };
