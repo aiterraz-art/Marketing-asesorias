@@ -255,3 +255,49 @@ export const deleteStudentPhoto = async (id, photoUrl) => {
     if (error) throw error;
     return true;
 }
+
+// ─── Student Tasks (Agenda/Calendario) ───
+
+export const getStudentTasks = async (studentId) => {
+    const { data, error } = await supabase
+        .from('student_tasks')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('due_date', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export const addStudentTask = async (task) => {
+    const { data, error } = await supabase
+        .from('student_tasks')
+        .insert([task])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export const updateStudentTask = async (id, updates) => {
+    const { data, error } = await supabase
+        .from('student_tasks')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export const deleteStudentTask = async (id) => {
+    const { error } = await supabase
+        .from('student_tasks')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+    return true;
+}

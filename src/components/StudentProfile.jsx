@@ -11,7 +11,8 @@ import {
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
     updateStudentData, getStudentSessions, addStudentSession, deleteStudentPlan,
-    getStudentPhotos, addStudentPhoto, deleteStudentPhoto, uploadPhoto
+    getStudentPhotos, addStudentPhoto, deleteStudentPhoto, uploadPhoto,
+    getStudentTasks, addStudentTask, updateStudentTask, deleteStudentTask
 } from '../lib/supabase';
 import { analyzeBodyComposition } from '../lib/openai';
 import {
@@ -56,6 +57,18 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const photoInputRef = useRef(null);
     const [nextVideoCall, setNextVideoCall] = useState(student.next_videocall_date ? new Date(student.next_videocall_date).toISOString().slice(0, 16) : '');
 
+    // Agenda / Tasks
+    const [tasks, setTasks] = useState([]);
+    const [showAddTask, setShowAddTask] = useState(false);
+    const [newTask, setNewTask] = useState({
+        title: '',
+        type: 'checkin', // checkin, payment, video_call, other
+        due_date: new Date().toISOString().split('T')[0],
+        notes: ''
+    });
+    const [isSavingTask, setIsSavingTask] = useState(false);
+
+
     useEffect(() => {
         if (student) loadData();
     }, [student]);
@@ -67,10 +80,11 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                 getStudentPlans(student.id),
                 getStudentMeasurements(student.id),
                 getStudentSessions(student.id),
-                getStudentPhotos(student.id)
+                getStudentPhotos(student.id),
+                getStudentTasks(student.id)
             ]);
 
-            const [plansResult, measurementsResult, sessionsResult, photosResult] = results;
+            const [plansResult, measurementsResult, sessionsResult, photosResult, tasksResult] = results;
 
             if (plansResult.status === 'fulfilled') {
                 setPlans(plansResult.value || []);
@@ -97,6 +111,13 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             } else {
                 console.warn("Could not load photos (table might be missing):", photosResult.reason);
                 setPhotos([]);
+            }
+
+            if (tasksResult.status === 'fulfilled') {
+                setTasks(tasksResult.value || []);
+            } else {
+                console.warn("Could not load tasks (table might be missing):", tasksResult.reason);
+                setTasks([]);
             }
         } catch (err) {
             console.error("Error loading student data:", err);
@@ -319,12 +340,64 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
         }
     };
 
+    const handleAddTask = async () => {
+        if (!newTask.title || !newTask.due_date) return;
+        setIsSavingTask(true);
+        try {
+            await addStudentTask({
+                student_id: student.id,
+                ...newTask
+            });
+            setShowAddTask(false);
+            setNewTask({
+                title: '',
+                type: 'checkin',
+                due_date: new Date().toISOString().split('T')[0],
+                notes: ''
+            });
+            await loadData();
+        } catch (err) {
+            console.error("Error adding task:", err);
+            alert("Error al guardar la tarea");
+        } finally {
+            setIsSavingTask(false);
+        }
+    };
+
+    const handleToggleTask = async (task) => {
+        try {
+            const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+            const completedAt = newStatus === 'completed' ? new Date().toISOString() : null;
+
+            await updateStudentTask(task.id, {
+                status: newStatus,
+                completed_at: completedAt
+            });
+            await loadData();
+        } catch (err) {
+            console.error("Error toggling task:", err);
+            alert("Error al actualizar tarea");
+        }
+    };
+
+    const handleDeleteTask = async (id) => {
+        if (!confirm('¿Eliminar esta tarea?')) return;
+        try {
+            await deleteStudentTask(id);
+            await loadData();
+        } catch (err) {
+            console.error("Error deleting task:", err);
+            alert("Error al eliminar tarea");
+        }
+    };
+
     const sections = [
         { id: 'dashboard', label: 'Resumen', icon: <BarChart3 size={16} /> },
         { id: 'nutrition', label: 'Planes Nutri', icon: <Apple size={16} /> },
         { id: 'training', label: 'Entrenamientos', icon: <Dumbbell size={16} /> },
         { id: 'measures', label: 'Progresos', icon: <Scale size={16} /> },
         { id: 'gallery', label: 'Galería', icon: <Camera size={16} /> },
+        { id: 'calendar', label: 'Agenda', icon: <Calendar size={16} /> },
         { id: 'ai_nutrition', label: 'Asistente Pro', icon: <Sparkles size={16} /> },
     ];
 
@@ -622,6 +695,160 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                             );
                         })
                     )}
+                </div>
+            )}
+
+            {/* ─── Calendar / Agenda Section ─── */}
+            {activeSection === 'calendar' && (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-white font-bold flex items-center gap-2">
+                            <Calendar size={18} className="text-purple-400" />
+                            Agenda y Tareas ({tasks.filter(t => t.status !== 'completed').length} Pendientes)
+                        </h3>
+                        <button
+                            onClick={() => setShowAddTask(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
+                        >
+                            <Plus size={16} /> Nueva Tarea
+                        </button>
+                    </div>
+
+                    {showAddTask && (
+                        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 animate-in slide-in-from-top-4 duration-300">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold">Título</label>
+                                    <input
+                                        type="text"
+                                        value={newTask.title}
+                                        onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                                        placeholder="Ej: Pago Mensualidad, Control Semanal..."
+                                        className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white text-sm outline-none focus:border-primary"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold">Tipo</label>
+                                    <select
+                                        value={newTask.type}
+                                        onChange={e => setNewTask({ ...newTask, type: e.target.value })}
+                                        className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white text-sm outline-none focus:border-primary"
+                                    >
+                                        <option value="payment">💰 Pago</option>
+                                        <option value="checkin">⚖️ Control</option>
+                                        <option value="video_call">📹 Videollamada</option>
+                                        <option value="other">📝 Otro</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold">Fecha Vencimiento</label>
+                                    <input
+                                        type="date"
+                                        value={newTask.due_date}
+                                        onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
+                                        className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white text-sm outline-none focus:border-primary"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold">Notas (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={newTask.notes}
+                                        onChange={e => setNewTask({ ...newTask, notes: e.target.value })}
+                                        placeholder="Detalles adicionales..."
+                                        className="w-full bg-black border border-zinc-800 rounded-lg p-2 text-white text-sm outline-none focus:border-primary"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button onClick={() => setShowAddTask(false)} className="px-3 py-2 text-zinc-400 hover:text-white text-sm">Cancelar</button>
+                                <button
+                                    onClick={handleAddTask}
+                                    disabled={isSavingTask || !newTask.title}
+                                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {isSavingTask && <Loader2 size={14} className="animate-spin" />}
+                                    Guardar Tarea
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden">
+                        {/* Pending Tasks */}
+                        <div className="p-4 bg-zinc-900/40 border-b border-zinc-900">
+                            <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Pendientes</h4>
+                        </div>
+                        <div className="divide-y divide-zinc-900">
+                            {tasks.filter(t => t.status !== 'completed').length === 0 && (
+                                <p className="p-8 text-center text-zinc-500 text-sm">No hay tareas pendientes. ¡Todo al día!</p>
+                            )}
+                            {tasks.filter(t => t.status !== 'completed').map(task => (
+                                <div key={task.id} className="p-4 flex items-center justify-between hover:bg-zinc-900/20 transition-colors group">
+                                    <div className="flex items-center gap-4">
+                                        <button
+                                            onClick={() => handleToggleTask(task)}
+                                            className="w-6 h-6 rounded-full border-2 border-zinc-600 hover:border-primary hover:bg-primary/20 transition-all flex items-center justify-center group-hover:scale-110"
+                                            title="Marcar como completada"
+                                        >
+                                            <div className="w-0 h-0 bg-primary rounded-full transition-all" />
+                                        </button>
+                                        <div>
+                                            <p className="text-white font-medium flex items-center gap-2">
+                                                {task.type === 'payment' && '💰'}
+                                                {task.type === 'checkin' && '⚖️'}
+                                                {task.type === 'video_call' && '📹'}
+                                                {task.type === 'other' && '📝'}
+                                                {task.title}
+                                            </p>
+                                            <p className="text-xs text-zinc-500">
+                                                Vence: {new Date(task.due_date).toLocaleDateString()}
+                                                {task.notes && <span className="ml-2">• {task.notes}</span>}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => handleDeleteTask(task.id)} className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Completed Tasks History */}
+                        {tasks.filter(t => t.status === 'completed').length > 0 && (
+                            <>
+                                <div className="p-4 bg-zinc-900/40 border-y border-zinc-900 mt-4">
+                                    <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Historial Completado</h4>
+                                </div>
+                                <div className="divide-y divide-zinc-900 opacity-60">
+                                    {tasks.filter(t => t.status === 'completed').map(task => (
+                                        <div key={task.id} className="p-4 flex items-center justify-between hover:bg-zinc-900/20 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <button
+                                                    onClick={() => handleToggleTask(task)}
+                                                    className="w-6 h-6 rounded-full bg-primary border-2 border-primary flex items-center justify-center text-white"
+                                                    title="Marcar como pendiente"
+                                                >
+                                                    <Check size={12} />
+                                                </button>
+                                                <div>
+                                                    <p className="text-zinc-400 line-through font-medium flex items-center gap-2">
+                                                        {task.title}
+                                                    </p>
+                                                    <p className="text-xs text-zinc-600">
+                                                        Completado: {new Date(task.completed_at || task.created_at).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => handleDeleteTask(task.id)} className="text-zinc-600 hover:text-red-400">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
