@@ -301,3 +301,27 @@ export const deleteStudentTask = async (id) => {
     if (error) throw error;
     return true;
 }
+
+// ─── Foods & Calculator ───
+
+export const getFoods = async () => {
+    const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export const updateStudentPlan = async (id, updates) => {
+    const { data, error } = await supabase
+        .from('student_plans')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}

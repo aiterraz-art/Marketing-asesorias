@@ -12,7 +12,8 @@ import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
     updateStudentData, getStudentSessions, addStudentSession, deleteStudentPlan,
     getStudentPhotos, addStudentPhoto, deleteStudentPhoto, uploadPhoto,
-    getStudentTasks, addStudentTask, updateStudentTask, deleteStudentTask
+    getStudentTasks, addStudentTask, updateStudentTask, deleteStudentTask,
+    getFoods, updateStudentPlan
 } from '../lib/supabase';
 import { analyzeBodyComposition } from '../lib/openai';
 import {
@@ -68,6 +69,9 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     });
     const [isSavingTask, setIsSavingTask] = useState(false);
 
+    // Foods for Calculator
+    const [foods, setFoods] = useState([]);
+
 
     useEffect(() => {
         if (student) loadData();
@@ -81,10 +85,11 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                 getStudentMeasurements(student.id),
                 getStudentSessions(student.id),
                 getStudentPhotos(student.id),
-                getStudentTasks(student.id)
+                getStudentTasks(student.id),
+                getFoods()
             ]);
 
-            const [plansResult, measurementsResult, sessionsResult, photosResult, tasksResult] = results;
+            const [plansResult, measurementsResult, sessionsResult, photosResult, tasksResult, foodsResult] = results;
 
             if (plansResult.status === 'fulfilled') {
                 setPlans(plansResult.value || []);
@@ -118,6 +123,12 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             } else {
                 console.warn("Could not load tasks (table might be missing):", tasksResult.reason);
                 setTasks([]);
+            }
+
+            if (foodsResult.status === 'fulfilled') {
+                setFoods(foodsResult.value || []);
+            } else {
+                console.warn("Could not load foods:", foodsResult.reason);
             }
         } catch (err) {
             console.error("Error loading student data:", err);
@@ -1601,16 +1612,73 @@ const EditField = ({ label, value, onChange, type = 'text' }) => (
     </div>
 );
 
-const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber, onDelete }) => {
+const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber, onDelete, foods = [], onUpdate }) => {
     const isNutrition = type === 'nutrition';
     const content = isNutrition
         ? (plan.nutrition_plan_text || plan.supplementation_plan_text)
         : plan.training_plan_text;
     const contentRef = useRef(null);
 
+    // Edit Mode State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedNutrition, setEditedNutrition] = useState(plan.nutrition_plan_text || '');
+    const [editedSupplementation, setEditedSupplementation] = useState(plan.supplementation_plan_text || '');
+    const [editedTraining, setEditedTraining] = useState(plan.training_plan_text || '');
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Calculator State
+    const [selectedFoodId, setSelectedFoodId] = useState('');
+    const [grams, setGrams] = useState(100);
+    const [calculatedMacros, setCalculatedMacros] = useState(null);
+
+    // Calculator Logic
+    const handleCalculate = () => {
+        const food = foods.find(f => f.id.toString() === selectedFoodId);
+        if (!food) return;
+
+        const ratio = grams / 100;
+        setCalculatedMacros({
+            calories: Math.round(food.calories_per_100g * ratio),
+            protein: Math.round(food.protein_per_100g * ratio),
+            carbs: Math.round(food.carbs_per_100g * ratio),
+            fat: Math.round(food.fat_per_100g * ratio),
+            foodName: food.name
+        });
+    };
+
+    const handleInsertFood = () => {
+        if (!calculatedMacros) return;
+        const textToInsert = `\n- **${grams}g ${calculatedMacros.foodName}** (${calculatedMacros.calories} kcal | P: ${calculatedMacros.protein}g | C: ${calculatedMacros.carbs}g | G: ${calculatedMacros.fat}g)`;
+        setEditedNutrition(prev => prev + textToInsert);
+        setCalculatedMacros(null);
+        setGrams(100);
+        setSelectedFoodId('');
+    };
+
+    useEffect(() => {
+        if (selectedFoodId) handleCalculate();
+    }, [selectedFoodId, grams]);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            await updateStudentPlan(plan.id, {
+                nutrition_plan_text: isNutrition ? editedNutrition : undefined,
+                supplementation_plan_text: isNutrition ? editedSupplementation : undefined,
+                training_plan_text: !isNutrition ? editedTraining : undefined
+            });
+            setIsEditing(false);
+            if (onUpdate) onUpdate();
+        } catch (err) {
+            console.error("Error updating plan:", err);
+            alert("Error al guardar cambios");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleExportPDF = (e) => {
         e.stopPropagation();
-        // Usar el ID estático para asegurar que el elemento existe incluso si el acordeón está colapsado
         const element = document.getElementById(`pdf-content-${plan.id}`);
         if (!element) return;
 
@@ -1630,9 +1698,9 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
 
     return (
         <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden transition-all">
-            <button
+            <div
                 onClick={onToggle}
-                className="w-full p-4 flex items-center justify-between hover:bg-zinc-900/30 transition-colors"
+                className="w-full p-4 flex items-center justify-between hover:bg-zinc-900/30 transition-colors cursor-pointer"
             >
                 <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isNutrition ? 'bg-primary/10 text-primary' : 'bg-blue-500/10 text-blue-400'}`}>
@@ -1667,6 +1735,15 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* Edit Button */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsEditing(!isEditing); }}
+                        className={`p-2 transition-colors ${isEditing ? 'text-primary' : 'text-zinc-500 hover:text-white'}`}
+                        title="Editar Plan"
+                    >
+                        <Edit3 size={18} />
+                    </button>
+
                     {content && (
                         <button
                             onClick={handleExportPDF}
@@ -1688,8 +1765,104 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     </button>
                     {isExpanded ? <ChevronUp size={18} className="text-zinc-500" /> : <ChevronDown size={18} className="text-zinc-500" />}
                 </div>
-            </button >
-            {isExpanded && (plan.nutrition_plan_text || plan.supplementation_plan_text || plan.training_plan_text) && (
+            </div >
+
+            {/* Edit Mode Panel */}
+            {isEditing && (
+                <div className="p-4 bg-zinc-900/50 border-t border-zinc-900 space-y-4 cursor-default" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2"><Edit3 size={14} /> Editor de Plan</h4>
+                        {isNutrition && (
+                            <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-lg border border-zinc-800">
+                                <select
+                                    value={selectedFoodId}
+                                    onChange={e => setSelectedFoodId(e.target.value)}
+                                    className="bg-transparent text-xs text-white outline-none w-32"
+                                >
+                                    <option value="">+ Añadir Alimento</option>
+                                    {foods.map(f => (
+                                        <option key={f.id} value={f.id}>{f.name}</option>
+                                    ))}
+                                </select>
+                                {selectedFoodId && (
+                                    <>
+                                        <input
+                                            type="number"
+                                            value={grams}
+                                            onChange={e => setGrams(Number(e.target.value))}
+                                            className="w-12 bg-zinc-800 rounded px-1 text-xs text-center text-white outline-none"
+                                            placeholder="g"
+                                        />
+                                        <span className="text-xs text-zinc-500">g</span>
+                                        <button
+                                            onClick={handleInsertFood}
+                                            className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded hover:opacity-90"
+                                        >
+                                            INSERTAR
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {calculatedMacros && (
+                        <div className="text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20 text-center animate-pulse">
+                            {grams}g {calculatedMacros.foodName}: <strong>{calculatedMacros.calories} kcal</strong> | P: {calculatedMacros.protein} | C: {calculatedMacros.carbs} | G: {calculatedMacros.fat}
+                        </div>
+                    )}
+
+                    {isNutrition ? (
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Plan Nutricional</label>
+                                <textarea
+                                    value={editedNutrition}
+                                    onChange={e => setEditedNutrition(e.target.value)}
+                                    className="w-full h-64 bg-black border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 font-mono focus:border-primary outline-none resize-y"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Suplementación</label>
+                                <textarea
+                                    value={editedSupplementation}
+                                    onChange={e => setEditedSupplementation(e.target.value)}
+                                    className="w-full h-32 bg-black border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 font-mono focus:border-primary outline-none resize-y"
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Plan de Entrenamiento</label>
+                            <textarea
+                                value={editedTraining}
+                                onChange={e => setEditedTraining(e.target.value)}
+                                className="w-full h-96 bg-black border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 font-mono focus:border-primary outline-none resize-y"
+                            />
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+                        <button
+                            onClick={() => setIsEditing(false)}
+                            className="px-3 py-1.5 text-zinc-400 text-xs hover:text-white"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:opacity-90 flex items-center gap-2"
+                        >
+                            {isSaving && <Loader2 size={12} className="animate-spin" />}
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Read Mode Content */}
+            {!isEditing && isExpanded && (plan.nutrition_plan_text || plan.supplementation_plan_text || plan.training_plan_text) && (
                 <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300 space-y-6">
                     <div ref={contentRef} className="space-y-6">
                         {isNutrition && plan.nutrition_plan_text && (
@@ -1721,7 +1894,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     </div>
                 </div>
             )}
-            {isExpanded && !content && (
+            {isExpanded && !content && !isEditing && (
                 <div className="border-t border-zinc-900 p-6 text-center text-zinc-600 text-sm">
                     Este plan fue guardado solo con macros (sin texto generado por IA).
                 </div>
