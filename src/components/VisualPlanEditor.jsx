@@ -116,6 +116,7 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                         // Calculate visuals
                         const currentFood = availableFoods.find(f => f.name === block.name) || foods.find(f => f.name === block.name);
                         const currentKcal = currentFood ? Math.round(currentFood.calories_per_100g * (parseInt(block.quantity) / 100)) : 0;
+                        const householdMeasure = currentFood?.household_measure || '';
 
                         return (
                             <div key={block.id} className="flex items-center gap-2 p-2 bg-zinc-900/40 rounded border border-zinc-800/50 hover:border-primary/30 transition-colors group">
@@ -129,7 +130,7 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                                 >
                                     <option value="" disabled>{block.name}</option>
                                     {availableFoods.map(f => (
-                                        <option key={f.id} value={f.id}>{f.name}</option>
+                                        <option key={f.id} value={f.id}>{f.name} {f.portion_grams ? `(${f.household_measure})` : ''}</option>
                                     ))}
                                     <optgroup label="Otros">
                                         {foods.filter(f => !availableFoods.includes(f)).map(f => (
@@ -139,11 +140,11 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                                 </select>
 
                                 {/* Calorie Badge */}
-                                <div className="hidden sm:flex items-center justify-center w-20 bg-black/40 rounded border border-zinc-800/50 px-2 py-1 mr-2">
+                                <div className="hidden sm:flex items-center justify-center w-24 bg-black/40 rounded border border-zinc-800/50 px-2 py-1 mr-2 flex-col leading-none">
                                     <span className={`text-xs font-mono font-bold ${currentKcal > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                                        {currentKcal > 0 ? `${currentKcal}` : '-'}
+                                        {currentKcal > 0 ? `${currentKcal} kcal` : '-'}
                                     </span>
-                                    <span className="text-[9px] text-zinc-600 ml-1">kcal</span>
+                                    {householdMeasure && <span className="text-[9px] text-zinc-500 max-w-full overflow-hidden text-ellipsis whitespace-nowrap mt-0.5">{householdMeasure}</span>}
                                 </div>
 
                                 <div className="flex items-center gap-1 bg-black rounded border border-zinc-800 px-2 py-1">
