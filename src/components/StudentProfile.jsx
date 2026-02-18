@@ -1874,7 +1874,12 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                 <div className="flex items-center gap-2 mb-4 text-primary uppercase text-[10px] font-black tracking-widest border-b border-primary/20 pb-2">
                                     <Apple size={12} /> Plan de Alimentación
                                 </div>
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan.nutrition_plan_text}</ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {plan.nutrition_plan_text
+                                        .replace(/DISTRIBUCIÓN DIARIA \(ABSTRACTA Y FLEXIBLE\)/g, 'EJEMPLO DE COMIDA DIARIA')
+                                        .replace(/PLAN DETALLADO \(SOLO CON ALIMENTOS PERMITIDOS\)/g, 'EJEMPLO DE COMIDA DIARIA')
+                                    }
+                                </ReactMarkdown>
                             </div>
                         )}
 
@@ -2038,7 +2043,10 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             `}</style>
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {isNutrition
-                                    ? `${plan.nutrition_plan_text || ''}\n\n${plan.supplementation_plan_text ? `## Suplementación\n\n${plan.supplementation_plan_text}` : ''}`
+                                    ? `${(plan.nutrition_plan_text || '')
+                                        .replace(/DISTRIBUCIÓN DIARIA \(ABSTRACTA Y FLEXIBLE\)/g, 'EJEMPLO DE COMIDA DIARIA')
+                                        .replace(/PLAN DETALLADO \(SOLO CON ALIMENTOS PERMITIDOS\)/g, 'EJEMPLO DE COMIDA DIARIA')
+                                    }\n\n${plan.supplementation_plan_text ? `## Suplementación\n\n${plan.supplementation_plan_text}` : ''}`
                                     : (plan.training_plan_text || '')}
                             </ReactMarkdown>
                         </div>

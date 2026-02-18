@@ -474,7 +474,7 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
            - GRUPO PROTEÍNAS (PRO): Huevos enteros, Pollo, Vacuno/Cerdo, Atún.
            - GRUPO GRASAS (FAT): Aceite de Oliva, Palta, Frutos Secos.
 
-        2. PÁGINA 2: DISTRIBUCIÓN DIARIA (ABSTRACTA Y FLEXIBLE)
+        2. PÁGINA 2: EJEMPLO DE COMIDA DIARIA (ABSTRACTA Y FLEXIBLE)
            - En esta sección, **NO** menciones alimentos específicos (ej: No digas "Pollo con Arroz").
            - Usa EXCLUSIVAMENTE el lenguaje de PORCIONES para que el alumno elija de la Tabla de Equivalencias.
            - Estructura OBLIGATORIA:
