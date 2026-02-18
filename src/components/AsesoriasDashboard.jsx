@@ -110,17 +110,25 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
                 }
             }
 
+            // Parse numeric values 
+            const age = wizardData.age ? parseInt(wizardData.age) : null;
+            const weight = wizardData.weight ? parseFloat(wizardData.weight) : null;
+            const height = wizardData.height ? parseFloat(wizardData.height) : null;
+            const body_fat_pct = wizardData.body_fat_pct ? parseFloat(wizardData.body_fat_pct) : null;
+            const activity_level = wizardData.activity_level ? parseFloat(wizardData.activity_level) : 1.2;
+            const sleep_hours = wizardData.sleep_hours ? parseFloat(wizardData.sleep_hours) : null;
+
             // 1. Crear el alumno
             const student = await createStudent({
                 full_name: wizardData.full_name,
-                age: wizardData.age ? parseInt(wizardData.age) : null,
+                age,
                 sex: wizardData.sex,
-                weight: wizardData.weight ? parseFloat(wizardData.weight) : null,
-                height: wizardData.height ? parseFloat(wizardData.height) : null,
-                body_fat_pct: wizardData.body_fat_pct ? parseFloat(wizardData.body_fat_pct) : null,
-                activity_level: wizardData.activity_level ? parseFloat(wizardData.activity_level) : 1.2,
+                weight,
+                height,
+                body_fat_pct,
+                activity_level,
                 goal: wizardData.goal,
-                sleep_hours: wizardData.sleep_hours ? parseFloat(wizardData.sleep_hours) : null,
+                sleep_hours,
                 stress_level: wizardData.stress_level,
                 experience: wizardData.experience,
                 equipment: wizardData.equipment,
@@ -137,11 +145,11 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
             });
 
             // 3. Crear primera medición si hay peso
-            if (wizardData.weight) {
+            if (weight) {
                 await addStudentMeasurement({
                     student_id: student.id,
-                    weight: wizardData.weight,
-                    body_fat_pct: wizardData.body_fat_pct,
+                    weight,
+                    body_fat_pct,
                     photo_url: uploadedPhotoUrl
                 });
             }
@@ -152,7 +160,7 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
             alert("¡Alumno creado con éxito! Ya puedes ver su perfil completo.");
         } catch (err) {
             console.error("Error in intake wizard flow:", err);
-            alert("Error al procesar la reunión inicial.");
+            alert(`Error al procesar la reunión inicial: ${err.message || JSON.stringify(err)}`);
         }
     };
 
