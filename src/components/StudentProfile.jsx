@@ -1665,7 +1665,12 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             await updateStudentPlan(plan.id, {
                 nutrition_plan_text: isNutrition ? editedNutrition : undefined,
                 supplementation_plan_text: isNutrition ? editedSupplementation : undefined,
-                training_plan_text: !isNutrition ? editedTraining : undefined
+                training_plan_text: !isNutrition ? editedTraining : undefined,
+                // Update Macros if they changed
+                calories: liveMacros.calories || plan.calories,
+                protein_g: liveMacros.protein || plan.protein_g,
+                carbs_g: liveMacros.carbs || plan.carbs_g,
+                fat_g: liveMacros.fat || plan.fat_g
             });
             setIsEditing(false);
             if (onUpdate) onUpdate();
@@ -1696,6 +1701,57 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
         });
     };
 
+    // Live Macros Calculation
+    const [liveMacros, setLiveMacros] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    useEffect(() => {
+        // Parse text to find macros patterns: (150 kcal ... P: 20g ... )
+        // Regex to match: (123 kcal | P: 10g | C: 20g | G: 5g) OR (123 kcal, 10g prot...)
+        // Simplified regex for the generated format: (\d+)\s*kcal
+        // And we look for P: (\d+), C: (\d+), G: (\d+) inside the same parenthesis block preferably
+
+        const textToCheck = (isNutrition ? (editedNutrition + ' ' + editedSupplementation) : editedTraining);
+
+        let totalCals = 0;
+        let totalP = 0;
+        let totalC = 0;
+        let totalF = 0;
+
+        // Extract all lines
+        const lines = textToCheck.split('\n');
+
+        lines.forEach(line => {
+            // Match standard format: (X kcal | P: Xg | C: Xg | G: Xg)
+            // Also match simple numbers if possible, but let's stick to the generated format
+            const kcalMatch = line.match(/(\d+)\s*kcal/i);
+            const pMatch = line.match(/P:\s*(\d+)/i);
+            const cMatch = line.match(/C:\s*(\d+)/i);
+            const fMatch = line.match(/G:\s*(\d+)/i) || line.match(/F:\s*(\d+)/i);
+
+            if (kcalMatch) totalCals += parseInt(kcalMatch[1]);
+            if (pMatch) totalP += parseInt(pMatch[1]);
+            if (cMatch) totalC += parseInt(cMatch[1]);
+            if (fMatch) totalF += parseInt(fMatch[1]);
+        });
+
+        setLiveMacros({
+            calories: totalCals,
+            protein: totalP,
+            carbs: totalC,
+            fat: totalF
+        });
+
+    }, [editedNutrition, editedSupplementation, isNutrition]);
+
+    // Use Live Macros if editing or if they differ from stored (optional, but for now just show stored or live if editing)
+    const displayMacros = isEditing ? liveMacros : {
+        calories: plan.calories,
+        protein: plan.protein_g,
+        carbs: plan.carbs_g,
+        fat: plan.fat_g
+    };
+
+
     return (
         <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden transition-all">
             <div
@@ -1714,19 +1770,17 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             <span className="text-[10px] bg-primary/20 text-primary border border-primary/30 px-1.5 py-0.5 rounded font-black uppercase">
                                 VERSIÓN {versionNumber}
                             </span>
+                            {isEditing && <span className="text-[10px] bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-1.5 py-0.5 rounded font-black uppercase animate-pulse">EDITANDO</span>}
                         </div>
                         <div className="flex items-center gap-3 text-[10px] text-zinc-500 mt-1 uppercase font-bold tracking-wider">
                             <span className="flex items-center gap-1">
                                 <Clock size={10} />
                                 {new Date(plan.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {(plan.calories > 0 || plan.protein_g > 0 || plan.fat_g > 0 || plan.carbs_g > 0) && (
-                                <>
-                                    <span>{plan.calories} kcal</span>
-                                    <span>P: {plan.protein_g}g</span>
-                                    <span>G: {plan.fat_g}g</span>
-                                    <span>C: {plan.carbs_g}g</span>
-                                </>
+                            {(displayMacros.calories > 0 || displayMacros.protein > 0 || displayMacros.fat > 0 || displayMacros.carbs > 0) && (
+                                <span className={`${isEditing ? 'text-primary' : ''} transition-colors`}>
+                                    {displayMacros.calories} kcal | P: {displayMacros.protein}g | G: {displayMacros.fat}g | C: {displayMacros.carbs}g
+                                </span>
                             )}
                             <span className="capitalize px-1.5 py-0.5 bg-zinc-900 rounded text-[10px]">
                                 {GOAL_LABELS[plan.goal] || plan.goal}
@@ -1735,13 +1789,18 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* Edit Button */}
+                    {/* Force Edit Button Visibility */}
                     <button
-                        onClick={(e) => { e.stopPropagation(); setIsEditing(!isEditing); }}
-                        className={`p-2 transition-colors ${isEditing ? 'text-primary' : 'text-zinc-500 hover:text-white'}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Edit clicked");
+                            setIsEditing(!isEditing);
+                        }}
+                        className={`p-2 transition-colors z-10 ${isEditing ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white bg-zinc-800/50'}`}
                         title="Editar Plan"
+                        style={{ pointerEvents: 'auto' }}
                     >
-                        <Edit3 size={18} />
+                        <Edit3 size={16} />
                     </button>
 
                     {content && (
