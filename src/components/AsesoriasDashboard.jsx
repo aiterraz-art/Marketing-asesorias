@@ -856,7 +856,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                 scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 1024
+                windowWidth: 800
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
@@ -1698,7 +1698,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                 scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 1024
+                windowWidth: 800
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }

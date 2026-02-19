@@ -55,7 +55,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                 scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 1024
+                windowWidth: 800
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }

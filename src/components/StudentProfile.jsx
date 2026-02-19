@@ -1698,7 +1698,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             margin: 10,
             filename: `Plan_${isNutrition ? 'Nutricion' : 'Entrenamiento'}_${studentName.replace(/\s+/g, '_')}_${new Date(plan.created_at).toLocaleDateString()}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1024 },
+            html2canvas: { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, windowWidth: 800 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
