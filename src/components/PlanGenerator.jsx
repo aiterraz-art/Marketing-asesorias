@@ -150,33 +150,22 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                         </div>
                     </div>
 
-                    {/* Macro Summary Header */}
+                    {/* Simple Target Header */}
                     {macros && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                             <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 text-center">
-                                <p className="text-[10px] uppercase font-black tracking-widest text-primary/70 mb-1">Calorías</p>
+                                <p className="text-[10px] uppercase font-black tracking-widest text-primary/70 mb-1">Calorías Diarias</p>
                                 <p className="text-2xl font-black text-white">{macros.calories || 0}<span className="text-xs ml-1 opacity-50">kcal</span></p>
                             </div>
                             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
-                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Proteína</p>
-                                <p className="text-2xl font-black text-white">{macros.protein || 0}<span className="text-xs ml-1 opacity-50">g</span></p>
-                                {macros.calories > 0 && (
-                                    <p className="text-[10px] text-zinc-600 mt-1">{Math.round((macros.protein * 4 / macros.calories) * 100)}%</p>
-                                )}
+                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Hidratación</p>
+                                <p className="text-lg font-black text-white">2 Litros</p>
+                                <p className="text-[10px] text-zinc-600 mt-1">Mínimo diario</p>
                             </div>
                             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
-                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Grasas</p>
-                                <p className="text-2xl font-black text-white">{macros.fat || 0}<span className="text-xs ml-1 opacity-50">g</span></p>
-                                {macros.calories > 0 && (
-                                    <p className="text-[10px] text-zinc-600 mt-1">{Math.round((macros.fat * 9 / macros.calories) * 100)}%</p>
-                                )}
-                            </div>
-                            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
-                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Carbos</p>
-                                <p className="text-2xl font-black text-white">{macros.carbs || 0}<span className="text-xs ml-1 opacity-50">g</span></p>
-                                {macros.calories > 0 && (
-                                    <p className="text-[10px] text-zinc-600 mt-1">{Math.round((macros.carbs * 4 / macros.calories) * 100)}%</p>
-                                )}
+                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Actividad</p>
+                                <p className="text-lg font-black text-white">8,000 Pasos</p>
+                                <p className="text-[10px] text-zinc-600 mt-1">Meta diaria</p>
                             </div>
                         </div>
                     )}
@@ -285,19 +274,14 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                             <p style={{ fontSize: '20px', fontWeight: '900', color: '#7c3aed', margin: 0 }}>{macros.calories} <span style={{ fontSize: '10px', opacity: 0.7 }}>kcal</span></p>
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
-                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Proteína</p>
-                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{macros.protein}g</p>
-                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>{Math.round((macros.protein * 4 / macros.calories) * 100)}%</p>
+                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Hidratación</p>
+                                            <p style={{ fontSize: '18px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>2 Litros</p>
+                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>Mínimo diario</p>
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
-                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Grasas</p>
-                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{macros.fat}g</p>
-                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>{Math.round((macros.fat * 9 / macros.calories) * 100)}%</p>
-                                        </div>
-                                        <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
-                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Carbohidratos</p>
-                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{macros.carbs}g</p>
-                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>{Math.round((macros.carbs * 4 / macros.calories) * 100)}%</p>
+                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Actividad</p>
+                                            <p style={{ fontSize: '18px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>8,000 Pasos</p>
+                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>Meta diaria</p>
                                         </div>
                                     </div>
                                 )}
