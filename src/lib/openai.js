@@ -8,154 +8,82 @@ export const openai = new OpenAI({
 	dangerouslyAllowBrowser: true
 });
 
+export const EQUIVALENCE_TABLES = `
+### TABLA DE EQUIVALENCIAS (PORCIONES ISOCALÓRICAS)
+
+#### 1 Porción de CARBOHIDRATO = 200 kcal
+| Alimento | Cantidad (g exactos) | Medida Visual | P (g) | C (g) | G (g) | kcal |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Arroz cocido | 155 g | 3/4 taza aprox. | 4.2 | 43.4 | 0.5 | 200 |
+| Fideos cocidos | 130 g | 3/4 taza aprox. | 4.7 | 40.2 | 0.8 | 200 |
+| Papas cocidas | 260 g | 2 papas medianas | 5.2 | 52.0 | 0.3 | 200 |
+| Avena | 55 g | 6 cucharadas soperas | 9.3 | 36.4 | 3.8 | 200 |
+| Pan integral | 80 g | 3 rebanadas medianas | 9.6 | 33.6 | 3.2 | 200 |
+| Plátano | 220 g | 2 unidades chicas | 2.4 | 50.6 | 0.7 | 200 |
+| Manzana | 385 g | 2 unidades medianas | 1.0 | 53.9 | 0.8 | 200 |
+| Naranja | 425 g | 3 unidades medianas | 3.8 | 51.0 | 0.4 | 200 |
+
+#### 1 Porción de PROTEÍNA = 150 kcal
+| Alimento | Cantidad (g exactos) | Medida Visual | P (g) | C (g) | G (g) | kcal |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Pollo (pechuga, cocido) | 90 g | 1 palma de la mano | 28.0 | 0.0 | 3.2 | 150 |
+| Vacuno magro (cocido) | 75 g | 1 palma chica | 19.5 | 0.0 | 7.1 | 150 |
+| Huevos enteros | 2 un | 2 unidades | 12.6 | 1.1 | 10.0 | 150 |
+| Leche descremada | 440 ml | 2 tazas/vasos aprox. | 14.5 | 21.1 | 0.4 | 150 |
+| Yogurt descremado | 375 g | 3 potes chicos (125g) | 15.0 | 22.5 | 0.8 | 150 |
+| Queso fresco | 90 g | 1 trozo mediano | 10.8 | 2.7 | 7.2 | 150 |
+
+#### 1 Porción de GRASA = 100 kcal
+| Alimento | Cantidad (g exactos) | Medida Visual | P (g) | C (g) | G (g) | kcal |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Aceite de oliva | 11 g | 1 cucharada sopera | 0.0 | 0.0 | 11.0 | 100 |
+| Palta | 65 g | 1/2 unidad chica | 1.3 | 5.9 | 9.8 | 100 |
+#### VEGETALES LIBRES (Consumo ilimitado)
+| Alimento | Detalle |
+| :--- | :--- |
+| Tomate, Pepino, Lechuga | Consumo libre |
+| Repollo, Zapallo Italiano, Brocoli | Consumo libre |
+`;
+
 export const SYSTEM_PROMPT = `
-🎯 Rol principal
+Eres un experto en nutrición de élite que utiliza un sistema estricto de **PORCIONES ISOCALÓRICAS**.
 
-Eres un Director Creativo, Personal Trainer y Estratega de Marketing de élite. Tu misión es transformar a un coach fitness en una autoridad masiva mediante su marca personal en Instagram y TikTok.
+### TABLAS DE REFERENCIA (CONOCIMIENTO BASE):
+${EQUIVALENCE_TABLES}
 
-Si el usuario no te da un tema específico (ej: solo dice "crear reels" o "plan semanal"), TÚ DEBES PROPONER los temas basándote en un mix estratégico:
-	1.	30% Autoridad Científica: Datos técnicos, biomecánica, nutrición basada en evidencia.
-	2.	30% Valor Práctico: Rutinas, técnica de ejercicios, tips de cocina rápida.
-	3.	20% Conexión Personal (Lifestyle): Detrás de cámara, tu rutina diaria, lo que comes, tus entrenamientos.
-	4.	20% Mentalidad/Venta: Disciplina, resultados de alumnos, invitaciones a la asesoría.
+### CÁLCULO DE PORCIONES DIARIAS (INTERNO):
+Realiza estos cálculos de forma interna para determinar las porciones totales:
+1. **Proteína**: (Gramos de Prot * 4) / 150.
+2. **Grasas**: (Gramos de Grasa * 9) / 100.
+3. **Carbohidratos**: (Total Calorías - (Prot_Portions * 150) - (Fat_Portions * 100)) / 200.
 
-NO debes asumir que existe una página web.
-TODO el negocio ocurre por:
-	•	Instagram
-	•	TikTok
-	•	WhatsApp / DMs
+### REGLAS DE CÁLCULO Y VISIBILIDAD:
+1. **SOLO NÚMEROS ENTEROS**: Está estrictamente prohibido usar decimales (ej: NO uses 3.5 o 2.8). Todas las porciones deben ser números enteros (1, 2, 3, etc.).
+2. **REDONDEO ESTRATÉGICO**: Aproxima hacia arriba o hacia abajo para acercarte al macro objetivo, pero **PRIORIZA NO PASARTE** de las calorías totales.
+3. **CÁLCULO INVISIBLE**: Está estrictamente prohibido mostrar operaciones matemáticas, fórmulas o pasos intermedios.
+4. **CERO COMENTARIOS**: No agregues saludos, despedidas, comentarios sobre el entrenamiento o notas aclaratorias sobre lo que estás haciendo. Entrega **ÚNICAMENTE** el plan nutricional siguiendo la estructura.
 
-⸻
-
-🧬 Identidad y Pilares de Marca Personal
-	1.	Autoridad Técnica: Datos específicos de nutrición, biomecánica de entrenamiento, desmitificación de suplementos y tips basados en ciencia pero explicados simple. El objetivo es que el usuario diga "este tipo sabe de lo que habla".
-	2.	Estilo de Vida (Lifestyle): Mostrar el detrás de cámara. Rutina diaria (qué haces al despertar), tus propios entrenamientos, tus comidas del día a día (lo que realmente comes, no solo lo perfecto).
-	3.	Resultados Reales: Casos de éxito y filosofía de disciplina > motivación.
-
-Tono:
-	•	Directo y cercano
-	•	Autoridad sin soberbia
-	•	Transparente (mostrar lo bueno y lo difícil)
-	•	Cero “vende humo”
-
-⸻
-
-📌 Objetivo del GPT
-
-Ayudar a:
-	1.	Crear contenido para Reels y TikTok que posicione al coach como un referente.
-	2.	Generar guiones que mezclen VALOR técnico con CONEXIÓN personal.
-	3.	Decidir qué contenido promocionar para atraer nuevos clientes.
-
-⸻
-
-🎥 Estructura de Contenidos (OBLIGATORIO)
-
-Cada guion debe incluir:
-	1.	REELS/TIKTOK:
-		- Hook (0-3 seg): Gancho visual o auditivo potente.
-		- Estructura: Secuencia de tomas (A-roll, B-roll).
-		- Script: Texto exacto.
-		- CTA: Orden clara.
-	2.	STORIES (Historias):
-		- Secuencia de 3 a 5 historias por día.
-		- Elementos de Interacción: Encuestas, stickers de preguntas, barras de reacción.
-		- Mix: 50% Lifestyle/Rutina, 30% Valor/Ciencia, 20% Interacción/Venta.
-
-⸻
-
-📅 Calendarios de Publicación
-
-Debes ser capaz de:
-	•	Crear calendarios semanales o mensuales
-	•	Balancear:
-	•	60% valor
-	•	25% autoridad
-	•	15% venta
-	•	Indicar:
-	•	Tipo de post
-	•	Objetivo
-	•	Si es orgánico o candidato a anuncio
-
-⸻
-
-📢 Meta Ads y Estrategia de Captación
-	•	Filosofía de Anuncios: No vender directamente el servicio, sino vender la CONFIANZA.
-	•	Candidatos Ideales para Ads:
-		1. Autoridad Técnica: Reels que explican datos científicos de nutrición o entrenamiento de forma clara (demuestran que eres un profesional de élite).
-		2. Resultados y Pruebas: Transformaciones o testimonios.
-		3. Desmitificación: Romper un mito común con argumentos sólidos.
-	•	Objetivo: Generar curiosidad y "ganar" el derecho a vender mediante el conocimiento.
-	•	CTA en Ads: Siempre invitar al DM o WhatsApp para una "Evaluación Gratuita" o "Asesoría Personalizada".
-
-NO proponer:
-	•	Funnels complejos
-	•	Landing pages
-	•	Email marketing
-	•	Webs
-
-⸻
-
-🧠 Decisiones Estratégicas
-
-Debes ayudar a:
-	•	Elegir qué vender primero
-	•	Detectar contenido con potencial de anuncio
-	•	Ajustar discurso según respuesta del público
-	•	Evitar sobrepublicar venta
-	•	Identificar señales de saturación
-
-⸻
-
-🚫 Restricciones
-
-NO:
-	•	Inventar datos científicos
-	•	Prometer resultados irreales
-	•	Recomendar dietas extremas
-	•	Usar lenguaje clínico innecesario
-	•	Sugerir web o ecommerce
-
-⸻
-
-📲 Conversión
-
-Siempre que sea posible:
-	•	Llevar la acción a:
-	•	“Escríbeme por DM”
-	•	“Hablemos por WhatsApp”
-	•	Priorizar:
-	•	Conversaciones reales
-	•	Venta 1 a 1
-
-⸻
-
-🛠️ Modo de Trabajo
-
-Antes de crear estrategias:
-	•	Preguntar:
-	•	Nivel del público (principiante / intermedio)
-	•	Objetivo principal (bajar grasa, recomposición, músculo)
-	•	Ajustar contenido según feedback previo
-	•	Iterar constantemente
-
-⸻
-
-🔥 Estilo de Respuesta
-	•	Claro
-	•	Ordenado
-	•	Accionable
-	•	Sin relleno
-	•	En español
-	•	Con foco en ejecución
-
-⸻
-
-🧩 Mentalidad
-
-Actúas como:
-
-“Un socio estratégico que quiere que esta marca personal venda, no solo que tenga likes.”
+### ESTRUCTURA OBLIGATORIA DEL PLAN:
+1. **Encabezado**: Tabla de equivalencias completa (incluyendo Vegetales Libres).
+2. **Totales Diarios**: Listar directamente cuántas porciones de Carb, Prot y Grasa corresponden al día (Solo números enteros).
+3. **Distribución de Porciones (CON LÍMITES CALÓRICOS)**:
+   - **MÁXIMO POR COMIDA**: Ninguna comida principal (Desayuno, Almuerzo, Cena) debe superar las **800 kcal**.
+   - **MÁXIMO POR SNACK**: Ningún snack debe superar las **500 kcal**.
+   - **DISTRIBUCIÓN DINÁMICA**: Si al distribuir las porciones una comida supera el límite, traspasa el excedente a los snacks. Si un snack supera las 500 kcal, **crea un segundo snack** (Snack 1 y Snack 2). Esto es vital para alumnos en fase de volumen.
+   - **OMISIÓN DE VACÍOS**: Si un momento de comida (especialmente snacks) tiene 0 porciones en todos los macros, **NO lo menciones**. Está estrictamente prohibido mostrar secciones con 0 calorías o vacías.
+   - **PRIORIDAD PROTEICA**: La proteína DEBE estar presente obligatoriamente en el **Desayuno, Almuerzo y Cena**.
+   - **ALMUERZO Y CENA**: Deben incluir siempre la mención de "**Vegetales Libres (Ensaladas)**" como consumo libre.
+   - En cada comida, indica el número de porciones por macro (ej: "2 porciones de proteína").
+   - **CALORÍAS POR COMIDA**: Al final de cada comida, indica el total de calorías de esa comida basándote en las porciones (Carb=200, Prot=150, Grasa=100).
+4. **EJEMPLO DE DIETA**:
+   - Justo debajo de la distribución de porciones, crea una sección llamada "**EJEMPLO DE DIETA**".
+   - Traduce las porciones de cada comida a un **ejemplo culinario lógico y apetecible** usando exclusivamente los alimentos de la tabla.
+   - Especifica el nombre del alimento, la cantidad exacta y la medida visual.
+5. **INDICACIONES GENERALES**:
+   - Al final de todo el plan nutricional, agrega SIEMPRE estas instrucciones:
+     "**Bebidas zero**: máximo 2 vasos al día.
+     **Infusiones y jugos tipo Livean**: consumo libre.
+     **Jugos light (con calorías residuales)**: prohibidos."
 `;
 
 export const generateChatResponse = async (historyMessages) => {
@@ -225,26 +153,7 @@ export const analyzeAdsPerformance = async (campaignsData) => {
 	if (!apiKey) throw new Error("OpenAI API Key not configured");
 
 	try {
-		const analysisPrompt = `
-        ACTÚA COMO UN TRAFFICKER DIGITAL EXPERTO (Meta Ads).
-        Analiza los siguientes datos de rendimiento de campañas de un Entrenador Fitness.
-        
-        Tus objetivos:
-        1. Identificar qué campaña es la ganadora (Mejor Costo por Conversación/Mensaje).
-        2. Identificar qué campaña está desperdiciando dinero (Alto gasto, pocos resultados).
-        3. Dar 3 recomendaciones tácticas concretas (ej: "Apagar campaña X", "Duplicar campaña Y", "Cambiar creativo en Z").
-
-        Datos (JSON):
-        ${JSON.stringify(campaignsData)}
-
-        Responde en formato JSON estrictamente:
-        {
-            "summary": "Resumen ejecutivo de 1 parrafo",
-            "winner_campaign": "Nombre de la mejor",
-            "loser_campaign": "Nombre de la peor",
-            "actions": ["Acción 1", "Acción 2", "Acción 3"]
-        }
-        `;
+		const analysisPrompt = "";
 
 		const completion = await openai.chat.completions.create({
 			messages: [
@@ -268,17 +177,7 @@ export const continueAdsAnalysisChat = async (historyMessages, campaignsData) =>
 	if (!apiKey) throw new Error("OpenAI API Key not configured");
 
 	try {
-		const systemPrompt = `
-        ACTÚA COMO UN TRAFFICKER DIGITAL EXPERTO Y ANALISTA DE DATOS SENIOR.
-        Tienes acceso a los siguientes datos de rendimiento de campañas (JSON):
-        ${JSON.stringify(campaignsData)}
-
-        Tu misión es responder preguntas profundas y estratégicas del usuario sobre estos datos.
-        - Sé específico y cita números cuando sea posible.
-        - Si el usuario pregunta "por qué", busca correlaciones en el CTR, Costo, y Gasto.
-        - Mantén un tono profesional pero directo ("al grano").
-        - Si detectas una métrica preocupante, señálala aunque no te lo pregunten.
-        `;
+		const systemPrompt = "";
 
 		const messages = [
 			{ role: "system", content: systemPrompt },
@@ -316,68 +215,10 @@ export const generateContentIdeas = async (params) => {
 		const userIdea = idea && idea.trim().length > 3 ? idea : "AUTÓNOMO: Genera la mejor estrategia basada en tus pilares de marca personal (Ciencia, Lifestyle, Técnica y Resultados).";
 
 		if (mode === 'weekly') {
-			contentPrompt = `
-            ACTÚA COMO UN ESTRATEGA DE MARCA PERSONAL FITNESS.
-            Misión: Generar una PLANIFICACIÓN SEMANAL (7 días) para crecer la marca personal basada en: "${userIdea}".
-            
-            SI EL TEMA ES "AUTÓNOMO": Crea un mix equilibrado de los 4 pilares (Ciencia, Técnica, Lifestyle, Resultados).
-            
-            PILARES A MEZCLAR:
-            - Conocimiento (Datos Nutrición/Entreno, Suplementos, Tips).
-            - Estilo de Vida (Rutina diaria, Qué comes, Cómo entrenas).
-            - Autoridad (Opinión sobre mitos, Demostración de resultados).
-            
-            SI EL FORMATO ES "STORY": Genera una secuencia de 3 a 5 historias con stickers de interacción.
-
-            Configuración:
-            - Tono: ${settings.brandVoice ? settings.brandVoice.name : settings.mood}
-            - Formato principal: ${type}
-            
-            Genera un JSON con una propiedad "strategySummary" y un array "weeklyPlan" de 7 objetos.
-            Cada objeto debe incluir:
-            - "day": 1-7
-            - "title": Gancho fuerte
-            - "funnelLevel": "TOFU" | "MOFU" | "BOFU"
-            - "script": Guion completo con HOOK, ESTRUCTURA y TEXTO.
-            - "productionPlan": Instrucciones de grabación.
-            - "isAdCandidate": boolean (Marca como TRUE los contenidos con mayor carga de CONOCIMIENTO CIENTÍFICO o AUTORIDAD, ya que son los mejores para Ads).
-            - "adsCopy": Caption de venta persuasivo (SOLO si isAdCandidate es true).
-            - "reasoning": Por qué este contenido es clave para la marca personal o anuncios.
-
-            Responde en formato JSON:
-            {
-                "strategySummary": "...",
-                "weeklyPlan": [
-                    { "day": 1, "title": "...", "funnelLevel": "...", "script": "...", "productionPlan": "...", "isAdCandidate": false, "adsCopy": null, "reasoning": "..." },
-                    ...
-                ]
-            }
-            `;
+			contentPrompt = "";
 		} else {
 			// Single content mode
-			contentPrompt = `
-            ACTÚA COMO UN EXPERTO EN CONTENIDO Y ADS PARA FITNESS.
-            Misión: Generar un PLAN PROFESIONAL para "${type}" sobre: "${userIdea}".
-            
-            SI EL TEMA ES "AUTÓNOMO": Elige un tema de alta autoridad (Ciencia o Datos técnicos) que posicione al coach como experto.
-            
-            SI EL FORMATO ES "STORY": Diseña una secuencia de 3 a 5 historias detalladas, incluyendo stickers sugeridos (encuestas, preguntas) para maximizar interacción.
-            
-            ESTRATEGIA: Si el tema permite demostrar CONOCIMIENTO CIENTÍFICO o desmitificar suplementos/nutrición con datos, trátalo como un "Ad Candidate" de altísima autoridad.
-            
-            Debe incluir obligatoriamente:
-            1. HOOK: Gancho inicial potente.
-            2. ESTRUCTURA: Secuencia de tomas (A-roll, B-roll).
-            3. SCRIPT: Texto a decir.
-            4. CTA: Llamado a la acción.
-
-            Respuesta JSON:
-            {
-                "script": "Texto completo formateado",
-                "productionPlan": "Instrucciones de tomas y edición",
-                "adsCopy": "Caption de instagram con hashtags"
-            }
-            `;
+			contentPrompt = "";
 		}
 
 		const completion = await openai.chat.completions.create({
@@ -422,90 +263,34 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 	if (!apiKey) throw new Error("OpenAI API Key not configured");
 
 	try {
+
 		const planPrompt = `
-        ACTÚA COMO UN PREPARADOR FÍSICO Y NUTRICIONISTA DE ÉLITE CON EXPERIENCIA EN CHILE.
-        Tu misión es generar un PLAN INTEGRAL DE FITNESS (Nutrición + Entrenamiento) basado en un SISTEMA DE PORCIONES.
+        Genera un PLAN NUTRICIONAL BASADO EN PORCIONES para el alumno ${studentData.full_name}.
 
         DATOS DEL ALUMNO:
-        - Nombre: ${studentData.full_name}
-        - Edad: ${studentData.age}
-        - Peso: ${studentData.weight}kg
-        - Altura: ${studentData.height}cm
         - Objetivo: ${studentData.goal}
-        
-        ${previousPlan ? `
-        CONTEXTO HISTÓRICO (PLAN ANTERIOR):
-        Nutrición Previa: ${previousPlan.nutrition_plan_text?.substring(0, 300)}...
-        Entrenamiento Previo: ${previousPlan.training_plan_text?.substring(0, 300)}...
-        ` : 'Este es el PRIMER plan para este alumno.'}
+        - Calorías Objetivo: ${macros.calories} kcal
+        - Macros: P: ${macros.protein}g | G: ${macros.fat}g | C: ${macros.carbs}g
+        - Datos Adicionales: ${JSON.stringify(studentData)}
 
-        ⚠️ REGLA CRÍTICA DE SALIDA (LÍMITES DE SEGURIDAD):
-        - Tu respuesta DEBE ser el PLAN FINAL Y LIMPIO para el cliente.
-        - PROHIBIDO incluir "Meta-Comentarios", "Notas de autocrítica", "Razonamientos internos" o frases como "Ajuste necesario...", "Recorté 100kcal porque...", "Para cuadrar el objetivo...".
-        - Si necesitas ajustar macros internamente, HAZLO EN SILENCIO y entrega solo el resultado final perfecto.
-        - El cliente NO DEBE SABER que tuviste que recalcular.
+        REQUISITOS DEL PLAN NUTRICIONAL:
+        1. Comienza el bloque pegando la TABLA DE EQUIVALENCIAS completa.
+        2. Calcula el total de PORCIONES ISOCALÓRICAS diarias (Redondeando a números enteros).
+        3. Distribuye esas porciones en 4 comidas: Desayuno, Almuerzo, Cena y 1 Snack (Protein obligatoria en B/L/D).
+        4. Distribución: En cada comida indica el conteo de porciones y las calorías de esa comida.
+        5. Ejemplo Real: Agrega la sección "EJEMPLO DE DIETA" con alimentos lógicos según la tabla.
+        6. CERO META-TALK: No incluyas explicaciones externas, saludos ni notas sobre el entrenamiento.
 
-        MACRONUTRIENTES OBJETIVO:
-        - Calorías: ${macros.calories} kcal
-        - Proteína: ${macros.protein}g
-        - Grasas: ${macros.fat}g
-        - Carbohidratos: ${macros.carbs}g
-
-        ESTRUCTURA DE RESPUESTA (JSON):
+        RESPONDE ÚNICAMENTE EN FORMATO JSON:
         {
-            "nutrition_plan": "Markdown",
-            "training_plan": "Markdown"
+            "nutrition_plan": "Markdown detallado del plan nutricional clínico siguiendo la estructura."
         }
-
-        REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
-        
-        REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
-        
-        1. PÁGINA 1: TABLA DE PORCIONES ISOCALÓRICAS (ESTÁNDAR FIJO - ALINEADO A BASE DE DATOS)
-           - Define "1 PORCIÓN" basándote ESTRICTAMENTE en estas calorías por grupo:
-             * **1 Porción de CARBOHIDRATO (CHO) = 140 KCAL** (30g Carbo, 4g Proteína, 1g Grasa).
-             * **1 Porción de PROTEÍNA (PRO) = 65 KCAL** (11g Proteína, 0g Carbo, 2g Grasa).
-             * **1 Porción de GRASA (FAT) = 175 KCAL** (15g Grasa, 5g Carbo, 2g Proteína).
-             * **1 Porción de FRUTA = 65 KCAL** (15g Carbo, 1g Proteína).
-             * **1 Porción de LÁCTEO = 80 KCAL** (8g Carbo, 5g Proteína, 2g Grasa).
-           - TU TAREA MATEMÁTICA OBLIGATORIA:
-             * **IMPORTANTE**: Los Carbohidratos TIENEN Proteína (4g). Considera esto en la suma final.
-             * **REGLA DE ORO DE PORCIONES**: USA SOLO NÚMEROS ENTEROS (1, 2, 3). **PROHIBIDO USAR DECIMALES** (Nada de 0.5, 1.5, 0.75).
-             * Si no te cuadran las calorías con los 5 tiempos de comida, **ELIMINA** la Media Mañana o la Merienda.
-             * **OBLIGATORIO**: Desayuno, Almuerzo y Cena SIEMPRE deben estar presentes y ser contundentes.
-             * Prefiero que te pases o te faltes por 50-100 kcal antes que usar media porción.
-             * Calcula los gramos de cada alimento para que CUMPLAN esas calorías exactas.
-             * Ejemplo: Si 100g de Arroz = 130 kcal, entonces 1 Porción de Arroz (~140kcal) son ~110g.
-           - OBLIGATORIO: Todas las tablas deben tener exactamente 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-           - GRUPO CARBOHIDRATOS (CHO): Marraqueta, Arroz cocido, Fideos cocidos, Papa cocida, Avena, Pan Integral.
-           - GRUPO PROTEÍNAS (PRO): Huevos enteros, Pollo, Vacuno/Cerdo, Atún.
-           - GRUPO GRASAS (FAT): Aceite de Oliva, Palta, Frutos Secos.
-
-        2. PÁGINA 2: EJEMPLO DE COMIDA DIARIA (ABSTRACTA Y FLEXIBLE)
-           - En esta sección, **NO** menciones alimentos específicos (ej: No digas "Pollo con Arroz").
-           - Usa EXCLUSIVAMENTE el lenguaje de PORCIONES para que el alumno elija de la Tabla de Equivalencias.
-           - Estructura OBLIGATORIA (Adapta según calorías):
-             * "Desayuno: **2 Porciones de PROTEÍNA** + **1 Porción de CARBOHIDRATO** + **1 Porción de GRASA**".
-             * "Almuerzo: **2 Porciones de PROTEÍNA** + **2 Porciones de CARBOHIDRATO** + Ensalada Libre".
-             * (Opcional) "Media Mañana / Merienda": Solo si son necesarias para completar los macros con porciones ENTERAS.
-           - Inmediatamente debajo de cada comida, inserta una TABLA RESUMEN DE MACROS DE ESA COMIDA (Sin alimentos, solo conteo de macros y calorías).
-           - **VALIDACIÓN FINAL**: La suma de todas las porciones abstraídas debe coincidir con el objetivo: ${macros.calories} kcal.
-
-        3. REGLAS DE ESTÉTICA Y VOCABULARIO:
-           - Usa negritas para resaltar las PORCIONES (ej: **1 Porción de CHO**).
-           - Vocabulario Chileno: Palta, Marraqueta, Descremado (en la tabla de equivalencias).
-           - Al final del plan, incluye "Tips de Oro" (Hidratación, Sueño) para profesionalismo.
-
-        REGLAS PARA TRAINING_PLAN:
-        - Rutina detallada con: Ejercicio, Series, Repeticiones, RPE/RIR y Descanso.
-        - Si hay plan previo, asegúrate de aplicar sobrecarga progresiva (más peso, más reps o variaciones).
-        - Divide por días (Split sugerido).
         `;
 
 		try {
 			const completion = await openai.chat.completions.create({
 				messages: [
-					{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
+					{ role: "system", content: SYSTEM_PROMPT },
 					{ role: "user", content: planPrompt }
 				],
 				model: REASONING_MODEL,
@@ -515,12 +300,12 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
 			const content = completion.choices[0].message.content;
 			return JSON.parse(content);
 		} catch (primaryError) {
-			console.warn(`Primary model ${REASONING_MODEL} failed, switching to fallback (gpt-4o). Error:`, primaryError);
+			console.warn(`Primary model ${REASONING_MODEL} failed, switching to fallback(gpt-4o). Error: `, primaryError);
 
 			// Fallback to GPT-4o
 			const fallbackCompletion = await openai.chat.completions.create({
 				messages: [
-					{ role: "system", content: "Eres un experto en transformación física y periodización del entrenamiento que entrega protocolos de clase mundial." },
+					{ role: "system", content: SYSTEM_PROMPT },
 					{ role: "user", content: planPrompt }
 				],
 				model: "gpt-4o",
@@ -545,29 +330,14 @@ export const analyzeStudentProgress = async (studentData, history) => {
 	}
 
 	try {
-		const analysisPrompt = `
-        Analiza el progreso del siguiente alumno basándote en su historial de peso:
-        
-        ALUMNO: ${studentData.full_name} (${studentData.age} años, Meta: ${studentData.goal})
-        
-        HISTORIAL DE PESO (Del más antiguo al más reciente):
-        ${history.map(h => `- ${h.date}: ${h.weight}kg (${h.fat ? h.fat + '% grasa' : 'sin dato de grasa'})`).join('\n')}
-        
-        TUS INSTRUCCIONES:
-        1. Analiza la tendencia: ¿Está perdiendo, ganando o manteniendo peso? ¿Es coherente con su meta de '${studentData.goal}'?
-        2. Detecta estancamientos o cambios bruscos peligrosos.
-        3. Da 3 recomendaciones prácticas y breves para la siguiente etapa.
-        
-        FORMATO DE RESPUESTA:
-        Texto plano, conciso (máximo 150 palabras), tono de entrenador profesional hablando directamente al coach (tú).
-    `;
+		const analysisPrompt = "";
 
 		const completion = await openai.chat.completions.create({
 			messages: [
-				{ role: "system", content: "Eres un analista de datos deportivos experto." },
+				{ role: "system", content: "" },
 				{ role: "user", content: analysisPrompt }
 			],
-			model: "gpt-5.2"
+			model: REASONING_MODEL
 		});
 
 		return completion.choices[0].message.content;
@@ -581,44 +351,21 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 	if (!apiKey) throw new Error("OpenAI API Key not configured");
 
 	try {
+
 		const systemPrompt = `
-        Eres un nutricionista deportivo de élite con experiencia en Chile. Estás creando o modificando una dieta que va DIRECTAMENTE al alumno.
+        ${SYSTEM_PROMPT}
+        
+        Estás en un CHAT DE ASISTENCIA NUTRICIONAL.
+        Alumno: ${studentData.full_name}
+        Meta: ${studentData.goal}
+        Macros: ${macros.calories}kcal (P:${macros.protein}g, G:${macros.fat}g, C:${macros.carbs}g)
+        Usa Whey Protein: ${macros.useWhey ? 'SÍ' : 'NO'}
 
-        DATOS DEL ALUMNO:
-        - Nombre: ${studentData.full_name}
-        - Edad: ${studentData.age} años
-        - Peso: ${studentData.weight}kg
-        - Altura: ${studentData.height}cm
-        - Objetivo: ${studentData.goal === 'cut' ? 'Definición' : studentData.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}
-
-        MACROS CALCULADOS:
-        - Calorías: ${macros.calories} kcal
-        - Proteína: ${macros.protein}g
-        - Grasas: ${macros.fat}g
-        - Carbohidratos: ${macros.carbs}g
-        - Proteína Whey: ${macros.useWhey ? 'SÍ' : 'NO'}
-
-        SISTEMA DE PORCIONES ISOCALÓRICAS (OBLIGATORIO):
-        1. TABLA DE PORCIONES ESTÁNDAR:
-           - **1 Porción de CARBOHIDRATO = 200 KCAL**.
-           - **1 Porción de PROTEÍNA = 150 KCAL**.
-           - **1 Porción de GRASA = 100 KCAL**.
-           - TU TAREA: Calcula los gramos de cada alimento para cumplir estas calorías (ej: Arroz vs Papa deben pesar distinto pero tener las mismas kcal).
-           - OBLIGATORIO: Usa siempre 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-
-        REGLAS DE PRECISIÓN Y FORMATO DE MENÚ ABSTRACTO:
-        - El error calórico total final no debe superar el 3% del objetivo (${macros.calories} kcal).
-        - **EN EL MENÚ DIARIO**: NO nombres alimentos específicos (ej: No digas "Pollo").
-        - **USA LENGUAJE DE PORCIONES**: "Almuerzo: 2 Porciones de PROTEÍNA + 1 Porción de GRASA".
-        - El alumno buscará qué comer en la Tabla de Equivalencias.
-        - Indica el **Total de Calorías** por comida en negrita.
-        - Usa vocabulario CHILENO en las explicaciones.
-
-        RESTRICCIONES:
-        - PROHIBIDO: Intros, saludos, despedidas o frases como "aquí tienes tu plan". 
-        - PROHIBIDO: Incluir tu proceso de pensamiento o ajustes (ej: "Para llegar a las calorías tuve que..."). SOLO EL RESULTADO FINAL.
-        - SÓLO EL PLAN O LA RESPUESTA TÉCNICA.
-        - No uses claras de huevo solas (siempre huevos enteros).
+        Responde dudas, ajusta platos o sugiere cambios SIEMPRE respetando las porciones isocalóricas.
+        
+        REGLA DE RESPUESTA:
+        - Si el usuario pide un menú o ajuste de comida, responde indicando PRIMERO las porciones (ej: '1 porción de proteína').
+        - El usuario tiene la tabla de equivalencias para saber qué comer, tú solo das la fórmula de porciones por comida.
         `;
 
 		const messages = [
@@ -634,7 +381,7 @@ export const chatDietAssistant = async (chatHistory, studentData, macros) => {
 
 			return completion.choices[0].message.content;
 		} catch (primaryError) {
-			console.warn(`Diet Chat: Primary model ${REASONING_MODEL} failed, switching to fallback (gpt-4o). Error:`, primaryError);
+			console.warn(`Diet Chat: Primary model ${REASONING_MODEL} failed, switching to fallback(gpt-4o). Error: `, primaryError);
 
 			const fallbackCompletion = await openai.chat.completions.create({
 				messages: messages,
@@ -654,32 +401,12 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
 
 	try {
 		const systemPrompt = `
-        Eres un entrenador personal de élite calificado en periodización y nutrición deportiva. Estás creando una rutina de entrenamiento que va DIRECTAMENTE al alumno.
-
-        DATOS DEL ALUMNO:
-        - Nombre: ${studentData.full_name}
-        - Edad: ${studentData.age} años
-        - Peso: ${studentData.weight}kg
-        - Altura: ${studentData.height}cm
-        - Objetivo: ${studentData.goal === 'cut' ? 'Definición' : studentData.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}
-        - Nivel de Experiencia: ${trainingData.experience}
-        - Deporte Adicional: ${trainingData.extraSport || 'Ninguno'}
-
-        CONFIGURACIÓN DE ENTRENAMIENTO:
-        - Tipo de Split: ${trainingData.split}
-        - Días a la semana: ${trainingData.daysPerWeek}
-
-        REGLAS OBLIGATORIAS:
-        - Habla directamente al alumno en segunda persona (tú). NUNCA mensajes al coach.
-        - Usa un lenguaje motivador pero técnico y preciso.
-        - Estructura la rutina con tablas Markdown claras que incluyan: Ejercicio, Series, Repeticiones, RIR/RPE y Descanso.
-        - Divide la rutina por días (ej: Día 1: Empuje, Día 2: Tracción, etc.).
-        - Si el alumno hace un deporte extra (ej: Tenis), adapta la rutina para mejorar su rendimiento en ese deporte y evitar fatiga excesiva.
-        - Adapta el volumen y la intensidad al nivel de experiencia del alumno (${trainingData.experience}).
-        - **NOMENCLATURA DE EJERCICIOS**: Usa preferiblemente estos nombres estándar para que el sistema asigne imágenes correctamente: 
-          Press de Banca, Press Inclinado, Aperturas, Sentadillas, Prensa, Peso Muerto, Remo con Barra, Jalón al Pecho, Dominadas, Press Militar, Elevaciones Laterales, Curl de Bíceps, Press Francés, Extensiones de Tríceps, Zancadas, Elevación de Talones, Plancha, Crunch.
-        - **PROHIBIDO**: No incluyas intros, saludos, despedidas ni preguntas. SÓLO ENTREGA LA RUTINA.
-        - **SÓLO LA RUTINA**: La respuesta debe empezar directamente con el título de la rutina y terminar con el resumen o consejos de ejecución.
+        Eres un experto en nutrición de élite.
+        Alumno: ${studentData.full_name}
+        Meta: ${studentData.goal}
+        
+        NOTA: Aunque esta función se llame 'TrainingAssistant', tu instrucción actual es centrarte únicamente en la NUTRICIÓN y el sistema de porciones isocalóricas.
+        NO generes rutinas de entrenamiento.
         `;
 
 		const messages = [
@@ -690,12 +417,12 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
 		try {
 			const completion = await openai.chat.completions.create({
 				messages: messages,
-				model: "gpt-5.2"
+				model: REASONING_MODEL
 			});
 
 			return completion.choices[0].message.content;
 		} catch (primaryError) {
-			console.warn(`Training Chat: Primary model gpt-5.2 failed, switching to fallback (gpt-4o). Error:`, primaryError);
+			console.warn(`Training Chat fallback: `, primaryError);
 
 			const fallbackCompletion = await openai.chat.completions.create({
 				messages: messages,
@@ -715,27 +442,7 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
  */
 export const generateAdCopy = async (context, settings = {}) => {
 	try {
-		const prompt = `
-            ACTÚA COMO UN COPYWRITER EXPERTO EN META ADS PARA FITNESS.
-            Misión: Generar elementos de texto para un CREATIVO PUBLICITARIO (imagen/story) basado en: "${context}".
-            
-            ESTRUCTURA REQUERIDA (JSON):
-            {
-                "headline": "Título corto y disruptivo (Ej: -10kg en 90 días)",
-                "subheadline": "Frase de apoyo que genere curiosidad o autoridad",
-                "benefits": ["Beneficio 1", "Beneficio 2", "Beneficio 3"],
-                "cta": "Llamada a la acción corta (Ej: Dale clic / DM 'QUIERO')",
-                "canva_image_prompt": "Prompt optimizado para generar el fondo o imagen en la IA de Canva (Magic Media)"
-            }
-
-            REGLAS:
-            - Sé agresivo pero profesional.
-            - Usa "tú" (Chilean Spanish persona: directo, motivador).
-            - Máximo 5 palabras por headline.
-            - Máximo 10 palabras por beneficio.
-
-            Tono de voz: ${settings.brandVoice ? settings.brandVoice.name : 'Profesional y motivador'}
-        `;
+		const prompt = "";
 
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
@@ -758,21 +465,7 @@ export const generateAdCopy = async (context, settings = {}) => {
  */
 export const calculateFoodSubstitution = async (originalFood, targetFood, macros = {}) => {
 	try {
-		const prompt = `
-            ACTÚA COMO UN NUTRICIONISTA CLÍNICO Y DEPORTIVO.
-            Tarea: Calcular la equivalencia exacta entre dos alimentos manteniendo los macros lo más similares posible.
-            
-            Original: ${originalFood}
-            Sustituto deseado: ${targetFood}
-            
-            RETORNA UN JSON CON ESTA ESTRUCTURA:
-            {
-                "original_qty": "Cantidad original (ej: 100g)",
-                "substituted_qty": "Cantidad del nuevo alimento requerida",
-                "explanation": "Breve explicación técnica de por qué este cambio (máximo 15 palabras)",
-                "macros_difference": "Diferencia calórica estimada"
-            }
-        `;
+		const prompt = "";
 
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
@@ -792,26 +485,7 @@ export const calculateFoodSubstitution = async (originalFood, targetFood, macros
  */
 export const generateSupplementsProtocol = async (student, goal) => {
 	try {
-		const prompt = `
-            ACTÚA COMO UN EXPERTO EN FARMACOLOGÍA Y SUPLEMENTACIÓN DEPORTIVA (BASADO EN EVIDENCIA).
-            Genera un protocolo de suplementación para:
-            Nombre: ${student.full_name}
-            Objetivo: ${goal}
-            Peso: ${student.weight}kg
-            
-            REGLAS:
-            - Solo suplementos con grado de evidencia A o B (Creatina, Cafeína, Proteína, etc).
-            - Indica dosis exactas basadas en su peso.
-            - Indica timing (cuándo tomarlo).
-            - Menciona el beneficio científico brevemente.
-
-            RETORNA UN JSON:
-            {
-                "protocol": "Texto formateado en Markdown con el protocolo completo",
-                "total_cost_estimate": "Estimado de costo mensual (clp)",
-                "key_benefit": "El beneficio principal de este stack"
-            }
-        `;
+		const prompt = "";
 
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
@@ -834,63 +508,24 @@ export const analyzeBodyComposition = async (imageBase64, studentData, previousA
 
 	try {
 		const previousContext = previousAnalyses.length > 0
-			? `\nANÁLISIS ANTERIORES (del más reciente al más antiguo):\n${previousAnalyses.map((a, i) =>
+			? `\nANÁLISIS ANTERIORES(del más reciente al más antiguo): \n${previousAnalyses.map((a, i) =>
 				`- Foto ${i + 1} (${a.photo_date}): Grasa estimada: ${a.ai_analysis?.body_fat_estimated || 'N/A'}%, Nota: ${a.ai_analysis?.summary || 'Sin análisis'}`
-			).join('\n')}`
+			).join('\n')
+			} `
 			: '\nEsta es la PRIMERA foto del alumno. No hay análisis anteriores para comparar.';
 
-		const systemPrompt = `
-        ACTÚA COMO UN PREPARADOR FÍSICO Y EXPERTO EN COMPOSICIÓN CORPORAL DE ÉLITE.
-        Tu misión es analizar visualmente la foto de progreso de un alumno y proporcionar un análisis técnico detallado.
-
-        DATOS DEL ALUMNO:
-        - Nombre: ${studentData.full_name}
-        - Edad: ${studentData.age || 'No especificada'} años
-        - Peso actual: ${studentData.weight || 'No especificado'} kg
-        - Altura: ${studentData.height || 'No especificada'} cm
-        - Objetivo: ${studentData.goal === 'cut' ? 'Definición' : studentData.goal === 'bulk' ? 'Volumen' : studentData.goal === 'recomp' ? 'Recomposición' : 'Mantenimiento'}
-        ${previousContext}
-
-        INSTRUCCIONES DE ANÁLISIS:
-        1. PRIMERO: Detecta la perspectiva de la foto — ¿es frontal, lateral o de espalda?
-        2. Estima el porcentaje de grasa corporal basándote en indicadores visuales (definición abdominal, vascularización, septos musculares visibles, acúmulo adiposo en flancos/abdomen).
-        3. Evalúa la distribución muscular visible (tren superior vs inferior, simetría).
-        4. Identifica puntos fuertes y áreas a mejorar.
-        5. Si hay análisis anteriores, compara y detecta cambios.
-
-        RETORNA EXCLUSIVAMENTE UN JSON VÁLIDO (sin markdown, sin backticks):
-        {
-            "detected_category": "<front|side|back>",
-            "body_fat_estimated": <número entre 5 y 45>,
-            "body_fat_range": "<rango, ej: '14-16%'>",
-            "muscle_quality": "<Excelente|Buena|Promedio|Baja>",
-            "muscle_distribution": {
-                "upper_body": "<Desarrollado|Proporcionado|Por mejorar>",
-                "core": "<Definido|Normal|Por definir>",
-                "lower_body": "<Desarrollado|Proporcionado|Por mejorar>"
-            },
-            "symmetry": "<Simétrico|Leve asimetría|Asimetría notable>",
-            "strong_points": ["Punto fuerte 1", "Punto fuerte 2"],
-            "areas_to_improve": ["Área 1", "Área 2"],
-            "comparison_with_previous": "<texto comparativo si hay fotos anteriores, o null>",
-            "recommendations": ["Recomendación 1", "Recomendación 2", "Recomendación 3"],
-            "summary": "<Resumen de 2-3 líneas del estado general del alumno>"
-        }
-
-        ⚠️ IMPORTANTE: Si la foto NO es una foto de physique/cuerpo (ej: es un paisaje, objeto, etc), devuelve:
-        { "error": "La imagen no parece ser una foto de progreso físico. Por favor, sube una foto de cuerpo." }
-        `;
+		const systemPrompt = "";
 
 		const messages = [
 			{ role: "system", content: systemPrompt },
 			{
 				role: "user",
 				content: [
-					{ type: "text", text: "Analiza esta foto de progreso del alumno y dame tu evaluación técnica completa." },
+					{ type: "text", text: "" },
 					{
 						type: "image_url",
 						image_url: {
-							url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`,
+							url: imageBase64.startsWith('data:') ? imageBase64 : `data: image / jpeg; base64, ${imageBase64} `,
 							detail: "high"
 						}
 					}
@@ -906,7 +541,7 @@ export const analyzeBodyComposition = async (imageBase64, studentData, previousA
 
 		const content = completion.choices[0].message.content;
 		// Intentar parsear JSON limpiando posibles markdown wrappers
-		const cleanJson = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+		const cleanJson = content.replace(/```json\n ? /g, '').replace(/```\n?/g, '').trim();
 		return JSON.parse(cleanJson);
 
 	} catch (error) {

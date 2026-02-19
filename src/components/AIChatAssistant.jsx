@@ -35,7 +35,7 @@ export default function AIChatAssistant() {
             if (data && data.length > 0) {
                 setMessages(data);
             } else {
-                setMessages([{ role: 'assistant', content: '¡Hola! Soy tu socio estratégico para tu marca fitness. ¿En qué nos enfocamos hoy: Crear contenido, Meta Ads o Ventas?' }]);
+                setMessages([]);
             }
         } catch (error) {
             console.error('Error loading history:', error);
@@ -65,7 +65,7 @@ export default function AIChatAssistant() {
 
         } catch (error) {
             console.error('Chat Error:', error);
-            setMessages(prev => [...prev, { role: 'assistant', content: '🚨 Error de conexión. Verifica tu API Key o conexión a internet.' }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: '🚨 Error.' }]);
         } finally {
             setLoading(false);
         }
@@ -80,7 +80,7 @@ export default function AIChatAssistant() {
             const events = result.events || result.items || result;
 
             if (!Array.isArray(events) || events.length === 0) {
-                alert("No detecté contenido claro para agendar. Pídeme primero que planifique algo.");
+                alert("No detecté contenido claro para agendar.");
                 return;
             }
 
@@ -102,25 +102,25 @@ export default function AIChatAssistant() {
             // 3. Notify User via Chat
             const successMsg = {
                 role: 'assistant',
-                content: `✅ **Sincronización Completada**\n\nHe agendado **${events.length} piezas de contenido** con sus guiones y planes de grabación.\n\nPuedes ver los detalles completos en la pestaña **Calendario** o **Generador**.`
+                content: `✅ OK.`
             };
             await supabase.from('chat_messages').insert([successMsg]);
             setMessages(prev => [...prev, successMsg]);
 
         } catch (error) {
             console.error('Sync Error:', error);
-            alert('Hubo un error al sincronizar con el calendario.');
+            alert('Error.');
         } finally {
             setExtracting(false);
         }
     };
 
     const handleClearHistory = async () => {
-        if (!confirm('¿Estás seguro de querer borrar toda la memoria del chat?')) return;
+        if (!confirm('¿Estás seguro?')) return;
         try {
             const { error: deleteError } = await supabase.from('chat_messages').delete().gt('id', -1);
             if (deleteError) throw deleteError;
-            setMessages([{ role: 'assistant', content: 'Memoria borrada. Empecemos de nuevo.' }]);
+            setMessages([]);
         } catch (err) {
             console.error('Failed to clear history', err);
             alert('No se pudo borrar el historial.');
@@ -190,8 +190,8 @@ export default function AIChatAssistant() {
                         )}
 
                         <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${msg.role === 'user'
-                                ? 'bg-primary text-white rounded-tr-none'
-                                : 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50'
+                            ? 'bg-primary text-white rounded-tr-none'
+                            : 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50'
                             }`}>
                             {msg.content}
                         </div>

@@ -2,10 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { getFoods } from '../lib/supabase';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 
-const PortionReference = () => {
+const PortionReference = ({ forceOpen = false }) => {
     const [foods, setFoods] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    // If forceOpen is true, we always show content. 
+    // Effect to sync forceOpen with internal state if needed, or just use condition.
+    useEffect(() => {
+        if (forceOpen) setIsOpen(true);
+    }, [forceOpen]);
+
+    // ...
+
+    const showContent = isOpen || forceOpen;
 
     useEffect(() => {
         const loadFoods = async () => {
@@ -18,12 +28,10 @@ const PortionReference = () => {
     }, []);
 
     const groups = {
-        'protein': { title: 'Proteínas', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', note: '~65 kcal | 11g Proteína' },
-        'carb': { title: 'Carbohidratos', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', note: '~140 kcal | 30g Carbohidratos' },
-        'fat': { title: 'Grasas', color: 'text-yellow-600', bg: 'bg-yellow-600/10', border: 'border-yellow-600/20', note: '~175 kcal | 15g Grasa' },
-        'fruit': { title: 'Frutas', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', note: '~65 kcal | 15g Carbohidratos' },
-        'dairy': { title: 'Lácteos', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', note: '~70-90 kcal' },
-        'vegetable': { title: 'Vegetales', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', note: 'Libre consumo (generalmente)' },
+        'protein': { title: 'Proteínas y Lácteos', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', note: '~150 kcal | 31g Proteína' },
+        'carb': { title: 'Carbohidratos y Frutas', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', note: '~200 kcal | 45g Carbohidratos' },
+        'fat': { title: 'Grasas', color: 'text-yellow-600', bg: 'bg-yellow-600/10', border: 'border-yellow-600/20', note: '~100 kcal | 11g Grasa' },
+        'vegetable': { title: 'Vegetales (Libre Consumo)', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', note: 'Bajos en calorías' },
     };
 
     if (loading) return null;
@@ -46,7 +54,7 @@ const PortionReference = () => {
                 {isOpen ? <ChevronUp className="text-zinc-500" /> : <ChevronDown className="text-zinc-500" />}
             </button>
 
-            {isOpen && (
+            {showContent && (
                 <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2">
                     {Object.entries(groups).map(([key, config]) => {
                         const groupFoods = foods.filter(f => {

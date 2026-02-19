@@ -48,18 +48,17 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
 
         const element = document.getElementById('pdf-content');
         const opt = {
-            margin: [0, 0],
+            margin: 10,
             filename: `Elite_Plan_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
-            image: { type: 'jpeg', quality: 1 },
+            image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 800,
-                width: 800
+                windowWidth: 1024
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
         html2pdf().set(opt).from(element).save().then(() => {
@@ -180,45 +179,44 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                     <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                         <div id="pdf-content" style={{ width: '800px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Helvetica, Arial, sans-serif' }}>
                             <style>{`
-                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3 { 
+                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3, .pdf-content-body h4 { 
                                     color: #4c1d95 !important; 
-                                    margin-top: 40px !important; 
-                                    margin-bottom: 20px !important; 
+                                    margin-top: 30px !important; 
+                                    margin-bottom: 15px !important; 
                                     font-weight: 800 !important; 
                                     page-break-after: avoid !important;
                                     break-after: avoid !important;
-                                    page-break-inside: avoid !important;
-                                    break-inside: avoid !important;
-                                    display: block !important;
                                 }
-                                .pdf-content-body h1 { fontSize: 20px !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-                                .pdf-content-body h2 { fontSize: 18px !important; color: #6d28d9 !important; }
-                                .pdf-content-body h3 { fontSize: 16px !important; color: #7c3aed !important; }
-                                .pdf-content-body p { margin-bottom: 10px !important; orphans: 3; widows: 3; }
-                                .pdf-content-body ul, .pdf-content-body ol { margin-bottom: 10px !important; padding-left: 20px !important; }
-                                .pdf-content-body li { margin-bottom: 5px !important; }
+                                .pdf-content-body h1 { fontSize: 22px !important; border-bottom: 2px solid #7c3aed; padding-bottom: 5px; }
+                                .pdf-content-body h2 { fontSize: 20px !important; color: #6d28d9 !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+                                .pdf-content-body h3 { fontSize: 18px !important; color: #7c3aed !important; }
+                                .pdf-content-body p { margin-bottom: 10px !important; orphans: 4; widows: 4; }
+                                .pdf-content-body ul, .pdf-content-body ol { margin-bottom: 15px !important; padding-left: 20px !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+                                .pdf-content-body li { margin-bottom: 8px !important; }
                                 .pdf-content-body strong { color: #000 !important; font-weight: bold !important; }
                                 .pdf-content-body table { 
                                     width: 100% !important; 
                                     border-collapse: collapse !important; 
                                     margin: 20px 0 !important; 
-                                    font-size: 12px !important; 
-                                    page-break-inside: auto !important;
-                                    break-inside: auto !important;
+                                    font-size: 11px !important; 
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                    table-layout: fixed !important;
                                 }
-                                .pdf-content-body th { background-color: #f3f4f6 !important; padding: 8px !important; text-align: left !important; border: 1px solid #e5e7eb !important; }
-                                .pdf-content-body td { padding: 8px !important; border: 1px solid #e5e7eb !important; }
+                                .pdf-content-body th { background-color: #f3f4f6 !important; padding: 10px 5px !important; text-align: left !important; border: 1px solid #d1d5db !important; font-weight: 800 !important; text-transform: uppercase !important; font-size: 10px !important; }
+                                .pdf-content-body td { padding: 8px 5px !important; border: 1px solid #e5e7eb !important; word-wrap: break-word !important; }
                                 .pdf-content-body tr { 
                                     page-break-inside: avoid !important;
                                     break-inside: avoid !important;
-                                    page-break-after: auto !important;
-                                    break-after: auto !important;
                                 }
-                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3, .pdf-content-body h4 {
-                                    page-break-after: avoid !important;
-                                    break-after: avoid !important;
+                                /* Grupo de comida para evitar saltos */
+                                .pdf-content-body h3 + p, 
+                                .pdf-content-body h3 + ul,
+                                .pdf-content-body h3 + table {
+                                    page-break-before: avoid !important;
+                                    break-before: avoid !important;
                                 }
-                                .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
+                                .pdf-content-body blockquote { border-left: 4px solid #7c3aed !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; margin: 20px 0 !important; }
                             `}</style>
                             {/* Magazine Header */}
                             <div style={{ backgroundColor: '#7c3aed', padding: '60px 40px', color: '#fff', textAlign: 'center' }}>
@@ -249,18 +247,78 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                                 </div>
 
                                 {/* Content Sections */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '40px' }}>
-                                    <div>
-                                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>Protocolo Nutricional</h2>
+                                <div style={{ display: 'block', width: '100%' }}>
+                                    <div style={{ marginBottom: '40px' }}>
+                                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px', pageBreakAfter: 'avoid' }}>Protocolo Nutricional</h2>
                                         <div className="pdf-content-body" style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.nutrition_plan}</ReactMarkdown>
+                                            {(() => {
+                                                const text = generatedPlan.nutrition_plan || '';
+                                                const rawSections = text.split(/(?=^#{2,3}\s)/m);
+                                                const sections = [];
+
+                                                for (let i = 0; i < rawSections.length; i++) {
+                                                    let section = rawSections[i];
+                                                    if (!section.trim()) continue;
+
+                                                    const lines = section.trim().split('\n');
+                                                    if (lines.length === 1 && lines[0].startsWith('#') && i < rawSections.length - 1) {
+                                                        rawSections[i + 1] = section + rawSections[i + 1];
+                                                        continue;
+                                                    }
+                                                    sections.push(section);
+                                                }
+
+                                                return sections.map((section, idx) => {
+                                                    const isFirst = idx === 0;
+                                                    return (
+                                                        <div key={idx} className={isFirst ? "" : "pdf-section"} style={{
+                                                            pageBreakInside: isFirst ? 'auto' : 'avoid',
+                                                            breakInside: isFirst ? 'auto' : 'avoid',
+                                                            marginBottom: '20px',
+                                                            display: 'block'
+                                                        }}>
+                                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{section}</ReactMarkdown>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
                                     </div>
 
-                                    <div style={{ borderTop: '1px solid #e4e4e7', pt: '40px' }}>
-                                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>Sistema de Entrenamiento</h2>
+                                    <div style={{ borderTop: '2px solid #e4e4e7', paddingTop: '40px', pageBreakBefore: 'auto' }}>
+                                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#7c3aed', textTransform: 'uppercase', borderLeft: '8px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px', pageBreakAfter: 'avoid' }}>Sistema de Entrenamiento</h2>
                                         <div className="pdf-content-body" style={{ fontSize: '14px', lineHeight: '1.6', color: '#3f3f46' }}>
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedPlan.training_plan}</ReactMarkdown>
+                                            {(() => {
+                                                const text = generatedPlan.training_plan || '';
+                                                const rawSections = text.split(/(?=^#{2,3}\s)/m);
+                                                const sections = [];
+
+                                                for (let i = 0; i < rawSections.length; i++) {
+                                                    let section = rawSections[i];
+                                                    if (!section.trim()) continue;
+
+                                                    const lines = section.trim().split('\n');
+                                                    if (lines.length === 1 && lines[0].startsWith('#') && i < rawSections.length - 1) {
+                                                        rawSections[i + 1] = section + rawSections[i + 1];
+                                                        continue;
+                                                    }
+                                                    sections.push(section);
+                                                }
+
+                                                return sections.map((section, idx) => {
+                                                    const isFirst = idx === 0;
+                                                    return (
+                                                        <div key={idx} className={isFirst ? "" : "pdf-section"} style={{
+                                                            pageBreakInside: isFirst ? 'auto' : 'avoid',
+                                                            breakInside: isFirst ? 'auto' : 'avoid',
+                                                            marginBottom: '20px',
+                                                            display: 'block'
+                                                        }}>
+                                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{section}</ReactMarkdown>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

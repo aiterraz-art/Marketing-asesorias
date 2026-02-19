@@ -789,36 +789,12 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
 
         const initialMessage = {
             role: 'user',
-            content: `Genera un plan de alimentación completo y detallado para ${activeStudent.full_name}.
-
-            IMPORTANTE: Esta dieta va DIRECTAMENTE al alumno. NO incluyas mensajes al coach, ni explicaciones técnicas, ni frases como "para tu coach" o "estimado entrenador". Habla directamente al alumno en segunda persona (tú).
-            PROHIBIDO: No incluyas saludos, ni despedidas, ni preguntas, ni comentarios introductorios. Sólo entrega el plan de alimentación y las tablas.
-
-            ALIMENTOS PERMITIDOS (usar SOLO estos, no inventar otros):
-            - Proteínas: pollo, carne de vacuno, huevos enteros${useWhey ? ', proteína whey' : ''}
-            - Carbohidratos: arroz, fideos, papas cocidas, avena, pan integral
-            - Grasas: palta, aceite de oliva
-            - Lácteos: leche descremada, yogurt descremado, queso fresco
-            - Verduras: lechuga, tomate, pepino, brócoli, zapallo italiano (libres)
-            - Frutas: plátano, manzana, naranja (con moderación)
-
-            REGLAS DE FORMATO OBLIGATORIAS:
-            - Usa tablas con los macros EXACTOS de cada alimento (proteína, carbs, grasa en gramos) Y LAS CALORÍAS.
-            - Cada tabla DEBE tener una columna llamada "kcal" con las calorías de ese alimento.
-            - Al final de cada comida (Desayuno, Almuerzo, etc.), indica el **Total de Calorías de esa comida**.
-            - Incluye: Desayuno, Media Mañana, Almuerzo, Merienda y Cena.
-            - Los macros totales del día deben cuadrar lo más exacto posible con el objetivo.
-            - Para CADA alimento, muestra DOS columnas de cantidad:
-            1. **Gramos exactos** (para alumnos con pesa de cocina)
-            2. **Medida visual** (cucharadas soperas, vasos, puños, unidades) para alumnos SIN pesa
-            - Al final muestra un RESUMEN con el total de macros del día vs. el objetivo.
-            - Usa vocabulario CHILENO: descremado (no desnatado), palta (no aguacate), porotos (no judías), choclo (no elote).
-
-            Ejemplo de formato de tabla:
-            | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
-            |----------|----------|---------------|---|---|---|------|
-            | Pechuga de pollo | 150g | 1 palma | 46 | 0 | 3 | 211 |
-            | Arroz cocido | 200g | 1 taza | 4 | 44 | 0 | 204 |`
+            content: `Genera un plan de alimentación para ${activeStudent.full_name}.
+            Objetivo: ${activeStudent.goal}
+            Calorías: ${results.calories} kcal
+            Proteína: ${data.protein} g
+            Grasas: ${data.fat} g
+            Carbohidratos: ${results.carbs} g`
         };
         setChatMessages([initialMessage]);
 
@@ -865,12 +841,17 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
         if (!element) return;
 
         const opt = {
-            margin: [10, 10, 10, 10],
+            margin: 10,
             filename: `Dieta_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
+            html2canvas: {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                windowWidth: 1024
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
         import('html2pdf.js').then(html2pdf => {
@@ -1200,42 +1181,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                         lineHeight: '1.6',
                         boxSizing: 'border-box'
                     }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #7c3aed' }}>
-                            <h1 style={{ color: '#7c3aed', fontSize: '20px', margin: '0 0 8px 0', fontWeight: '700' }}>Plan Nutricional Personalizado</h1>
-                            <p style={{ color: '#666', fontSize: '12px', margin: '0' }}>
-                                {selectedStudent?.full_name} • {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
-                            </p>
-                        </div>
 
-                        {/* Macros Summary */}
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-around',
-                            backgroundColor: '#f8f7ff',
-                            border: '1px solid #e8e5f0',
-                            borderRadius: '8px',
-                            padding: '12px',
-                            marginBottom: '20px',
-                            fontSize: '11px'
-                        }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#7c3aed' }}>{results?.calories}</div>
-                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Calorías</div>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#7c3aed' }}>{data.protein}g</div>
-                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Proteína</div>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#f59e0b' }}>{data.fat}g</div>
-                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Grasas</div>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontWeight: '700', fontSize: '16px', color: '#3b82f6' }}>{results?.carbs}g</div>
-                                <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Carbohidratos</div>
-                            </div>
-                        </div>
 
                         {/* Content */}
                         <style dangerouslySetInnerHTML={{
@@ -1258,7 +1204,9 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                                 font-size: 10px;
                                 table-layout: fixed;
                                 word-wrap: break-word;
+                                page-break-inside: auto;
                             }
+                            .pdf-diet-content tr { page-break-inside: avoid; break-inside: avoid; }
                             .pdf-diet-content th {
                                 background-color: #7c3aed;
                                 color: white;
@@ -1280,7 +1228,78 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                             .pdf-diet-content hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
                         `}} />
                         <div className="pdf-diet-content">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lastAIResponse.content}</ReactMarkdown>
+                            {/* Header & Macros Summary - No .pdf-section class to allow it to share space with the tables */}
+                            <div className="pdf-intro-block" style={{ pageBreakInside: 'auto', marginBottom: '10px' }}>
+                                {/* Header */}
+                                <div style={{ textAlign: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #7c3aed' }}>
+                                    <h1 style={{ color: '#7c3aed', fontSize: '20px', margin: '0 0 8px 0', fontWeight: '700' }}>Plan Nutricional Personalizado</h1>
+                                    <p style={{ color: '#666', fontSize: '12px', margin: '0' }}>
+                                        {selectedStudent?.full_name} • {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                    </p>
+                                </div>
+
+                                {/* Macros Summary */}
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-around',
+                                    backgroundColor: '#f8f7ff',
+                                    border: '1px solid #e8e5f0',
+                                    borderRadius: '8px',
+                                    padding: '12px',
+                                    marginBottom: '20px',
+                                    fontSize: '11px'
+                                }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontWeight: '700', fontSize: '16px', color: '#7c3aed' }}>{results?.calories}</div>
+                                        <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Calorías</div>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontWeight: '700', fontSize: '16px', color: '#7c3aed' }}>{data.protein}g</div>
+                                        <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Proteína</div>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontWeight: '700', fontSize: '16px', color: '#f59e0b' }}>{data.fat}g</div>
+                                        <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Grasas</div>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontWeight: '700', fontSize: '16px', color: '#3b82f6' }}>{results?.carbs}g</div>
+                                        <div style={{ color: '#888', fontSize: '9px', textTransform: 'uppercase' }}>Carbohidratos</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {(() => {
+                                const text = lastAIResponse.content || '';
+                                const rawSections = text.split(/(?=^#{2,3}\s)/m);
+                                const sections = [];
+
+                                for (let i = 0; i < rawSections.length; i++) {
+                                    let section = rawSections[i];
+                                    if (!section.trim()) continue;
+
+                                    // If section is just a heading, merge with next
+                                    const lines = section.trim().split('\n');
+                                    if (lines.length === 1 && lines[0].startsWith('#') && i < rawSections.length - 1) {
+                                        rawSections[i + 1] = section + rawSections[i + 1];
+                                        continue;
+                                    }
+                                    sections.push(section);
+                                }
+
+                                return sections.map((section, idx) => {
+                                    const isFirst = idx === 0;
+                                    return (
+                                        <div key={idx} className={isFirst ? "" : "pdf-section"} style={{
+                                            pageBreakInside: isFirst ? 'auto' : 'avoid',
+                                            breakInside: isFirst ? 'auto' : 'avoid',
+                                            marginBottom: '25px',
+                                            display: 'block'
+                                        }}>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{section}</ReactMarkdown>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -1643,12 +1662,17 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         if (!element) return;
 
         const opt = {
-            margin: [10, 10, 10, 10],
+            margin: 10,
             filename: `Rutina_${activeStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 680 },
+            html2canvas: {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                windowWidth: 1024
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
         import('html2pdf.js').then(html2pdf => {
@@ -2072,12 +2096,42 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                             .pdf-training-content hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
                         `}} />
                         <div className="pdf-training-content">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={PDFMarkdownComponents}
-                            >
-                                {lastAIResponse.content}
-                            </ReactMarkdown>
+                            {(() => {
+                                const text = lastAIResponse.content || '';
+                                const rawSections = text.split(/(?=^#{2,3}\s)/m);
+                                const sections = [];
+
+                                for (let i = 0; i < rawSections.length; i++) {
+                                    let section = rawSections[i];
+                                    if (!section.trim()) continue;
+
+                                    const lines = section.trim().split('\n');
+                                    if (lines.length === 1 && lines[0].startsWith('#') && i < rawSections.length - 1) {
+                                        rawSections[i + 1] = section + rawSections[i + 1];
+                                        continue;
+                                    }
+                                    sections.push(section);
+                                }
+
+                                return sections.map((section, idx) => {
+                                    const isFirst = idx === 0;
+                                    return (
+                                        <div key={idx} className={isFirst ? "" : "pdf-section"} style={{
+                                            pageBreakInside: isFirst ? 'auto' : 'avoid',
+                                            breakInside: isFirst ? 'auto' : 'avoid',
+                                            marginBottom: '25px',
+                                            display: 'block'
+                                        }}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={PDFMarkdownComponents}
+                                            >
+                                                {section}
+                                            </ReactMarkdown>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
                 </div>

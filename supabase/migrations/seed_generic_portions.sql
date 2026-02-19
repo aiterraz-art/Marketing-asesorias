@@ -17,19 +17,19 @@ values -- We use 100g as base for "1 Portion" to make math easy (Multiplier 1.0 
         'protein',
         1,
         '1 porción',
-        65,
-        11,
+        150,
+        31,
         0,
-        2
+        3
     ),
     (
         'bloque carbohidrato',
         'carb',
         1,
         '1 porción',
-        140,
-        4,
-        30,
+        200,
+        6,
+        45,
         1
     ),
     (
@@ -37,10 +37,10 @@ values -- We use 100g as base for "1 Portion" to make math easy (Multiplier 1.0 
         'fat',
         1,
         '1 porción',
-        175,
-        2,
-        5,
-        15
+        100,
+        0,
+        0,
+        11
     ),
     (
         'bloque fruta',
