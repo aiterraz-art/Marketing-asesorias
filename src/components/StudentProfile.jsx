@@ -23,6 +23,7 @@ import {
 } from 'recharts';
 import NutritionAssistant from './NutritionAssistant';
 import VisualPlanEditor from './VisualPlanEditor';
+import PortionReference from './PortionReference';
 
 const GOAL_LABELS = { cut: 'Definición', bulk: 'Volumen', maintenance: 'Mantenimiento', recomp: 'Recomposición' };
 const ACTIVITY_LABELS = { 1.2: 'Sedentario', 1.375: 'Ligero', 1.55: 'Moderado', 1.725: 'Intenso', 1.9: 'Muy Intenso' };
@@ -1695,7 +1696,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 800, width: 800 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { mode: 'css', avoid: ['tr', 'h2', 'h3'] }
         };
 
         import('html2pdf.js').then(html2pdf => {
@@ -1860,7 +1861,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                 </div>
             )}
 
-            import PortionReference from './PortionReference';
+
 
             {/* Read Mode Content */}
             {!isEditing && isExpanded && (plan.nutrition_plan_text || plan.supplementation_plan_text || plan.training_plan_text) && (
@@ -2017,7 +2018,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                 .pdf-content-body table { 
                                     width: 100% !important; 
                                     border-collapse: collapse !important; 
-                                    margin: 20px 0 !important; 
+                                    margin: 10px 0 !important; 
                                     font-size: 12px !important; 
                                     page-break-inside: auto !important;
                                     break-inside: auto !important;
@@ -2030,25 +2031,39 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                     page-break-after: auto !important;
                                     break-after: auto !important;
                                 }
-                                .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3, .pdf-content-body h4 {
-                                    page-break-after: avoid !important;
-                                    break-after: avoid !important;
-                                    page-break-inside: avoid !important;
-                                    break-inside: avoid !important;
-                                    margin-top: 40px !important;
+                                .pdf-section {
+                                    page-break-inside: auto !important;
+                                    break-inside: auto !important;
                                     margin-bottom: 20px !important;
                                     display: block !important;
                                 }
                                 .pdf-content-body blockquote { border-left: 4px solid #e5e7eb !important; padding-left: 15px !important; color: #4b5563 !important; font-style: italic !important; }
                             `}</style>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {isNutrition
+
+                            {/* Custom Renderer to keep headers with tables */}
+                            {(() => {
+                                const fullText = isNutrition
                                     ? `${(plan.nutrition_plan_text || '')
                                         .replace(/DISTRIBUCIÓN DIARIA \(ABSTRACTA Y FLEXIBLE\)/g, 'EJEMPLO DE COMIDA DIARIA')
                                         .replace(/PLAN DETALLADO \(SOLO CON ALIMENTOS PERMITIDOS\)/g, 'EJEMPLO DE COMIDA DIARIA')
                                     }\n\n${plan.supplementation_plan_text ? `## Suplementación\n\n${plan.supplementation_plan_text}` : ''}`
-                                    : (plan.training_plan_text || '')}
-                            </ReactMarkdown>
+                                    : (plan.training_plan_text || '');
+
+                                // Split by H2 or H3, but keep the delimiter
+                                // This regex looks for (## Title) or (### Title)
+                                const sections = fullText.split(/(?=^#{2,3}\s)/m);
+
+                                return sections.map((section, idx) => {
+                                    if (!section.trim()) return null;
+                                    return (
+                                        <div key={idx} className="pdf-section">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {section}
+                                            </ReactMarkdown>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
 

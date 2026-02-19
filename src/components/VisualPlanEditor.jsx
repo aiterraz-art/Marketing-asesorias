@@ -6,7 +6,7 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
     // Helper: Normalize category strings
     const normalizeCategory = (cat) => {
         if (!cat) return 'other';
-        const lower = cat.toLowerCase();
+        const lower = String(cat).toLowerCase(); // Force String
         if (lower.includes('carb')) return 'carb';
         if (lower.includes('prot')) return 'protein';
         if (lower.includes('gras') || lower.includes('fat') || lower.includes('lipid')) return 'fat';
@@ -18,20 +18,20 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
 
     // Parser: Text -> Blocks
     const parseTextToBlocks = (text) => {
-        if (!text) return [];
+        if (!text || typeof text !== 'string') return [];
         const lines = text.split('\n');
         const blocks = [];
         let currentCategory = 'other';
 
         lines.forEach((line, index) => {
             const id = `block-${index}-${Date.now()}`;
-            const trimmed = line.trim();
+            const trimmed = String(line).trim();
 
             // 1. Detect Category Context from Headers
             if (trimmed.startsWith('#')) {
                 const cat = normalizeCategory(trimmed);
                 if (cat !== 'other') currentCategory = cat;
-                blocks.push({ id, type: 'header', content: line.replace(/^#+\s*/, ''), original: line, level: trimmed.match(/^#+/)[0].length });
+                blocks.push({ id, type: 'header', content: line.replace(/^#+\s*/, ''), original: line, level: (trimmed.match(/^#+/) || [''])[0].length });
                 return;
             }
 
@@ -83,7 +83,7 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
         return blocks;
     };
 
-    const [blocks, setBlocks] = useState(parseTextToBlocks(initialText));
+    const [blocks, setBlocks] = useState(() => parseTextToBlocks(initialText));
 
     // Live Stats
     const [stats, setStats] = useState({ kcal: 0 });
@@ -104,7 +104,7 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
     };
 
     const handleFoodChange = (blockId, newFoodId) => {
-        const food = foods.find(f => f.id.toString() === newFoodId);
+        const food = foods.find(f => String(f.id) === String(newFoodId));
         if (!food) return;
 
         setBlocks(prev => prev.map(b => {
@@ -119,8 +119,8 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
             if (b.type === 'food-table-row') {
                 // Find ONLY the old food to get its standard portion
                 const oldFood = foods.find(f => f.name === b.name);
-                const isNewGeneric = food.name.toLowerCase().startsWith('bloque');
-                const isOldGeneric = oldFood?.name?.toLowerCase().startsWith('bloque');
+                const isNewGeneric = food.name && String(food.name).toLowerCase().startsWith('bloque');
+                const isOldGeneric = oldFood?.name && String(oldFood.name).toLowerCase().startsWith('bloque');
 
                 let currentPortions = 1;
 
@@ -166,11 +166,11 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                 const measureText = food.household_measure ? ` (${food.household_measure})` : '';
 
                 // Assuming table structure: | Name | Qty | Visual | P | C | F | Kcal |
-                const parts = b.original.split('|');
+                const parts = String(b.original).split('|');
                 if (parts.length >= 8) {
                     parts[1] = ` ${isNewGeneric ? newName.replace('bloque ', 'Porción ') : newName} `;
                     parts[2] = ` ${newQuantity} ${isNewGeneric ? '' : 'g'} `; // Update Quantity column
-                    parts[3] = isNewGeneric ? ' - ' : ` ${measureText || parts[3].trim()} `; // Update Visual Measure column if available
+                    parts[3] = isNewGeneric ? ' - ' : ` ${measureText || String(parts[3] || '').trim()} `; // Update Visual Measure column if available
                     parts[4] = ` ${newP.toFixed(1)} `;
                     parts[5] = ` ${newC.toFixed(1)} `;
                     parts[6] = ` ${newF.toFixed(1)} `;
@@ -218,24 +218,25 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                     // RENDER TABLE ROWS (Smart Dropdowns)
                     if (block.type === 'food-table-row') {
                         // Filter foods by category
-                        const categoryFoods = foods.filter(f => normalizeCategory(f.category) === block.category);
-                        const availableFoods = categoryFoods.length > 0 ? categoryFoods : foods;
+                        const safeFoods = Array.isArray(foods) ? foods : [];
+                        const categoryFoods = safeFoods.filter(f => normalizeCategory(f.category) === block.category);
+                        const availableFoods = categoryFoods.length > 0 ? categoryFoods : safeFoods;
 
                         // Calculate visuals
-                        const currentFood = availableFoods.find(f => f.name === block.name) || foods.find(f => f.name === block.name);
+                        const currentFood = availableFoods.find(f => f.name === block.name) || safeFoods.find(f => f.name === block.name);
 
                         // Check if it's a Generic Block
-                        const isGeneric = currentFood?.name?.toLowerCase().startsWith('bloque');
+                        const isGeneric = currentFood && currentFood.name && String(currentFood.name).toLowerCase().startsWith('bloque');
 
                         // Calculation Logic
                         let currentKcal = 0;
                         if (currentFood) {
                             if (isGeneric) {
                                 // For generics, quantity IS the multiplier
-                                currentKcal = Math.round(currentFood.calories_per_100g * parseFloat(block.quantity));
+                                currentKcal = Math.round((currentFood.calories_per_100g || 0) * (parseFloat(block.quantity) || 0));
                             } else {
                                 // Standard food: grams
-                                currentKcal = Math.round(currentFood.calories_per_100g * (parseInt(block.quantity) / 100));
+                                currentKcal = Math.round((currentFood.calories_per_100g || 0) * ((parseInt(block.quantity) || 0) / 100));
                             }
                         }
 
@@ -253,23 +254,23 @@ const VisualPlanEditor = ({ initialText, foods = [], onSave, onCancel }) => {
                                 >
                                     <option value="" disabled>{block.name}</option>
 
-                                    {/* Generic Blocks First */}
+                                    {/* Generic Blocks First - SAFEGUARDED */}
                                     <optgroup label="Bloques Genéricos">
-                                        {availableFoods.filter(f => f.name.toLowerCase().startsWith('bloque')).map(f => (
-                                            <option key={f.id} value={f.id}>{f.name.replace('bloque ', 'Porción ').toUpperCase()}</option>
+                                        {availableFoods.filter(f => f && f.name && String(f.name).toLowerCase().startsWith('bloque')).map(f => (
+                                            <option key={f.id} value={f.id}>{String(f.name).replace('bloque ', 'Porción ').toUpperCase()}</option>
                                         ))}
                                     </optgroup>
 
-                                    {/* Specific Foods */}
+                                    {/* Specific Foods - SAFEGUARDED */}
                                     <optgroup label="Alimentos Específicos">
-                                        {availableFoods.filter(f => !f.name.toLowerCase().startsWith('bloque')).map(f => (
-                                            <option key={f.id} value={f.id}>{f.name} {f.portion_grams ? `(${f.household_measure})` : ''}</option>
+                                        {availableFoods.filter(f => f && f.name && !String(f.name).toLowerCase().startsWith('bloque')).map(f => (
+                                            <option key={f.id} value={f.id}>{String(f.name)} {f.portion_grams ? `(${f.household_measure})` : ''}</option>
                                         ))}
                                     </optgroup>
 
                                     <optgroup label="Otros">
-                                        {foods.filter(f => !availableFoods.includes(f)).map(f => (
-                                            <option key={f.id} value={f.id}>{f.name}</option>
+                                        {safeFoods.filter(f => !availableFoods.includes(f) && f && f.name).map(f => (
+                                            <option key={f.id} value={f.id}>{String(f.name)}</option>
                                         ))}
                                     </optgroup>
                                 </select>
