@@ -470,7 +470,10 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
              * **1 Porción de LÁCTEO = 80 KCAL** (8g Carbo, 5g Proteína, 2g Grasa).
            - TU TAREA MATEMÁTICA OBLIGATORIA:
              * **IMPORTANTE**: Los Carbohidratos TIENEN Proteína (4g). Considera esto en la suma final.
-             * Usa decimales si es necesario (0.5, 1.5).
+             * **REGLA DE ORO DE PORCIONES**: USA SOLO NÚMEROS ENTEROS (1, 2, 3). **PROHIBIDO USAR DECIMALES** (Nada de 0.5, 1.5, 0.75).
+             * Si no te cuadran las calorías con los 5 tiempos de comida, **ELIMINA** la Media Mañana o la Merienda.
+             * **OBLIGATORIO**: Desayuno, Almuerzo y Cena SIEMPRE deben estar presentes y ser contundentes.
+             * Prefiero que te pases o te faltes por 50-100 kcal antes que usar media porción.
              * Calcula los gramos de cada alimento para que CUMPLAN esas calorías exactas.
              * Ejemplo: Si 100g de Arroz = 130 kcal, entonces 1 Porción de Arroz (~140kcal) son ~110g.
            - OBLIGATORIO: Todas las tablas deben tener exactamente 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
@@ -481,9 +484,10 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         2. PÁGINA 2: EJEMPLO DE COMIDA DIARIA (ABSTRACTA Y FLEXIBLE)
            - En esta sección, **NO** menciones alimentos específicos (ej: No digas "Pollo con Arroz").
            - Usa EXCLUSIVAMENTE el lenguaje de PORCIONES para que el alumno elija de la Tabla de Equivalencias.
-           - Estructura OBLIGATORIA:
+           - Estructura OBLIGATORIA (Adapta según calorías):
              * "Desayuno: **2 Porciones de PROTEÍNA** + **1 Porción de CARBOHIDRATO** + **1 Porción de GRASA**".
              * "Almuerzo: **2 Porciones de PROTEÍNA** + **2 Porciones de CARBOHIDRATO** + Ensalada Libre".
+             * (Opcional) "Media Mañana / Merienda": Solo si son necesarias para completar los macros con porciones ENTERAS.
            - Inmediatamente debajo de cada comida, inserta una TABLA RESUMEN DE MACROS DE ESA COMIDA (Sin alimentos, solo conteo de macros y calorías).
            - **VALIDACIÓN FINAL**: La suma de todas las porciones abstraídas debe coincidir con el objetivo: ${macros.calories} kcal.
 
