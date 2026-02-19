@@ -461,14 +461,18 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         
         REGLAS PARA NUTRITION_PLAN (FORMATO MARKDOWN DE ÉLITE):
         
-        1. PÁGINA 1: TABLA DE PORCIONES ISOCALÓRICAS (ESTÁNDAR FIJO)
-           - Define "1 PORCIÓN" basándote ESTRICTAMENTE en estas calorías objetivo por grupo:
-             * **1 Porción de CARBOHIDRATO (CHO) = 200 KCAL (aprox)**.
-             * **1 Porción de PROTEÍNA (PRO) = 150 KCAL (aprox)**.
-             * **1 Porción de GRASA (FAT) = 100 KCAL (aprox)**.
-           - TU TAREA MATEMÁTICA: Calcula los gramos de cada alimento para que CUMPLAN esas calorías.
-             * Ejemplo: Si 100g de Arroz = 130 kcal, entonces 1 Porción de Arroz (~200kcal) son ~150-160g.
-             * Ejemplo: Si 100g de Papa = 80 kcal, le corresponde MÁS cantidad (~250g) para llegar a las 200 kcal.
+        1. PÁGINA 1: TABLA DE PORCIONES ISOCALÓRICAS (ESTÁNDAR FIJO - ALINEADO A BASE DE DATOS)
+           - Define "1 PORCIÓN" basándote ESTRICTAMENTE en estas calorías por grupo:
+             * **1 Porción de CARBOHIDRATO (CHO) = 140 KCAL** (30g Carbo, 4g Proteína, 1g Grasa).
+             * **1 Porción de PROTEÍNA (PRO) = 65 KCAL** (11g Proteína, 0g Carbo, 2g Grasa).
+             * **1 Porción de GRASA (FAT) = 175 KCAL** (15g Grasa, 5g Carbo, 2g Proteína).
+             * **1 Porción de FRUTA = 65 KCAL** (15g Carbo, 1g Proteína).
+             * **1 Porción de LÁCTEO = 80 KCAL** (8g Carbo, 5g Proteína, 2g Grasa).
+           - TU TAREA MATEMÁTICA OBLIGATORIA:
+             * **IMPORTANTE**: Los Carbohidratos TIENEN Proteína (4g). Considera esto en la suma final.
+             * Usa decimales si es necesario (0.5, 1.5).
+             * Calcula los gramos de cada alimento para que CUMPLAN esas calorías exactas.
+             * Ejemplo: Si 100g de Arroz = 130 kcal, entonces 1 Porción de Arroz (~140kcal) son ~110g.
            - OBLIGATORIO: Todas las tablas deben tener exactamente 7 columnas: | Alimento | Cantidad | Medida Visual | P | C | G | kcal |
            - GRUPO CARBOHIDRATOS (CHO): Marraqueta, Arroz cocido, Fideos cocidos, Papa cocida, Avena, Pan Integral.
            - GRUPO PROTEÍNAS (PRO): Huevos enteros, Pollo, Vacuno/Cerdo, Atún.
