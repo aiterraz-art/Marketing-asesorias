@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import html2pdf from 'html2pdf.js';
 import {
     Users,
     Calculator,
@@ -858,11 +859,10 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
         };
 
         try {
-            const html2pdf = (await import('html2pdf.js')).default;
             await html2pdf().set(opt).from(element).save();
         } catch (err) {
             console.error("Error exporting PDF:", err);
-            alert("No se pudo generar el PDF. Por favor intenta de nuevo.");
+            alert(`No se pudo generar el PDF. Error: ${err.message || "Error desconocido"}`);
         } finally {
             setIsExporting(false);
         }
@@ -1689,11 +1689,10 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         };
 
         try {
-            const html2pdf = (await import('html2pdf.js')).default;
             await html2pdf().set(opt).from(element).save();
         } catch (err) {
             console.error("Error exporting PDF:", err);
-            alert("No se pudo generar el PDF. Por favor intenta de nuevo.");
+            alert(`No se pudo generar el PDF. Error: ${err.message || "Error desconocido"}`);
         } finally {
             setIsExporting(false);
         }

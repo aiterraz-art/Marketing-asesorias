@@ -65,7 +65,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
             await html2pdf().set(opt).from(element).save();
         } catch (err) {
             console.error("PDF Export Error:", err);
-            alert("Error al generar el PDF.");
+            alert(`Error al generar el PDF. Detalle: ${err.message || 'Error desconocido'}`);
         } finally {
             setIsExporting(false);
         }
