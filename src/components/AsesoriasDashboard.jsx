@@ -1188,11 +1188,11 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                     <div id="pdf-diet-content" style={{
-                        width: '680px',
+                        width: '800px',
                         padding: '40px 35px',
                         color: '#1a1a1a',
                         backgroundColor: '#ffffff',
-                        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                        fontFamily: 'Helvetica, Arial, sans-serif',
                         fontSize: '12px',
                         lineHeight: '1.6',
                         boxSizing: 'border-box'
@@ -2064,11 +2064,11 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                     <div id="pdf-training-content" style={{
-                        width: '680px',
+                        width: '800px',
                         padding: '40px 35px',
                         color: '#1a1a1a',
                         backgroundColor: '#ffffff',
-                        fontFamily: '"Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                        fontFamily: 'Helvetica, Arial, sans-serif',
                         fontSize: '12px',
                         lineHeight: '1.6',
                         boxSizing: 'border-box'
