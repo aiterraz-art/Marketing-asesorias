@@ -1704,10 +1704,12 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
         };
 
         try {
+            console.log(`Generating PDF for plan ${plan.id}...`);
             await html2pdf().set(opt).from(element).save();
+            console.log("PDF generated successfully");
         } catch (err) {
-            console.error("Error exporting PDF:", err);
-            alert(`No se pudo generar el PDF. Error: ${err.message || 'Error desconocido'}`);
+            console.error("Error exporting PDF from History:", err);
+            alert(`No se pudo generar el PDF del historial. Error: ${err.message || 'Error desconocido'}`);
         } finally {
             setIsExporting(false);
         }

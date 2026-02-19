@@ -839,8 +839,12 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
         const lastAssistantMsg = [...chatMessages].reverse().find(m => m.role === 'assistant');
         if (!lastAssistantMsg) return;
 
-        const element = dietContentRef.current;
-        if (!element) return;
+        const element = document.getElementById('pdf-diet-content');
+        if (!element) {
+            console.error("PDF element not found: pdf-diet-content");
+            alert("Error interno: No se encontró el contenido para el PDF.");
+            return;
+        }
 
         setIsExporting(true);
 
@@ -859,10 +863,12 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
         };
 
         try {
+            console.log("Generating Diet PDF...");
             await html2pdf().set(opt).from(element).save();
+            console.log("Diet PDF generated successfully");
         } catch (err) {
-            console.error("Error exporting PDF:", err);
-            alert(`No se pudo generar el PDF. Error: ${err.message || "Error desconocido"}`);
+            console.error("Error exporting Diet PDF:", err);
+            alert(`No se pudo generar el PDF de la dieta. Error: ${err.message || 'Error desconocido'}`);
         } finally {
             setIsExporting(false);
         }
@@ -1181,7 +1187,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             {/* Hidden element for PDF export */}
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                    <div ref={dietContentRef} style={{
+                    <div id="pdf-diet-content" style={{
                         width: '680px',
                         padding: '40px 35px',
                         color: '#1a1a1a',
@@ -1669,8 +1675,12 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         const lastAssistantMsg = [...chatMessages].reverse().find(m => m.role === 'assistant');
         if (!lastAssistantMsg) return;
 
-        const element = trainingContentRef.current;
-        if (!element) return;
+        const element = document.getElementById('pdf-training-content');
+        if (!element) {
+            console.error("PDF element not found: pdf-training-content");
+            alert("Error interno: No se encontró el contenido para el PDF.");
+            return;
+        }
 
         setIsExporting(true);
 
@@ -1689,10 +1699,12 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         };
 
         try {
+            console.log("Generating Training PDF...");
             await html2pdf().set(opt).from(element).save();
+            console.log("Training PDF generated successfully");
         } catch (err) {
-            console.error("Error exporting PDF:", err);
-            alert(`No se pudo generar el PDF. Error: ${err.message || "Error desconocido"}`);
+            console.error("Error exporting Training PDF:", err);
+            alert(`No se pudo generar el PDF de la rutina. Error: ${err.message || 'Error desconocido'}`);
         } finally {
             setIsExporting(false);
         }
@@ -2051,7 +2063,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
             {/* Hidden PDF element */}
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                    <div ref={trainingContentRef} style={{
+                    <div id="pdf-training-content" style={{
                         width: '680px',
                         padding: '40px 35px',
                         color: '#1a1a1a',
