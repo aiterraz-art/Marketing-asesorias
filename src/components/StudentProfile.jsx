@@ -1627,6 +1627,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
     const [editedSupplementation, setEditedSupplementation] = useState(plan.supplementation_plan_text || '');
     const [editedTraining, setEditedTraining] = useState(plan.training_plan_text || '');
     const [isSaving, setIsSaving] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Calculator State
     const [selectedFoodId, setSelectedFoodId] = useState('');
@@ -1685,23 +1686,31 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
         }
     };
 
-    const handleExportPDF = (e) => {
+    const handleExportPDF = async (e) => {
         e.stopPropagation();
         const element = document.getElementById(`pdf-content-${plan.id}`);
         if (!element) return;
+
+        setIsExporting(true);
 
         const opt = {
             margin: 10,
             filename: `Plan_${isNutrition ? 'Nutricion' : 'Entrenamiento'}_${studentName.replace(/\s+/g, '_')}_${new Date(plan.created_at).toLocaleDateString()}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1024 },
+            html2canvas: { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1024 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
-        import('html2pdf.js').then(html2pdf => {
-            html2pdf.default().set(opt).from(element).save();
-        });
+        try {
+            const html2pdf = (await import('html2pdf.js')).default;
+            await html2pdf().set(opt).from(element).save();
+        } catch (err) {
+            console.error("Error exporting PDF:", err);
+            alert("No se pudo generar el PDF. Por favor intenta de nuevo.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     // Live Macros Calculation
@@ -1809,10 +1818,11 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     {content && (
                         <button
                             onClick={handleExportPDF}
-                            className="p-2 text-zinc-500 hover:text-white transition-colors"
+                            disabled={isExporting}
+                            className={`p-2 transition-colors ${isExporting ? 'text-primary' : 'text-zinc-500 hover:text-white'}`}
                             title="Descargar PDF"
                         >
-                            <Download size={18} />
+                            {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                         </button>
                     )}
                     <button

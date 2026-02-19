@@ -42,17 +42,17 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
         }
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         if (!generatedPlan) return;
         setIsExporting(true);
 
         const element = document.getElementById('pdf-content');
         const opt = {
             margin: 10,
-            filename: `Elite_Plan_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
+            filename: `Elite_Plan_${activeStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
-                scale: 2,
+                scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 windowWidth: 1024
@@ -61,13 +61,14 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
-        html2pdf().set(opt).from(element).save().then(() => {
-            setIsExporting(false);
-        }).catch(err => {
+        try {
+            await html2pdf().set(opt).from(element).save();
+        } catch (err) {
             console.error("PDF Export Error:", err);
-            setIsExporting(false);
             alert("Error al generar el PDF.");
-        });
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const handleConfirm = async () => {

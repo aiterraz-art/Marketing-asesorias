@@ -665,6 +665,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
 
     const [results, setResults] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Chat IA states
     const [chatMessages, setChatMessages] = useState([]);
@@ -833,19 +834,21 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
     };
 
     // Exportar última respuesta de la IA a PDF
-    const handleExportDietPDF = () => {
+    const handleExportDietPDF = async () => {
         const lastAssistantMsg = [...chatMessages].reverse().find(m => m.role === 'assistant');
         if (!lastAssistantMsg) return;
 
         const element = dietContentRef.current;
         if (!element) return;
 
+        setIsExporting(true);
+
         const opt = {
             margin: 10,
             filename: `Dieta_${selectedStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
-                scale: 2,
+                scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 windowWidth: 1024
@@ -854,9 +857,15 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
-        import('html2pdf.js').then(html2pdf => {
-            html2pdf.default().set(opt).from(element).save();
-        });
+        try {
+            const html2pdf = (await import('html2pdf.js')).default;
+            await html2pdf().set(opt).from(element).save();
+        } catch (err) {
+            console.error("Error exporting PDF:", err);
+            alert("No se pudo generar el PDF. Por favor intenta de nuevo.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     // Obtener la última respuesta de la IA para el render oculto del PDF
@@ -1108,10 +1117,11 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                         {lastAIResponse && (
                             <button
                                 onClick={handleExportDietPDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:opacity-90 transition-opacity"
+                                disabled={isExporting}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                <Download size={14} />
-                                Exportar a PDF
+                                {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                                {isExporting ? 'Generando...' : 'Exportar a PDF'}
                             </button>
                         )}
                     </div>
@@ -1560,6 +1570,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [chatMessages, setChatMessages] = useState([]);
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
@@ -1654,19 +1665,21 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         }
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         const lastAssistantMsg = [...chatMessages].reverse().find(m => m.role === 'assistant');
         if (!lastAssistantMsg) return;
 
         const element = trainingContentRef.current;
         if (!element) return;
 
+        setIsExporting(true);
+
         const opt = {
             margin: 10,
             filename: `Rutina_${activeStudent.full_name.replace(/\s+/g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
-                scale: 2,
+                scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 windowWidth: 1024
@@ -1675,9 +1688,15 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
 
-        import('html2pdf.js').then(html2pdf => {
-            html2pdf.default().set(opt).from(element).save();
-        });
+        try {
+            const html2pdf = (await import('html2pdf.js')).default;
+            await html2pdf().set(opt).from(element).save();
+        } catch (err) {
+            console.error("Error exporting PDF:", err);
+            alert("No se pudo generar el PDF. Por favor intenta de nuevo.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const lastAIResponse = [...chatMessages].reverse().find(m => m.role === 'assistant');
@@ -1966,10 +1985,11 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                         {lastAIResponse && (
                             <button
                                 onClick={handleExportPDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all"
+                                disabled={isExporting}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                <Download size={14} />
-                                Exportar Rutina a PDF
+                                {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                                {isExporting ? 'Generando...' : 'Exportar a PDF'}
                             </button>
                         )}
                     </div>
