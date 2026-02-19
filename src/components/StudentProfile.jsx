@@ -1880,7 +1880,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                 <div className="border-t border-zinc-900 p-6 bg-black/30 animate-in slide-in-from-top-2 duration-300 space-y-6">
 
                     {/* Portion Reference Guide */}
-                    {plan.nutrition_plan_text && <PortionReference />}
+                    {plan.nutrition_plan_text && <PortionReference hideHeader={true} />}
                     <div ref={contentRef} className="space-y-6">
                         {isNutrition && plan.nutrition_plan_text && (
                             <div className="prose prose-invert prose-sm max-w-none text-zinc-300 leading-relaxed bg-black/20 p-4 rounded-lg border border-zinc-800/50">
@@ -2015,7 +2015,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                         {/* Portion Reference Guide for PDF */}
                         {isNutrition && plan.nutrition_plan_text && (
                             <div className="pdf-section" style={{ marginBottom: '30px' }}>
-                                <PortionReference forceOpen={true} />
+                                <PortionReference hideHeader={true} />
                             </div>
                         )}
 
