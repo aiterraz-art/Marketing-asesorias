@@ -1929,6 +1929,13 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                     color: '#1a1a1a',
                     fontFamily: 'Helvetica, Arial, sans-serif',
                 }}>
+                    <style dangerouslySetInnerHTML={{
+                        __html: `
+                        #pdf-content-${plan.id} * { color: #1a1a1a !important; border-color: #eeeeee !important; }
+                        #pdf-content-${plan.id} .text-primary { color: #7c3aed !important; }
+                        #pdf-content-${plan.id} .bg-primary { background-color: #7c3aed !important; }
+                    `}} />
+
                     {/* Header Premium */}
                     <div style={{
                         backgroundColor: '#7c3aed', // Violet-600 (Morado Vibrante)

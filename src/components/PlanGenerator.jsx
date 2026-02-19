@@ -179,6 +179,13 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                     {/* Hidden Copy for PDF (Elite Magazine Style) */}
                     <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                         <div id="pdf-content" style={{ width: '800px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                            <style dangerouslySetInnerHTML={{
+                                __html: `
+                            #pdf-content * { color: #1a1a1a !important; border-color: #eeeeee !important; }
+                            #pdf-content .text-primary { color: #7c3aed !important; }
+                            #pdf-content h1, #pdf-content h2 { color: #4c1d95 !important; }
+                        `}} />
+
                             <style>{`
                                 .pdf-content-body h1, .pdf-content-body h2, .pdf-content-body h3, .pdf-content-body h4 { 
                                     color: #4c1d95 !important; 

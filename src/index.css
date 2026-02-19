@@ -136,3 +136,26 @@ body {
 .markdown-pdf tr:nth-child(even) {
   background-color: #faf9fd;
 }
+
+/* ─── Solución para Error oklch en PDF (html2canvas incompatibility) ─── */
+[id^="pdf-"], 
+[id^="pdf-"] *,
+.pdf-section, 
+.pdf-section * {
+  /* Forzamos colores HEX/RGB standard para evitar oklch() de Tailwind 4 */
+  --color-primary: #7c3aed !important;
+  --color-background: #ffffff !important;
+  --color-surface: #ffffff !important;
+  --color-accent: #f97316 !important;
+  
+  /* Sobrescribimos cualquier variable de DaisyUI o Tailwind 4 que use oklch */
+  color: #1a1a1a;
+  border-color: #eeeeee;
+  background-color: transparent;
+}
+
+/* Forzar colores específicos para elementos comunes en el PDF */
+[id^="pdf-"] h1, [id^="pdf-"] h2, [id^="pdf-"] h3 { color: #7c3aed !important; }
+[id^="pdf-"] th { background-color: #7c3aed !important; color: white !important; }
+[id^="pdf-"] td { border-bottom: 1px solid #eeeeee !important; }
+[id^="pdf-"] p, [id^="pdf-"] li, [id^="pdf-"] div { color: #1a1a1a !important; }

@@ -1197,6 +1197,12 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                         lineHeight: '1.6',
                         boxSizing: 'border-box'
                     }}>
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                            #pdf-diet-content * { color: #1a1a1a !important; border-color: #eeeeee !important; }
+                            #pdf-diet-content .text-primary { color: #7c3aed !important; }
+                            #pdf-diet-content h1, #pdf-diet-content h2 { color: #7c3aed !important; }
+                        `}} />
 
 
                         {/* Content */}
@@ -2073,6 +2079,12 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                         lineHeight: '1.6',
                         boxSizing: 'border-box'
                     }}>
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                            #pdf-training-content * { color: #1a1a1a !important; border-color: #eeeeee !important; }
+                            #pdf-training-content .text-primary { color: #7c3aed !important; }
+                            #pdf-training-content h1, #pdf-training-content h2 { color: #3b82f6 !important; }
+                        `}} />
                         {/* Header */}
                         <div style={{ textAlign: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #3b82f6' }}>
                             <h1 style={{ color: '#3b82f6', fontSize: '20px', margin: '0 0 8px 0', fontWeight: '700' }}>Plan de Entrenamiento Personalizado</h1>
