@@ -150,6 +150,37 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                         </div>
                     </div>
 
+                    {/* Macro Summary Header */}
+                    {macros && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 text-center">
+                                <p className="text-[10px] uppercase font-black tracking-widest text-primary/70 mb-1">Calorías</p>
+                                <p className="text-2xl font-black text-white">{macros.calories || 0}<span className="text-xs ml-1 opacity-50">kcal</span></p>
+                            </div>
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Proteína</p>
+                                <p className="text-2xl font-black text-white">{macros.protein || 0}<span className="text-xs ml-1 opacity-50">g</span></p>
+                                {macros.calories > 0 && (
+                                    <p className="text-[10px] text-zinc-600 mt-1">{Math.round((macros.protein * 4 / macros.calories) * 100)}%</p>
+                                )}
+                            </div>
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Grasas</p>
+                                <p className="text-2xl font-black text-white">{macros.fat || 0}<span className="text-xs ml-1 opacity-50">g</span></p>
+                                {macros.calories > 0 && (
+                                    <p className="text-[10px] text-zinc-600 mt-1">{Math.round((macros.fat * 9 / macros.calories) * 100)}%</p>
+                                )}
+                            </div>
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+                                <p className="text-[10px] uppercase font-black tracking-widest text-zinc-500 mb-1">Carbos</p>
+                                <p className="text-2xl font-black text-white">{macros.carbs || 0}<span className="text-xs ml-1 opacity-50">g</span></p>
+                                {macros.calories > 0 && (
+                                    <p className="text-[10px] text-zinc-600 mt-1">{Math.round((macros.carbs * 4 / macros.calories) * 100)}%</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div id="printable-plan" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* Nutrition Plan */}
                         <div className="bg-surface border border-zinc-900 rounded-xl overflow-hidden flex flex-col">
@@ -237,7 +268,40 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                             </div>
 
                             {/* Body */}
-                            <div style={{ padding: '40px' }}>
+                            <div style={{ padding: '0 40px 40px 40px' }}>
+                                {/* Summary Metrics for PDF */}
+                                {macros && (
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '15px',
+                                        marginBottom: '30px',
+                                        background: '#f8fafc',
+                                        padding: '20px',
+                                        borderRadius: '12px',
+                                        border: '1px solid #e2e8f0'
+                                    }}>
+                                        <div style={{ flex: 1, textAlign: 'center' }}>
+                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Calorías</p>
+                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#7c3aed', margin: 0 }}>{macros.calories} <span style={{ fontSize: '10px', opacity: 0.7 }}>kcal</span></p>
+                                        </div>
+                                        <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
+                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Proteína</p>
+                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{macros.protein}g</p>
+                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>{Math.round((macros.protein * 4 / macros.calories) * 100)}%</p>
+                                        </div>
+                                        <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
+                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Grasas</p>
+                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{macros.fat}g</p>
+                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>{Math.round((macros.fat * 9 / macros.calories) * 100)}%</p>
+                                        </div>
+                                        <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
+                                            <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Carbohidratos</p>
+                                            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{macros.carbs}g</p>
+                                            <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>{Math.round((macros.carbs * 4 / macros.calories) * 100)}%</p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Metrics Bar */}
                                 <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', borderBottom: '2px solid #f4f4f5', paddingBottom: '20px' }}>
                                     <div style={{ flex: 1 }}>
