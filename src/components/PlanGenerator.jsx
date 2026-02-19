@@ -55,7 +55,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
                 scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 800
+                windowWidth: 720
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
@@ -178,7 +178,7 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
 
                     {/* Hidden Copy for PDF (Elite Magazine Style) */}
                     <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                        <div id="pdf-content" style={{ width: '800px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                        <div id="pdf-content" style={{ width: '720px', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: 'Helvetica, Arial, sans-serif' }}>
                             <style dangerouslySetInnerHTML={{
                                 __html: `
                             #pdf-content * { color: #1a1a1a !important; border-color: #eeeeee !important; }

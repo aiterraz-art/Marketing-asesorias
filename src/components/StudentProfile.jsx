@@ -1698,7 +1698,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             margin: 10,
             filename: `Plan_${isNutrition ? 'Nutricion' : 'Entrenamiento'}_${studentName.replace(/\s+/g, '_')}_${new Date(plan.created_at).toLocaleDateString()}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, windowWidth: 800 },
+            html2canvas: { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, windowWidth: 720 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
         };
@@ -1924,7 +1924,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
             {/* Contenido oculto para exportación PDF (Siempre en el DOM para handleExportPDF) */}
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                 <div id={`pdf-content-${plan.id}`} style={{
-                    width: '800px',
+                    width: '720px',
                     backgroundColor: '#ffffff',
                     color: '#1a1a1a',
                     fontFamily: 'Helvetica, Arial, sans-serif',

@@ -856,7 +856,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
                 scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 800
+                windowWidth: 720
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
@@ -1188,7 +1188,7 @@ const NutritionCalculator = ({ selectedStudent, students, onSelectStudent, lates
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                     <div id="pdf-diet-content" style={{
-                        width: '800px',
+                        width: '720px',
                         padding: '40px 35px',
                         color: '#1a1a1a',
                         backgroundColor: '#ffffff',
@@ -1698,7 +1698,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                 scale: 1.5,
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                windowWidth: 800
+                windowWidth: 720
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-section' }
@@ -2070,7 +2070,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
             {lastAIResponse && (
                 <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                     <div id="pdf-training-content" style={{
-                        width: '800px',
+                        width: '720px',
                         padding: '40px 35px',
                         color: '#1a1a1a',
                         backgroundColor: '#ffffff',
