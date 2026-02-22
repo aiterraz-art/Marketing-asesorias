@@ -64,37 +64,38 @@ IMPORTANTE: El cálculo de Carbohidratos debe ser EXACTO usando las calorías de
 3. **CÁLCULO INVISIBLE**: Está estrictamente prohibido mostrar operaciones matemáticas, fórmulas o pasos intermedios.
 4. **CERO COMENTARIOS**: No agregues saludos, despedidas, comentarios sobre el entrenamiento o notas aclaratorias sobre lo que estás haciendo. Entrega **ÚNICAMENTE** el plan nutricional siguiendo la estructura.
 
-### ESTRUCTURA OBLIGATORIA DEL PLAN:
-1. **Encabezado**: Tabla de equivalencias completa (incluyendo Vegetales Libres).
-2. **Totales Diarios**: Listar directamente cuántas porciones de Carb, Prot y Grasa corresponden al día (Solo números enteros).
-3. **Distribución de Porciones (CON LÍMITES CALÓRICOS)**:
-   - **MÁXIMO POR COMIDA**: Ninguna comida principal (Desayuno, Almuerzo, Cena) debe superar las **800 kcal**.
-   - **MÁXIMO POR SNACK**: Ningún snack debe superar las **500 kcal**.
-   - **DISTRIBUCIÓN DINÁMICA**: Si al distribuir las porciones una comida supera el límite, traspasa el excedente a los snacks. Si un snack supera las 500 kcal, **crea un segundo snack** (Snack 1 y Snack 2). Esto es vital para alumnos en fase de volumen.
-   - **OMISIÓN DE VACÍOS**: Si un momento de comida (especialmente snacks) tiene 0 porciones en todos los macros, **NO lo menciones**. Está estrictamente prohibido mostrar secciones con 0 calorías o vacías.
-   - **PRIORIDAD PROTEICA**: La proteína DEBE estar presente obligatoriamente en el **Desayuno, Almuerzo y Cena**.
-   - **ALMUERZO Y CENA**: Deben incluir siempre la mención de "**Vegetales Libres (Ensaladas)**" como consumo libre.
-   - En cada comida, indica el número de porciones por macro (ej: "2 porciones de proteína").
-   - **CALORÍAS POR COMIDA**: Al final de cada comida, indica el total de calorías de esa comida basándote en las porciones (Carb=200, Prot=150, Grasa=100).
-4. **EJEMPLO DE DIETA**:
-   - Justo debajo de la distribución de porciones, crea una sección llamada "**EJEMPLO DE DIETA**".
-   - Traduce las porciones de cada comida a un **ejemplo culinario lógico y apetecible** usando exclusivamente los alimentos de la tabla.
-   - Especifica el nombre del alimento, la cantidad exacta y la medida visual.
-5. **INDICACIONES GENERALES**:
-   - Al final de todo el plan nutricional, agrega SIEMPRE estas instrucciones:
-     "**Bebidas zero**: máximo 2 vasos al día.
-     **Infusiones y jugos tipo Livean**: consumo libre.
-     **Jugos light (con calorías residuales)**: prohibidos."
-6. **REGLA CRÍTICA DE GRASAS SEGÚN MOMENTO DEL DÍA**:
-   - **DESAYUNO y SNACKS**: La fuente de grasa DEBE ser siempre **Palta**. Está **estrictamente PROHIBIDO** incluir Aceite de Oliva en estas comidas.
-   - **ALMUERZO y CENA**: La fuente de grasa preferida es **Aceite de Oliva** (para condimentar). Se puede combinar con Palta si las porciones lo permiten.
-7. **REGLA CRÍTICA DE CARBOHIDRATOS EN ALMUERZO Y CENA**:
-   - En **ALMUERZO y CENA**, está **estrictamente PROHIBIDO** combinar dos fuentes distintas de carbohidrato en una misma comida (ej: NO arroz + papas, NO fideos + pan).
-   - Usa **UNA SOLA fuente de carbohidrato** por comida principal, ajustando la cantidad de porciones de ese único alimento.
-8. **REGLA CRÍTICA DE AVENA (PROHIBICIÓN ESTRICTA)**:
-   - Está **ESTRICTAMENTE PROHIBIDO** combinar Avena con Huevos, Pollo, Vacuno o Queso. La Avena NUNCA debe pautarse junto a esas proteínas en la misma comida.
-   - La **Avena** ÚNICA Y EXCLUSIVAMENTE puede usarse si la proteína de esa comida es **Leche descremada** o **Yogurt descremado**.
-   - Si pautas Huevos en el desayuno o snack, el carbohidrato DEBE ser **Pan integral**, **Plátano** u otra fruta de la tabla, pero **JAMÁS Avena**.
+### ESTRUCTURA OBLIGATORIA DEL PLAN (Úsala EXACTAMENTE así):
+# PROTOCOLO NUTRICIONAL PERSONALIZADO
+
+## 1. TABLA DE EQUIVALENCIAS
+(Inserta aquí la tabla completa de equivalencias y vegetales libres)
+
+## 2. RESUMEN DE PORCIONES DIARIAS
+- **Carbohidratos**: [X] porciones
+- **Proteínas**: [Y] porciones
+- **Grasas**: [Z] porciones
+
+## 3. DISTRIBUCIÓN POR COMIDAS
+### [NOMBRE COMIDA] ([Kcal de la comida])
+- [Z] porciones de [Macro]
+- ...
+(Repite para Desayuno, Almuerzo, Cena y Snacks necesarios)
+
+## 4. EJEMPLO DE DIETA
+### [NOMBRE COMIDA]
+- [Cantidad] de [Alimento] ([Medida Visual])
+- ...
+
+## 5. INDICACIONES GENERALES
+**Bebidas zero**: máximo 2 vasos al día.
+**Infusiones y jugos tipo Livean**: consumo libre.
+**Jugos light (con calorías residuales)**: prohibidos.
+
+### REGLAS CRÍTICAS ADICIONALES:
+1. **GRASAS SEGÚN MOMENTO**: DESAYUNO/SNACKS = Palta obligatoria (Prohibido aceite). ALMUERZO/CENA = Aceite de Oliva preferente.
+2. **CARBOHIDRATOS**: Prohibido combinar 2 fuentes en una misma comida.
+3. **AVENA**: Solo permitida con Leche o Yogurt descremado. Prohibida con Huevos/Pollo/Vacuno/Queso.
+4. **CERO META-TALK**: Entrega solo el Markdown.
 `;
 
 export const generateChatResponse = async (historyMessages) => {

@@ -2232,10 +2232,22 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             {/* Custom Renderer to keep headers with tables */}
                             {(() => {
                                 const fullText = isNutrition
-                                    ? `${(plan.nutrition_plan_text || '')
-                                        .replace(/DISTRIBUCIÓN DIARIA \(ABSTRACTA Y FLEXIBLE\)/g, 'EJEMPLO DE COMIDA DIARIA')
-                                        .replace(/PLAN DETALLADO \(SOLO CON ALIMENTOS PERMITIDOS\)/g, 'EJEMPLO DE COMIDA DIARIA')
-                                    }\n\n${plan.supplementation_plan_text ? `## Suplementación\n\n${plan.supplementation_plan_text}` : ''}`
+                                    ? (() => {
+                                        let text = (plan.nutrition_plan_text || '');
+                                        // Standardize old headers to the new system if they exist
+                                        text = text.replace(/#+ (?:PLAN DETALLADO|DISTRIBUCIÓN DIARIA).*/gi, '## 4. EJEMPLO DE DIETA');
+                                        text = text.replace(/#+ (?:TABLA DE EQUIVALENCIAS).*/gi, '## 1. TABLA DE EQUIVALENCIAS');
+                                        text = text.replace(/#+ (?:TOTALES DIARIOS|RESUMEN).*/gi, '## 2. RESUMEN DE PORCIONES DIARIAS');
+                                        text = text.replace(/#+ (?:DISTRIBUCIÓN POR COMIDAS|PORCIONES POR COMIDA).*/gi, '## 3. DISTRIBUCIÓN POR COMIDAS');
+                                        text = text.replace(/#+ (?:INDICACIONES GENERALES).*/gi, '## 5. INDICACIONES GENERALES');
+
+                                        // Remove any double titles like "# PROTOCOLO..." if it already has one
+                                        if (!text.toLowerCase().includes('# protocolo nutricional')) {
+                                            text = `# PROTOCOLO NUTRICIONAL PERSONALIZADO\n\n${text}`;
+                                        }
+
+                                        return `${text}\n\n${plan.supplementation_plan_text ? `## 6. Suplementación\n\n${plan.supplementation_plan_text}` : ''}`;
+                                    })()
                                     : (plan.training_plan_text || '');
 
                                 // Split by H2 or H3, but keep the delimiter
