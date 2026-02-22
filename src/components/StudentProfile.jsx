@@ -7,7 +7,7 @@ import {
     TrendingUp, TrendingDown, Minus, Apple, Dumbbell, ChevronDown,
     ChevronUp, Plus, Loader2, Edit3, Check, X, Scale, Flame,
     Beef, Droplets, Wheat, BarChart3, ClipboardList, Heart, Download, Sparkles,
-    Video, Clock, Pill, Trash2, Camera, ZoomIn, Image, Eye, Upload
+    Video, Clock, Pill, Trash2, Camera, ZoomIn, Image, Eye, Upload, Save
 } from 'lucide-react';
 import {
     getStudentPlans, getStudentMeasurements, addStudentMeasurement,
