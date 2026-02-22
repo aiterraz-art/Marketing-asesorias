@@ -17,6 +17,7 @@ import {
     getFoods, updateStudentPlan, addStudentPlan
 } from '../lib/supabase';
 import { analyzeBodyComposition, chatEditTraining } from '../lib/openai';
+import { getExerciseImageUrl } from '../lib/exerciseDatabase';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -205,6 +206,68 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
         } catch (err) {
             console.error("Error updating student:", err);
             alert(`Error al actualizar el alumno: ${err.message || 'Error desconocido'}`);
+        }
+    };
+
+    // Exercise Rendering Components for Markdown
+    const ExerciseMarkdownComponents = {
+        td: ({ children }) => {
+            const cellText = Array.isArray(children) ? children.join('') : String(children);
+            const imageUrl = getExerciseImageUrl(cellText);
+
+            return (
+                <td className="relative group p-2 border border-zinc-800">
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1">{children}</div>
+                        {imageUrl && (
+                            <div className="w-10 h-10 flex-shrink-0 relative">
+                                <img
+                                    src={imageUrl}
+                                    alt={cellText}
+                                    className="w-full h-full object-cover rounded border border-zinc-700 bg-black/40"
+                                    loading="lazy"
+                                />
+                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 h-32 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
+                                    <img
+                                        src={imageUrl}
+                                        alt={cellText}
+                                        className="w-full h-full object-cover rounded-lg border-2 border-primary shadow-2xl bg-black"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </td>
+            );
+        }
+    };
+
+    const ExercisePDFMarkdownComponents = {
+        td: ({ children }) => {
+            const cellText = Array.isArray(children) ? children.join('') : String(children);
+            const imageUrl = getExerciseImageUrl(cellText);
+
+            return (
+                <td style={{ padding: '8px 5px', border: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1 }}>{children}</div>
+                        {imageUrl && (
+                            <img
+                                src={imageUrl}
+                                alt={cellText}
+                                style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    objectFit: 'cover',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ddd',
+                                    display: 'block'
+                                }}
+                            />
+                        )}
+                    </div>
+                </td>
+            );
         }
     };
 
@@ -2048,7 +2111,12 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                 <div className="flex items-center gap-2 mb-4 text-blue-400 uppercase text-[10px] font-black tracking-widest border-b border-blue-400/20 pb-2">
                                     <Dumbbell size={12} /> Plan de Entrenamiento
                                 </div>
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan.training_plan_text}</ReactMarkdown>
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={!isNutrition ? ExerciseMarkdownComponents : {}}
+                                >
+                                    {plan.training_plan_text}
+                                </ReactMarkdown>
                             </div>
                         )}
                     </div>
@@ -2275,7 +2343,10 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                             marginBottom: '25px',
                                             display: 'block'
                                         }}>
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={!isNutrition ? ExercisePDFMarkdownComponents : {}}
+                                            >
                                                 {section}
                                             </ReactMarkdown>
                                         </div>
