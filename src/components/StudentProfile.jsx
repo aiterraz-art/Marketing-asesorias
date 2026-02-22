@@ -707,6 +707,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     onToggle={() => setExpandedPlan(expandedPlan === `n-${plan.id}` ? null : `n-${plan.id}`)}
                                     studentName={student.full_name}
                                     onDelete={() => handleDeletePlan(plan.id)}
+                                    onUpdate={loadData}
                                 />
                             );
                         })
@@ -898,6 +899,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     onToggle={() => setExpandedPlan(expandedPlan === `t-${plan.id}` ? null : `t-${plan.id}`)}
                                     studentName={student.full_name}
                                     onDelete={() => handleDeletePlan(plan.id)}
+                                    onUpdate={loadData}
                                 />
                             );
                         })
