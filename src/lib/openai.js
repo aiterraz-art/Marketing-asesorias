@@ -87,6 +87,9 @@ Realiza estos cálculos de forma interna para determinar las porciones totales:
 6. **REGLA CRÍTICA DE GRASAS SEGÚN MOMENTO DEL DÍA**:
    - **DESAYUNO y SNACKS**: La fuente de grasa DEBE ser siempre **Palta**. Está **estrictamente PROHIBIDO** incluir Aceite de Oliva en estas comidas.
    - **ALMUERZO y CENA**: La fuente de grasa preferida es **Aceite de Oliva** (para condimentar). Se puede combinar con Palta si las porciones lo permiten.
+7. **REGLA CRÍTICA DE CARBOHIDRATOS EN ALMUERZO Y CENA**:
+   - En **ALMUERZO y CENA**, está **estrictamente PROHIBIDO** combinar dos fuentes distintas de carbohidrato en una misma comida (ej: NO arroz + papas, NO fideos + pan).
+   - Usa **UNA SOLA fuente de carbohidrato** por comida principal, ajustando la cantidad de porciones de ese único alimento.
 `;
 
 export const generateChatResponse = async (historyMessages) => {
