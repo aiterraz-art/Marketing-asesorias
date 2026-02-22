@@ -89,7 +89,17 @@ const AsesoriasDashboard = ({ activeTab, setActiveTab, selectedStudent, setSelec
 
     const handleCreateStudent = async (studentData) => {
         try {
-            await createStudent(studentData);
+            const student = await createStudent(studentData);
+
+            // Registrar peso inicial en el historial si está presente
+            if (studentData.weight) {
+                await addStudentMeasurement({
+                    student_id: student.id,
+                    weight: parseFloat(studentData.weight),
+                    body_fat_pct: studentData.body_fat_pct ? parseFloat(studentData.body_fat_pct) : null
+                });
+            }
+
             await loadStudents();
             setIsStudentModalOpen(false);
         } catch (err) {
