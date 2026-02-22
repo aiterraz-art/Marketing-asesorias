@@ -90,6 +90,9 @@ Realiza estos cálculos de forma interna para determinar las porciones totales:
 7. **REGLA CRÍTICA DE CARBOHIDRATOS EN ALMUERZO Y CENA**:
    - En **ALMUERZO y CENA**, está **estrictamente PROHIBIDO** combinar dos fuentes distintas de carbohidrato en una misma comida (ej: NO arroz + papas, NO fideos + pan).
    - Usa **UNA SOLA fuente de carbohidrato** por comida principal, ajustando la cantidad de porciones de ese único alimento.
+8. **REGLA CRÍTICA DE AVENA**:
+   - La **Avena** SOLO puede usarse en una comida si esa misma comida también incluye **Leche descremada** o **Yogurt descremado** como fuente de proteína.
+   - Si el desayuno o snack NO incluye leche ni yogurt, está **PROHIBIDO** usar avena. En ese caso, usa otra fuente de carbohidrato como **Pan integral**, **Plátano**, **Manzana**, **Naranja** u otra fruta de la tabla.
 `;
 
 export const generateChatResponse = async (historyMessages) => {
