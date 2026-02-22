@@ -84,6 +84,9 @@ Realiza estos cálculos de forma interna para determinar las porciones totales:
      "**Bebidas zero**: máximo 2 vasos al día.
      **Infusiones y jugos tipo Livean**: consumo libre.
      **Jugos light (con calorías residuales)**: prohibidos."
+6. **REGLA CRÍTICA DE GRASAS SEGÚN MOMENTO DEL DÍA**:
+   - **DESAYUNO y SNACKS**: La fuente de grasa DEBE ser siempre **Palta**. Está **estrictamente PROHIBIDO** incluir Aceite de Oliva en estas comidas.
+   - **ALMUERZO y CENA**: La fuente de grasa preferida es **Aceite de Oliva** (para condimentar). Se puede combinar con Palta si las porciones lo permiten.
 `;
 
 export const generateChatResponse = async (historyMessages) => {
