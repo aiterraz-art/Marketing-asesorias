@@ -47,6 +47,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
     const [newWaist, setNewWaist] = useState('');
     const [newHip, setNewHip] = useState('');
     const [newPhoto, setNewPhoto] = useState(null);
+    const [newMeasureDate, setNewMeasureDate] = useState(new Date().toISOString().split('T')[0]);
     const [isSavingMeasure, setIsSavingMeasure] = useState(false);
 
     // Photo Gallery
@@ -217,7 +218,8 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                 body_fat_pct: newFat ? parseFloat(newFat) : null,
                 waist_cm: newWaist ? parseFloat(newWaist) : null,
                 hip_cm: newHip ? parseFloat(newHip) : null,
-                photo_url: newPhoto // Simplificado, idealmente subir a Storage
+                photo_url: newPhoto,
+                measured_at: newMeasureDate
             });
 
             // Lógica de decremento de controles
@@ -236,6 +238,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
             setNewWaist('');
             setNewHip('');
             setNewPhoto(null);
+            setNewMeasureDate(new Date().toISOString().split('T')[0]);
             setShowAddMeasure(false);
             await loadData();
             if (onStudentUpdated) onStudentUpdated();
@@ -922,6 +925,15 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                     {showAddMeasure && (
                         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-end gap-3 animate-in slide-in-from-top-4 duration-300">
                             <div className="flex-1 space-y-1 w-full">
+                                <label className="text-[10px] text-zinc-300 uppercase font-bold">Fecha</label>
+                                <input
+                                    type="date"
+                                    value={newMeasureDate}
+                                    onChange={(e) => setNewMeasureDate(e.target.value)}
+                                    className="w-full bg-black border border-zinc-800 rounded-lg p-2.5 text-white outline-none focus:border-primary text-sm"
+                                />
+                            </div>
+                            <div className="flex-1 space-y-1 w-full">
                                 <label className="text-[10px] text-zinc-600 uppercase font-bold">Peso (kg)</label>
                                 <input
                                     type="number"
@@ -954,7 +966,14 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     Guardar
                                 </button>
                                 <button
-                                    onClick={() => { setShowAddMeasure(false); setNewWeight(''); setNewFat(''); }}
+                                    onClick={() => {
+                                        setShowAddMeasure(false);
+                                        setNewWeight('');
+                                        setNewFat('');
+                                        setNewWaist('');
+                                        setNewHip('');
+                                        setNewMeasureDate(new Date().toISOString().split('T')[0]);
+                                    }}
                                     className="px-3 py-2.5 text-zinc-500 hover:text-white text-sm transition-colors"
                                 >
                                     <X size={16} />
