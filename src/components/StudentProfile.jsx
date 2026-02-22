@@ -26,6 +26,68 @@ import {
 import NutritionAssistant from './NutritionAssistant';
 import VisualPlanEditor from './VisualPlanEditor';
 
+// ─── Exercise Rendering Components (Module Scope) ───
+const ExerciseMarkdownComponents = {
+    td: ({ children }) => {
+        const cellText = Array.isArray(children) ? children.join('') : String(children);
+        const imageUrl = getExerciseImageUrl(cellText);
+
+        return (
+            <td className="relative group p-2 border border-zinc-800">
+                <div className="flex items-center gap-2">
+                    <div className="flex-1">{children}</div>
+                    {imageUrl && (
+                        <div className="w-10 h-10 shrink-0 relative">
+                            <img
+                                src={imageUrl}
+                                alt={cellText}
+                                className="w-full h-full object-cover rounded border border-zinc-700 bg-black/40"
+                                loading="lazy"
+                            />
+                            <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 h-32 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
+                                <img
+                                    src={imageUrl}
+                                    alt={cellText}
+                                    className="w-full h-full object-cover rounded-lg border-2 border-primary shadow-2xl bg-black"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </td>
+        );
+    }
+};
+
+const ExercisePDFMarkdownComponents = {
+    td: ({ children }) => {
+        const cellText = Array.isArray(children) ? children.join('') : String(children);
+        const imageUrl = getExerciseImageUrl(cellText);
+
+        return (
+            <td style={{ padding: '8px 5px', border: '1px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ flex: 1 }}>{children}</div>
+                    {imageUrl && (
+                        <img
+                            src={imageUrl}
+                            alt={cellText}
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                objectFit: 'cover',
+                                borderRadius: '4px',
+                                border: '1px solid #ddd',
+                                display: 'block'
+                            }}
+                        />
+                    )}
+                </div>
+            </td>
+        );
+    }
+};
+
 const GOAL_LABELS = { cut: 'Definición', bulk: 'Volumen', maintenance: 'Mantenimiento', recomp: 'Recomposición' };
 const ACTIVITY_LABELS = { 1.2: 'Sedentario', 1.375: 'Ligero', 1.55: 'Moderado', 1.725: 'Intenso', 1.9: 'Muy Intenso' };
 
@@ -206,68 +268,6 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
         } catch (err) {
             console.error("Error updating student:", err);
             alert(`Error al actualizar el alumno: ${err.message || 'Error desconocido'}`);
-        }
-    };
-
-    // Exercise Rendering Components for Markdown
-    const ExerciseMarkdownComponents = {
-        td: ({ children }) => {
-            const cellText = Array.isArray(children) ? children.join('') : String(children);
-            const imageUrl = getExerciseImageUrl(cellText);
-
-            return (
-                <td className="relative group p-2 border border-zinc-800">
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1">{children}</div>
-                        {imageUrl && (
-                            <div className="w-10 h-10 flex-shrink-0 relative">
-                                <img
-                                    src={imageUrl}
-                                    alt={cellText}
-                                    className="w-full h-full object-cover rounded border border-zinc-700 bg-black/40"
-                                    loading="lazy"
-                                />
-                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 h-32 z-50 pointer-events-none animate-in fade-in zoom-in duration-200">
-                                    <img
-                                        src={imageUrl}
-                                        alt={cellText}
-                                        className="w-full h-full object-cover rounded-lg border-2 border-primary shadow-2xl bg-black"
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </td>
-            );
-        }
-    };
-
-    const ExercisePDFMarkdownComponents = {
-        td: ({ children }) => {
-            const cellText = Array.isArray(children) ? children.join('') : String(children);
-            const imageUrl = getExerciseImageUrl(cellText);
-
-            return (
-                <td style={{ padding: '8px 5px', border: '1px solid #e5e7eb' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1 }}>{children}</div>
-                        {imageUrl && (
-                            <img
-                                src={imageUrl}
-                                alt={cellText}
-                                style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    objectFit: 'cover',
-                                    borderRadius: '4px',
-                                    border: '1px solid #ddd',
-                                    display: 'block'
-                                }}
-                            />
-                        )}
-                    </div>
-                </td>
-            );
         }
     };
 
