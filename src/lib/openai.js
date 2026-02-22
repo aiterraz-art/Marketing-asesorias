@@ -291,8 +291,9 @@ export const generateFitnessPlan = async (studentData, macros, previousPlan = nu
         4. Distribución: En cada comida indica el conteo de porciones y las calorías de esa comida.
         5. Ejemplo Real: Agrega la sección "EJEMPLO DE DIETA" con alimentos lógicos según la tabla.
         6. CERO META-TALK: No incluyas explicaciones externas, saludos ni notas sobre el entrenamiento.
+        7. ESTRICTAMENTE PROHIBIDO: NO generes, no menciones y no incluyas ningún plan ni rutina de entrenamiento. Tu única tarea es la nutrición.
 
-        RESPONDE ÚNICAMENTE EN FORMATO JSON:
+        RESPONDE ÚNICAMENTE EN FORMATO JSON (No agregues otras claves):
         {
             "nutrition_plan": "Markdown detallado del plan nutricional clínico siguiendo la estructura."
         }

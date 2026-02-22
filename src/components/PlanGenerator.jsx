@@ -33,7 +33,12 @@ const PlanGenerator = ({ selectedStudent, macros, latestPlan, onSavePlan }) => {
             // Importar dinámicamente para evitar problemas de dependencias circulares si los hubiera
             const { generateFitnessPlan } = await import('../lib/openai');
             const plan = await generateFitnessPlan(activeStudent, activeMacros, latestPlan);
-            setGeneratedPlan(plan);
+
+            // Forzar preservación del plan de entrenamiento existente e ignorar alucinaciones del LLM
+            setGeneratedPlan({
+                ...plan,
+                training_plan: latestPlan?.training_plan_text || null
+            });
         } catch (error) {
             console.error("Error generating plan:", error);
             alert(`Error al generar el plan con IA: ${error.message || 'Error desconocido'}`);
