@@ -460,6 +460,53 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
 };
 
 /**
+ * Chat interactivo para editar una Rutina de Entrenamiento existente
+ */
+export const chatEditTraining = async (chatHistory, currentRoutineText) => {
+	if (!apiKey) throw new Error("OpenAI API Key not configured");
+
+	try {
+		const systemPrompt = `
+		Eres un Especialista de Élite en Entrenamiento de Fuerza e Hipertrofia.
+		El usuario te proporcionará un plan de entrenamiento previamente generado (Rutina Actual) y solicitará modificaciones (ej: "Sube el volumen", "Cambia estos ejercicios por otra variación", "Baja la intensidad", etc.).
+
+		INSTRUCCIONES CRÍTICAS:
+		1. Mantén intacta la estructura base de la rutina (títulos con ##, listas, fomato Markdown) a menos que se te pida explícitamente alterarla.
+		2. Aplica exactamente los cambios que pida el usuario. Si pide más "volumen", agrega inteligentemente 1 o 2 ejercicios coherentes al día. Si pide "cambiar ejercicio", propón un ejercicio biomecánicamente similar.
+		3. ENTREGA ÚNICAMENTE LA RUTINA COMPLETA MODIFICADA EN FORMATO MARKDOWN.
+		4. NO TE COMUNIQUES CON EL USUARIO. Cero saludos, cero explicaciones, cero notas adicionales. Inicia directamente con el título de la rutina y devuélvela completa.
+		`;
+
+		const messages = [
+			{ role: "system", content: systemPrompt },
+			{ role: "assistant", content: "Entendido, devolveré únicamente la rutina completa en formato Markdown con las modificaciones aplicadas." },
+			{ role: "user", content: `## RUTINA ACTUAL:\n\n${currentRoutineText}\n\n---\nPor favor, responde a mis últimos mensajes listados a continuación, y basándote en ellos DEBUELVE EL CÓDIGO MARKDOWN de la rutina actualizada.` },
+			...chatHistory.map(m => ({ role: m.role, content: m.content }))
+		];
+
+		try {
+			const completion = await openai.chat.completions.create({
+				messages: messages,
+				model: REASONING_MODEL
+			});
+
+			return completion.choices[0].message.content;
+		} catch (primaryError) {
+			console.warn(`Edit Training Chat fallback: `, primaryError);
+			const fallbackCompletion = await openai.chat.completions.create({
+				messages: messages,
+				model: "gpt-4o"
+			});
+			return fallbackCompletion.choices[0].message.content;
+		}
+	} catch (error) {
+		console.error("Edit Training Chat Error:", error);
+		throw error;
+	}
+};
+
+
+/**
  * Generates persuasive copy for Ad Creatives (Before/After)
  */
 export const generateAdCopy = async (context, settings = {}) => {

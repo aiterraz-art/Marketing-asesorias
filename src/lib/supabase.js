@@ -103,6 +103,17 @@ export const saveStudentPlan = async (plan) => {
     return data;
 }
 
+export const addStudentPlan = async (plan) => {
+    const { data, error } = await supabase
+        .from('student_plans')
+        .insert([plan])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
 export const deleteStudentPlan = async (id) => {
     const { error } = await supabase
         .from('student_plans')

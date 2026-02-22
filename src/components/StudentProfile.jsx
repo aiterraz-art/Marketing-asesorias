@@ -14,9 +14,9 @@ import {
     updateStudentData, getStudentSessions, addStudentSession, deleteStudentPlan,
     getStudentPhotos, addStudentPhoto, deleteStudentPhoto, uploadPhoto,
     getStudentTasks, addStudentTask, updateStudentTask, deleteStudentTask,
-    getFoods, updateStudentPlan
+    getFoods, updateStudentPlan, addStudentPlan
 } from '../lib/supabase';
-import { analyzeBodyComposition } from '../lib/openai';
+import { analyzeBodyComposition, chatEditTraining } from '../lib/openai';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -1648,6 +1648,40 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
     const [isSaving, setIsSaving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
+    // AI Training Edit Chat State
+    const [aiChatInput, setAiChatInput] = useState('');
+    const [isAiEditing, setIsAiEditing] = useState(false);
+    const [aiChatHistory, setAiChatHistory] = useState([]);
+    const chatContainerRef = useRef(null);
+
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [aiChatHistory]);
+
+    const handleAiEditSubmit = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!aiChatInput.trim() || isAiEditing) return;
+
+        const userMsg = aiChatInput;
+        setAiChatInput('');
+        setAiChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
+        setIsAiEditing(true);
+
+        try {
+            const newRoutineText = await chatEditTraining([...aiChatHistory, { role: 'user', content: userMsg }], editedTraining);
+            setEditedTraining(newRoutineText);
+            setAiChatHistory(prev => [...prev, { role: 'assistant', content: '✅ Rutina modificada exitosamente. ¿Deseas algún otro cambio?' }]);
+        } catch (error) {
+            console.error("AI Edit Error:", error);
+            setAiChatHistory(prev => [...prev, { role: 'assistant', content: '❌ Error al comunicar con la IA. Inténtalo de nuevo.' }]);
+            alert("No se pudo editar la rutina con IA.");
+        } finally {
+            setIsAiEditing(false);
+        }
+    };
+
     // Calculator State
     const [selectedFoodId, setSelectedFoodId] = useState('');
     const [grams, setGrams] = useState(100);
@@ -1686,19 +1720,34 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
         const finalNutrition = overrideNutritionText !== null ? overrideNutritionText : editedNutrition;
 
         try {
-            await updateStudentPlan(plan.id, {
-                nutrition_plan_text: isNutrition ? finalNutrition : undefined,
-                supplementation_plan_text: isNutrition ? editedSupplementation : undefined,
-                training_plan_text: !isNutrition ? editedTraining : undefined,
-                // Update Macros if they changed (simplified logic for now, relies on liveMacros or existing)
-                // Note: VisualPlanEditor saves text, liveMacros might need recalc if we want accurate DB numbers.
-                // For now, we trust the text update is primary.
-            });
-            setEditedNutrition(finalNutrition); // Sync state
+            if (isNutrition) {
+                // For Nutrition: update the existing plan as usual
+                await updateStudentPlan(plan.id, {
+                    nutrition_plan_text: finalNutrition,
+                    supplementation_plan_text: editedSupplementation,
+                });
+                setEditedNutrition(finalNutrition); // Sync state
+            } else {
+                // For Training: CREATE A NEW PLAN (cloning the old one but with new training text)
+                const newPlanData = {
+                    student_id: plan.student_id,
+                    goal: plan.goal,
+                    calories: plan.calories || 0,
+                    protein_g: plan.protein_g || 0,
+                    fat_g: plan.fat_g || 0,
+                    carbs_g: plan.carbs_g || 0,
+                    nutrition_plan_text: plan.nutrition_plan_text,
+                    supplementation_plan_text: plan.supplementation_plan_text,
+                    training_plan_text: editedTraining // The new AI edited text
+                };
+                await addStudentPlan(newPlanData);
+                // The parent component should reload plans via onUpdate()
+            }
+
             setIsEditing(false);
             if (onUpdate) onUpdate();
         } catch (err) {
-            console.error("Error updating plan:", err);
+            console.error("Error updating/cloning plan:", err);
             alert("Error al guardar cambios");
         } finally {
             setIsSaving(false);
@@ -1873,18 +1922,68 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             onCancel={() => setIsEditing(false)}
                         />
                     ) : (
-                        <div className="p-4 bg-zinc-900/50 space-y-4">
-                            <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Plan de Entrenamiento (Modo Texto)</label>
-                            <textarea
-                                value={editedTraining}
-                                onChange={e => setEditedTraining(e.target.value)}
-                                className="w-full h-96 bg-black border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 font-mono focus:border-primary outline-none resize-y"
-                            />
-                            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
-                                <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-zinc-400 text-xs hover:text-white">Cancelar</button>
-                                <button onClick={() => handleSave()} disabled={isSaving} className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg flex items-center gap-2">
-                                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Save size={14} />} Guardar
-                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] h-full">
+                            {/* AI Assistant Chat Panel */}
+                            <div className="border-r border-zinc-800 bg-black/40 p-4 flex flex-col h-full">
+                                <div className="flex items-center gap-2 mb-4 text-emerald-400">
+                                    <Sparkles size={16} />
+                                    <h3 className="text-sm font-bold">Asistente de Edición</h3>
+                                </div>
+                                <div className="text-[10px] text-zinc-500 mb-4 bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                                    "Añade un ejercicio extra de bíceps," "cambia el sentadilla por prensa," o "sube el volumen general".
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto space-y-3 mb-4 custom-scrollbar pr-2" ref={chatContainerRef}>
+                                    {aiChatHistory.length === 0 && (
+                                        <div className="text-center text-xs text-zinc-600 italic mt-10">
+                                            Escribe qué cambios le quieres hacer a esta rutina.
+                                        </div>
+                                    )}
+                                    {aiChatHistory.map((msg, i) => (
+                                        <div key={i} className={`text-xs p-2.5 rounded-lg ${msg.role === 'user' ? 'bg-primary/20 text-blue-100 ml-4' : 'bg-zinc-800/50 text-zinc-300 mr-4'}`}>
+                                            {msg.content}
+                                        </div>
+                                    ))}
+                                    {isAiEditing && (
+                                        <div className="flex items-center gap-2 text-primary text-xs p-2 bg-primary/10 rounded mr-4 w-fit animate-pulse">
+                                            <Loader2 size={12} className="animate-spin" /> Modificando rutina...
+                                        </div>
+                                    )}
+                                </div>
+
+                                <form onSubmit={handleAiEditSubmit} className="relative mt-auto">
+                                    <input
+                                        type="text"
+                                        value={aiChatInput}
+                                        onChange={e => setAiChatInput(e.target.value)}
+                                        placeholder="Aplicar cambio..."
+                                        disabled={isAiEditing}
+                                        className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-2.5 pl-4 pr-10 text-xs text-white focus:border-primary focus:bg-black transition-all outline-none"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={!aiChatInput.trim() || isAiEditing}
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 bg-primary text-white rounded-full hover:bg-primary/80 disabled:opacity-50 transition-colors"
+                                    >
+                                        <ArrowLeft size={12} className="rotate-180" />
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* Text Editor Panel */}
+                            <div className="p-4 bg-zinc-900/50 flex flex-col h-full">
+                                <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-2">Editor de Código Markdown</label>
+                                <textarea
+                                    value={editedTraining}
+                                    onChange={e => setEditedTraining(e.target.value)}
+                                    className="w-full flex-1 bg-black border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 font-mono focus:border-primary outline-none resize-none custom-scrollbar"
+                                />
+                                <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800 mt-4">
+                                    <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-zinc-400 text-xs hover:text-white transition-colors">Cancelar</button>
+                                    <button onClick={() => handleSave()} disabled={isSaving} className="px-5 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-lg flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+                                        {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Guardar como Nueva Versión
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
