@@ -769,6 +769,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     isExpanded={expandedPlan === `n-${plan.id}`}
                                     onToggle={() => setExpandedPlan(expandedPlan === `n-${plan.id}` ? null : `n-${plan.id}`)}
                                     studentName={student.full_name}
+                                    student={student}
                                     onDelete={() => handleDeletePlan(plan.id)}
                                     onUpdate={loadData}
                                 />
@@ -961,6 +962,7 @@ const StudentProfile = ({ student, onBack, onStudentUpdated }) => {
                                     isExpanded={expandedPlan === `t-${plan.id}`}
                                     onToggle={() => setExpandedPlan(expandedPlan === `t-${plan.id}` ? null : `t-${plan.id}`)}
                                     studentName={student.full_name}
+                                    student={student}
                                     onDelete={() => handleDeletePlan(plan.id)}
                                     onUpdate={loadData}
                                 />
@@ -1698,7 +1700,7 @@ const EditField = ({ label, value, onChange, type = 'text' }) => (
     </div>
 );
 
-const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber, onDelete, foods = [], onUpdate }) => {
+const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber, onDelete, foods = [], onUpdate, student }) => {
     const isNutrition = type === 'nutrition';
     const content = isNutrition
         ? (plan.nutrition_plan_text || plan.supplementation_plan_text)
@@ -2218,7 +2220,7 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                             </h2>
                         </div>
 
-                        {/* Summary Metrics for PDF */}
+                        {/* Summary Metrics for PDF - NUTRITION */}
                         {plan.calories && isNutrition && (
                             <div style={{
                                 display: 'flex',
@@ -2242,6 +2244,36 @@ const PlanCard = ({ plan, type, isExpanded, onToggle, studentName, versionNumber
                                     <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Actividad</p>
                                     <p style={{ fontSize: '18px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>8,000 Pasos</p>
                                     <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>Meta diaria</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Summary Metrics for PDF - TRAINING (No nutrition data) */}
+                        {!isNutrition && (
+                            <div style={{
+                                display: 'flex',
+                                gap: '15px',
+                                marginBottom: '30px',
+                                background: '#f8fafc',
+                                padding: '20px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0'
+                            }}>
+                                <div style={{ flex: 1, textAlign: 'center' }}>
+                                    <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Objetivo</p>
+                                    <p style={{ fontSize: '18px', fontWeight: '900', color: '#7c3aed', margin: 0, textTransform: 'capitalize' }}>
+                                        {student?.goal === 'cut' ? 'Definición' : student?.goal === 'bulk' ? 'Volumen' : 'Mantenimiento'}
+                                    </p>
+                                </div>
+                                <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
+                                    <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Frecuencia</p>
+                                    <p style={{ fontSize: '18px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>Variable</p>
+                                    <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>Sesiones / Semana</p>
+                                </div>
+                                <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0' }}>
+                                    <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px' }}>Nivel</p>
+                                    <p style={{ fontSize: '18px', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>Personalizado</p>
+                                    <p style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0 0 0' }}>Adaptado al alumno</p>
                                 </div>
                             </div>
                         )}
