@@ -1588,6 +1588,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         split: 'PPL (Push/Pull/Legs)',
         daysPerWeek: 4,
         experience: 'Intermedio',
+        volume: 'Medio (6-7)',
         extraSport: ''
     });
 
@@ -1625,7 +1626,7 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
         setIsChatLoading(true);
         setShowChat(true);
 
-        const initialUserMsg = `Genera una rutina ${data.split} de ${data.daysPerWeek} días para un nivel ${data.experience}${data.extraSport ? ` enfocado en mejorar en ${data.extraSport}` : ''}.`;
+        const initialUserMsg = `Genera una rutina ${data.split} de ${data.daysPerWeek} días para un nivel ${data.experience}. El volumen de entrenamiento debe ser: **${data.volume} ejercicios por sesión**. ${data.extraSport ? `Enfoque extra: mejorar en ${data.extraSport}.` : ''}`;
 
         setChatMessages([{ role: 'user', content: initialUserMsg }]);
 
@@ -1950,6 +1951,25 @@ const TrainingGenerator = ({ selectedStudent, students, onSelectStudent, latestP
                                 <TrendingUp size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
                             </div>
                         </div>
+
+                        <div className="space-y-1.5 mt-4">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Volumen (Ejercicios/Día)</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['Bajo (4-5)', 'Medio (6-7)', 'Alto (8+)'].map(vol => (
+                                    <button
+                                        key={vol}
+                                        onClick={() => setData({ ...data, volume: vol })}
+                                        className={`py-2 rounded-lg text-[10px] font-bold border transition-all ${data.volume === vol
+                                            ? 'bg-amber-500/10 border-amber-500 text-amber-500'
+                                            : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                            }`}
+                                    >
+                                        {vol}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 

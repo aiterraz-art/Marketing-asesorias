@@ -413,13 +413,23 @@ export const chatTrainingAssistant = async (chatHistory, studentData, trainingDa
 
 	try {
 		const systemPrompt = `
-        Eres un experto en nutrición de élite.
-        Alumno: ${studentData.full_name}
-        Meta: ${studentData.goal}
-        
-        NOTA: Aunque esta función se llame 'TrainingAssistant', tu instrucción actual es centrarte únicamente en la NUTRICIÓN y el sistema de porciones isocalóricas.
-        NO generes rutinas de entrenamiento.
-        `;
+		Eres un Especialista de Élite en Entrenamiento de Fuerza e Hipertrofia.
+		Alumno: ${studentData.full_name}
+		Objetivo Físico: ${studentData.goal}
+		Sexo: ${studentData.sex || 'No especificado'}
+		Nivel de Experiencia: ${trainingData.experience || 'Intermedio'}
+		Días de Entrenamiento: ${trainingData.daysPerWeek || 4} días a la semana
+		Tipo de Rutina (Split): ${trainingData.split || 'PPL'}
+		Volumen de Ejercicios: ${trainingData.volume || 'Medio (6-7)'} ejercicios por sesión de entrenamiento.
+
+		INSTRUCCIONES CRÍTICAS:
+		1. Diseña la rutina de entrenamiento cumpliendo EXACTAMENTE con los Días de Entrenamiento y el Tipo de Rutina solicitados.
+		2. El número de ejercicios por día de entrenamiento DEBE coincidir con el Volumen de Ejercicios solicitado (${trainingData.volume}). Por ejemplo, si es "Bajo (4-5)", no pongas 6 ejercicios.
+		3. Para cada ejercicio especifica: Nombre, Series (Sets), Repeticiones (Reps) y Descanso (Rest).
+		4. Si el alumno tiene un enfoque extra deportivo (${trainingData.extraSport || 'ninguno'}), adapta la selección de ejercicios o agrega trabajo específico para mejorar en esa disciplina sin descuidar el objetivo principal de hipertrofia/fuerza.
+		5. Formatea la respuesta estrictamente en Markdown, usando ## para cada Día de Entrenamiento, listas para los ejercicios, y tablas si lo consideras visualmente más claro.
+		6. NO hables sobre nutrición ni dietas. Tu única y exclusiva labor es diseñar el protocolo de entrenamiento en el gimnasio.
+		`;
 
 		const messages = [
 			{ role: "system", content: systemPrompt },
